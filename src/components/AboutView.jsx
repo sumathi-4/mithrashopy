@@ -135,7 +135,7 @@ export default function AboutView() {
               We do not just sell products; we deliver stories of culture, warmth, and attention to detail. Every box packaged is a promise of premium quality and happiness delivered right to your doorstep.
             </p>
             <div className="about-founder-signature">
-              <span className="founder-name">Sumathi S.</span>
+              <span className="founder-name">Mithra</span>
               <span className="founder-title">Founder, MithiraShoppy</span>
             </div>
             <div className="about-founder-border-glow"></div>
