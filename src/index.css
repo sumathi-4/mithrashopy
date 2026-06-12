@@ -2818,11 +2818,109 @@ ul {
   border: 1px solid #f2ece9;
   box-shadow: var(--shadow-sm);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .shop-prod-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 15px 35px rgba(58, 42, 47, 0.08);
+}
+
+.shop-prod-card .prod-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1.1;
+  flex-shrink: 0;
+}
+
+.shop-prod-card .prod-details {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: space-between;
+}
+
+.shop-prod-card .prod-card-category {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.shop-prod-card .prod-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.8em; /* Force titles to exactly 2 lines height to align ratings & prices */
+}
+
+.shop-prod-card .prod-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  margin-top: auto;
+}
+
+.shop-prod-card .prod-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.shop-prod-card .prod-card-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary-rose-dark);
+}
+
+/* Ensure contrast and white text in themed shop cards */
+.prod-theme-clothing .prod-card-category,
+.prod-theme-gifts .prod-card-category,
+.prod-theme-stationery .prod-card-category,
+.prod-theme-accessories .prod-card-category {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.prod-theme-clothing .prod-card-title,
+.prod-theme-gifts .prod-card-title,
+.prod-theme-stationery .prod-card-title,
+.prod-theme-accessories .prod-card-title {
+  color: #ffffff !important;
+}
+
+.prod-theme-clothing .prod-card-price,
+.prod-theme-gifts .prod-card-price,
+.prod-theme-stationery .prod-card-price,
+.prod-theme-accessories .prod-card-price {
+  color: #ffffff !important;
+}
+
+.prod-theme-clothing .reviews-count,
+.prod-theme-gifts .reviews-count,
+.prod-theme-stationery .reviews-count,
+.prod-theme-accessories .reviews-count {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.prod-theme-clothing .star-empty,
+.prod-theme-gifts .star-empty,
+.prod-theme-stationery .star-empty,
+.prod-theme-accessories .star-empty {
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 .shop-card-hover-overlay {
@@ -5181,6 +5279,9 @@ ul {
   border: 1px solid rgba(185, 122, 126, 0.08);
   position: relative;
   transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .celeb-item-card:hover {
@@ -5190,10 +5291,12 @@ ul {
 }
 
 .celeb-item-img-wrapper {
-  height: 290px;
+  width: 100%;
+  aspect-ratio: 1 / 1.1;
   background-color: #f7eded;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .celeb-item-img {
@@ -5248,6 +5351,10 @@ ul {
 
 .celeb-item-content {
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: space-between;
 }
 
 .celeb-item-tag {
@@ -5367,6 +5474,197 @@ ul {
 
   .celeb-item-img-wrapper {
     height: 250px;
+  }
+}
+
+/* Shop Sub-category Tabs */
+.shop-subcategories-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.shop-subtab-btn {
+  background-color: #ffffff;
+  border: 1px solid rgba(185, 122, 126, 0.15);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 8px 22px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.shop-subtab-btn:hover {
+  border-color: var(--primary-rose);
+  color: var(--primary-rose);
+  background-color: #f7eded;
+  transform: translateY(-1px);
+}
+
+.shop-subtab-btn.active {
+  background-color: var(--primary-rose);
+  border-color: var(--primary-rose);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(185, 122, 126, 0.2);
+}
+
+/* Kids Badge Glowing Style */
+.kids-glow-badge {
+  background: linear-gradient(135deg, var(--gold-accent) 0%, var(--primary-rose) 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 10px rgba(196, 154, 108, 0.4);
+  animation: badgeGlowPulse 2s infinite alternate;
+}
+
+@keyframes badgeGlowPulse {
+  0% {
+    box-shadow: 0 0 5px rgba(196, 154, 108, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(196, 154, 108, 0.7);
+  }
+}
+
+/* Playful Kids Theme Cards styling */
+.prod-theme-kids {
+  background: linear-gradient(135deg, #fffafd 0%, #fff2f5 100%) !important;
+  color: var(--text-dark) !important;
+  border: 1px solid rgba(185, 122, 126, 0.25) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.prod-theme-kids:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 15px 35px rgba(185, 122, 126, 0.2), 0 5px 15px rgba(196, 154, 108, 0.15) !important;
+  border-color: var(--gold-accent) !important;
+}
+
+.prod-theme-kids .prod-badge {
+  background: linear-gradient(135deg, var(--primary-rose) 0%, var(--gold-accent) 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 8px rgba(185, 122, 126, 0.25) !important;
+}
+
+.prod-theme-kids .prod-wishlist-btn {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid rgba(185, 122, 126, 0.15) !important;
+}
+
+.prod-theme-kids .prod-wishlist-btn:hover {
+  background-color: #ffffff !important;
+  color: var(--primary-rose) !important;
+}
+
+.prod-theme-kids .prod-wishlist-btn.active {
+  color: var(--primary-rose) !important;
+  background-color: #ffffff !important;
+  border-color: var(--primary-rose) !important;
+  box-shadow: 0 4px 8px rgba(185, 122, 126, 0.2) !important;
+}
+
+.prod-theme-kids .prod-details {
+  background-color: transparent !important;
+  padding: 18px !important;
+}
+
+.prod-theme-kids .prod-card-category {
+  color: var(--primary-rose) !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+}
+
+.prod-theme-kids .prod-card-title {
+  color: var(--text-dark) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  margin: 6px 0 !important;
+}
+
+.prod-theme-kids .reviews-count {
+  color: var(--text-muted) !important;
+}
+
+.prod-theme-kids .prod-card-price {
+  color: var(--primary-rose-dark) !important;
+  font-weight: 800 !important;
+  font-size: 1.15rem !important;
+}
+
+.prod-theme-kids .star-empty {
+  color: #dddddd !important;
+}
+
+/* Sparkle effect on kids card hover */
+.prod-theme-kids::before {
+  content: '⭐';
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 0.95rem;
+  opacity: 0;
+  transition: var(--transition);
+  z-index: 5;
+}
+
+.prod-theme-kids:hover::before {
+  opacity: 1;
+  transform: scale(1.2) rotate(15deg);
+  animation: floatSparkle 1.5s infinite ease-in-out alternate;
+}
+
+@keyframes floatSparkle {
+  0% { transform: translateY(0) scale(1) rotate(0); }
+  100% { transform: translateY(-4px) scale(1.3) rotate(20deg); }
+}
+
+/* Playful kid sub-tab hover states */
+.shop-subtab-btn.kids-subtab-btn:hover {
+  background: linear-gradient(135deg, #fff2f4 0%, #ffeef1 100%) !important;
+  border-color: #fca5a5 !important;
+  color: #f43f5e !important;
+}
+
+.shop-subtab-btn.kids-subtab-btn.active {
+  background: linear-gradient(135deg, #f43f5e 0%, var(--primary-rose) 100%) !important;
+  border-color: #f43f5e !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Playful spec-card in modal styling */
+.modal-kids-spec-box {
+  background: linear-gradient(135deg, #fdfbf8 0%, #faf5ee 100%) !important;
+  border: 2px dashed rgba(185, 122, 126, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 18px 22px !important;
+  margin-top: 15px !important;
+  box-shadow: inset 0 2px 4px rgba(58, 42, 47, 0.02) !important;
+}
+
+.modal-whatsapp-btn {
+  animation: floatWhatsApp 2s infinite alternate;
+}
+
+@keyframes floatWhatsApp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
   }
 }
 

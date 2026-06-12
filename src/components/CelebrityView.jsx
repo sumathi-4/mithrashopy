@@ -5,6 +5,8 @@ import celebSaree from '../assets/celeb_saree.jpg';
 import celebKid from '../assets/celeb_kid.jpg';
 import celebKeerthy from '../assets/celeb_keerthy.jpg';
 import celebDulquer from '../assets/celeb_dulquer.jpg';
+import celebVeshti from '../assets/celeb_veshti.jpg';
+import celebHaram from '../assets/celeb_haram.jpg';
 
 export default function CelebrityView() {
   const [activeCelebTab, setActiveCelebTab] = useState('couple');
@@ -42,14 +44,14 @@ export default function CelebrityView() {
           title: "Men's Classic Khadi Veshti & Kurta Set",
           category: "clothing",
           price: "₹2,500",
-          image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"
+          image: celebVeshti
         },
         {
           id: 'sc3',
           title: "Traditional Gold Plated Temple Haram",
           category: "accessories",
           price: "₹3,200",
-          image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80"
+          image: celebHaram
         }
       ]
     },
