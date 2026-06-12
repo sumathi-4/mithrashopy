@@ -6,11 +6,13 @@ import celebCouple from '../assets/celeb_couple.jpg';
 export default function CelebrityCollection() {
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
-    alert(`Navigating to: ${path}`);
+    window.dispatchEvent(new Event('popstate'));
   };
 
+
   return (
-    <section className="celebrity-section">
+    <section id="celebrity-collection" className="celebrity-section">
+
       <div className="section-container">
         
         {/* Section Header */}

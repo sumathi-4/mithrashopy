@@ -8,8 +8,9 @@ export default function Footer() {
 
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
-    alert(`Navigating to: ${path}`);
+    window.dispatchEvent(new Event('popstate'));
   };
+
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -17,13 +18,13 @@ export default function Footer() {
   };
 
   const quickCategories = [
-    { name: "Clothing", icon: <Shirt size={28} />, path: "/shop?category=clothing" },
-    { name: "Fancy Items", icon: <ShoppingBag size={28} />, path: "/shop?category=accessories" },
-    { name: "Gifts", icon: <Gift size={28} />, path: "/shop?category=gifts" },
-    { name: "Celebrity", icon: <Star size={28} />, path: "/shop?collection=celebrity" },
-    { name: "New Arrivals", icon: <Award size={28} />, path: "/shop?type=new_arrivals" },
-    { name: "Premium", icon: <Compass size={28} />, path: "/shop?type=premium" },
-    { name: "Offers", icon: <Percent size={28} />, path: "/shop?type=offers" }
+    { name: "Clothing", icon: <Shirt size={28} />, path: "/Shop?category=clothing" },
+    { name: "Fancy Items", icon: <ShoppingBag size={28} />, path: "/Shop?category=accessories" },
+    { name: "Gifts", icon: <Gift size={28} />, path: "/Shop?category=gifts" },
+    { name: "Celebrity", icon: <Star size={28} />, path: "/Celebrity" },
+    { name: "New Arrivals", icon: <Award size={28} />, path: "/NewArrivals" },
+    { name: "Premium", icon: <Compass size={28} />, path: "/Shop?type=premium" },
+    { name: "Offers", icon: <Percent size={28} />, path: "/Offers" }
   ];
 
   return (
@@ -109,11 +110,12 @@ export default function Footer() {
           </div>
 
           {/* Information Links */}
-          <div className="sitemap-column">
+          <div id="about" className="sitemap-column">
+
             <h4>Information</h4>
             <ul>
-              <li><a href="#about">About Us</a></li>
-              <li><a href="#contact">Contact Us</a></li>
+              <li><a href="/About" onClick={(e) => { e.preventDefault(); handleNavigation('/About'); }}>About Us</a></li>
+              <li><a href="/Contact" onClick={(e) => { e.preventDefault(); handleNavigation('/Contact'); }}>Contact Us</a></li>
               <li><a href="#privacy">Privacy Policy</a></li>
               <li><a href="#terms">Terms & Conditions</a></li>
               <li><a href="#faq">FAQ</a></li>
@@ -145,7 +147,8 @@ export default function Footer() {
           </div>
 
           {/* Contact Details */}
-          <div className="sitemap-column contact-column">
+          <div id="contact" className="sitemap-column contact-column">
+
             <h4>Contact Us</h4>
             <div className="contact-details-list">
               <div className="contact-detail-item">

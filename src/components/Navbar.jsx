@@ -7,6 +7,13 @@ export default function Navbar() {
 
   const categories = ['Clothing', 'Stationery', 'Gifts', 'Accessories'];
 
+  const handleLinkClick = (e, path) => {
+    e.preventDefault();
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new Event('popstate'));
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="navbar-container">
       {/* Top Announcement Bar */}
@@ -34,7 +41,7 @@ export default function Navbar() {
         </button>
 
         {/* Logo (Centered on desktop, customized SVG brand matching reference img2) */}
-        <a href="/" className="logo-link">
+        <a href="/" onClick={(e) => handleLinkClick(e, '/')} className="logo-link">
           <div className="flex flex-col items-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {/* Elegant Golden Crown SVG matching img2 */}
             <svg 
@@ -60,10 +67,10 @@ export default function Navbar() {
         {/* Navigation Menu Links */}
         <ul className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
           <li className="nav-item">
-            <a href="#home">Home</a>
+            <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
           </li>
           <li className="nav-item">
-            <a href="#shop">Shop</a>
+            <a href="/Shop" onClick={(e) => handleLinkClick(e, '/Shop')}>Shop</a>
           </li>
           
           {/* Categories Dropdown */}
@@ -72,13 +79,17 @@ export default function Navbar() {
             onMouseEnter={() => setCategoriesDropdownOpen(true)}
             onMouseLeave={() => setCategoriesDropdownOpen(false)}
           >
-            <div className="dropdown-toggle" onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}>
+            <div className="dropdown-toggle" onClick={(e) => handleLinkClick(e, '/#categories')}>
               Categories <ChevronDown className="dropdown-icon" />
             </div>
             <ul className={`dropdown-menu ${categoriesDropdownOpen ? 'show' : ''}`} style={{ display: categoriesDropdownOpen ? 'block' : 'none' }}>
               {categories.map((category) => (
                 <li key={category}>
-                  <a href={`#category-${category.toLowerCase()}`} className="dropdown-item">
+                  <a 
+                    href={`/Shop?category=${category.toLowerCase()}`} 
+                    className="dropdown-item"
+                    onClick={(e) => handleLinkClick(e, `/Shop?category=${category.toLowerCase()}`)}
+                  >
                     {category}
                   </a>
                 </li>
@@ -87,27 +98,32 @@ export default function Navbar() {
           </li>
 
           <li className="nav-item">
-            <a href="#celebrity-collection">Celebrity Collection</a>
+            <a href="/Celebrity" onClick={(e) => handleLinkClick(e, '/Celebrity')}>Celebrity Collection</a>
           </li>
           <li className="nav-item">
-            <a href="#new-arrivals">New Arrivals</a>
+            <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
           </li>
           <li className="nav-item">
-            <a href="#offers">Offers</a>
+            <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
           </li>
           <li className="nav-item">
-            <a href="#about">About</a>
+            <a href="/About" onClick={(e) => handleLinkClick(e, '/About')}>About</a>
           </li>
           <li className="nav-item">
-            <a href="#contact">Contact</a>
+            <a href="/Contact" onClick={(e) => handleLinkClick(e, '/Contact')}>Contact</a>
           </li>
         </ul>
 
         {/* Action Icons (Search, Wishlist, Account, Cart) */}
         <div className="nav-icons">
-          <button className="icon-btn" aria-label="Search">
+          <button 
+            className="icon-btn" 
+            aria-label="Search"
+            onClick={(e) => handleLinkClick(e, '/Shop')}
+          >
             <Search size={20} />
           </button>
+
           <button className="icon-btn" aria-label="Account">
             <User size={20} />
           </button>

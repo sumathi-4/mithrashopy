@@ -11,7 +11,7 @@ export default function ProductsSection() {
   // Mock navigation function
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
-    alert(`Navigating to: ${path}`);
+    window.dispatchEvent(new Event('popstate'));
   };
 
   const toggleWishlist = (id) => {
@@ -194,7 +194,8 @@ export default function ProductsSection() {
     <div className="products-section-outer">
       
       {/* 1. TRENDING PRODUCTS (AJIO Top Trends Style: Big, Glassy, Premium Hover Anim) */}
-      <section className="trending-products-section">
+      <section id="offers" className="trending-products-section">
+
         <div className="section-container">
           
           <div className="section-header">
@@ -253,7 +254,7 @@ export default function ProductsSection() {
           <div className="section-footer-btn">
             <button 
               className="view-all-btn flex-center"
-              onClick={() => handleNavigation('/shop?type=trending')}
+              onClick={() => handleNavigation('/Shop')}
             >
               View All Products
             </button>
@@ -263,7 +264,8 @@ export default function ProductsSection() {
       </section>
 
       {/* 2. NEW ARRIVALS (Full-width layout with bright solid themes and torn paper detail container) */}
-      <section className="new-arrivals-section full-width-arrivals-section">
+      <section id="new-arrivals" className="new-arrivals-section full-width-arrivals-section">
+
         <div className="section-container full-width-container">
 
           <div className="section-header">
@@ -313,7 +315,7 @@ export default function ProductsSection() {
                   <div className="kombu-actions">
                     <button 
                       className="kombu-btn black-white-btn"
-                      onClick={() => handleNavigation('/shop')}
+                      onClick={() => handleNavigation('/Shop')}
                     >
                       Examine Collection
                     </button>
@@ -374,7 +376,7 @@ export default function ProductsSection() {
           <div className="section-footer-btn">
             <button 
               className="view-all-btn flex-center"
-              onClick={() => handleNavigation('/shop')}
+              onClick={() => handleNavigation('/Shop')}
             >
               View All Products
             </button>
@@ -382,6 +384,7 @@ export default function ProductsSection() {
 
         </div>
       </section>
+
 
     </div>
   );

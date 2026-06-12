@@ -4,7 +4,7 @@ import { Gift, ChevronRight } from 'lucide-react';
 export default function GiftsByOccasion() {
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
-    alert(`Navigating to: ${path}`);
+    window.dispatchEvent(new Event('popstate'));
   };
 
   const occasions = [

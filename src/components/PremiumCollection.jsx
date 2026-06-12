@@ -18,7 +18,7 @@ export default function PremiumCollection() {
 
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
-    alert(`Navigating to: ${path}`);
+    window.dispatchEvent(new Event('popstate'));
   };
 
   // Decreased amount of products from 4 to 3, and using the newly uploaded premium accessory images

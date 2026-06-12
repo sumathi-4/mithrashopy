@@ -33,7 +33,8 @@ export default function CategoryCards() {
   ];
 
   return (
-    <section className="categories-section">
+    <section id="categories" className="categories-section">
+
       <div className="categories-container">
         
         {/* Section Header */}
@@ -48,7 +49,15 @@ export default function CategoryCards() {
         {/* Categories Grid */}
         <div className="categories-grid">
           {categories.map((cat) => (
-            <div key={cat.id} className={`category-card ${cat.themeClass}`}>
+            <div 
+              key={cat.id} 
+              className={`category-card ${cat.themeClass}`}
+              onClick={() => {
+                window.history.pushState({}, '', `/Shop?category=${cat.title.toLowerCase()}`);
+                window.dispatchEvent(new Event('popstate'));
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               
               {/* Image Container with background */}
               <div className="card-image-wrapper">
@@ -75,6 +84,7 @@ export default function CategoryCards() {
             </div>
           ))}
         </div>
+
 
       </div>
     </section>

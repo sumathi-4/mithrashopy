@@ -53,7 +53,8 @@ export default function Hero() {
   }, [slides.length]);
 
   return (
-    <section className="hero-container full-width-hero">
+    <section id="home" className="hero-container full-width-hero">
+
       {/* Background Auto-Slider (Spans full width) */}
       <div className="hero-slider-wrapper">
         {slides.map((slide, index) => (
@@ -96,9 +97,18 @@ export default function Hero() {
           <span className="hero-tag">New Collection</span>
           <h2 className="hero-title">Elegant Ethnic Wear Collection</h2>
           <p className="hero-subtitle">Timeless Beauty, Modern You</p>
-          <button className="hero-btn">Shop Now</button>
+          <button 
+            className="hero-btn"
+            onClick={() => {
+              window.history.pushState({}, '', '/Shop');
+              window.dispatchEvent(new Event('popstate'));
+            }}
+          >
+            Shop Now
+          </button>
         </div>
       </div>
     </section>
   );
 }
+
