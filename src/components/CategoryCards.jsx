@@ -1,4 +1,8 @@
 import React from 'react';
+import imgClothing from '../assets/hero_clothing.jpg';
+import imgStationery from '../assets/hero_stationery.jpg';
+import imgGifts from '../assets/hero_gifts.jpg';
+import imgAccessories from '../assets/hero_accessories.jpg';
 
 export default function CategoryCards() {
   const categories = [
@@ -6,31 +10,32 @@ export default function CategoryCards() {
       id: 1,
       title: "Clothing",
       subtitle: "Kids, Men & Women Fashion",
-      image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      image: imgClothing,
       themeClass: "theme-clothing"
     },
     {
       id: 2,
       title: "Stationery",
       subtitle: "Aesthetic Premium Journals & Pens",
-      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80",
+      image: imgStationery,
       themeClass: "theme-stationery"
     },
     {
       id: 3,
       title: "Gifts",
       subtitle: "Birthday, Wedding & Return Gifts",
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
+      image: imgGifts,
       themeClass: "theme-gifts"
     },
     {
       id: 4,
       title: "Accessories",
       subtitle: "Accessories & Premium Picks",
-      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+      image: imgAccessories,
       themeClass: "theme-accessories"
     }
   ];
+
 
   return (
     <section id="categories" className="categories-section">

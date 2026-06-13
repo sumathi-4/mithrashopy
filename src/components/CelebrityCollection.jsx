@@ -17,22 +17,19 @@ export default function CelebrityCollection() {
         
         {/* Section Header */}
         <div className="section-header">
-          <svg className="section-crown-icon" viewBox="0 0 100 40">
-            <path d="M 15,35 L 85,35 L 80,18 L 65,26 L 50,10 L 35,26 L 20,18 Z M 15,37 L 85,37 L 85,39 L 15,39 Z" />
-          </svg>
-          <h2 className="section-title animate-glow">Celebrity Collection</h2>
-          <p className="section-subtitle">Premium curation inspired by direct celebrity choices and authentic designs</p>
+          <h2 className="section-title animate-glow">Signature Collection</h2>
+          <p className="section-subtitle">Exquisite curations embodying timeless elegance and modern aesthetic craft</p>
         </div>
 
         {/* Layout Container */}
         <div className="celebrity-layout">
           
-          {/* Left Large Card: Suriya & Jyothika */}
+          {/* Left Large Card: Signature collection */}
           <div className="celeb-card celeb-card-large">
             <div className="celeb-img-container">
               <img 
                 src={celebCouple} 
-                alt="Suriya & Jyothika - Celebrity Collection" 
+                alt="MithiraShoppy Signature Collection" 
                 className="celeb-img"
               />
               <div className="celeb-gradient-overlay"></div>
@@ -40,10 +37,10 @@ export default function CelebrityCollection() {
 
             
             <div className="celeb-content">
-              <span className="celeb-badge">CELEBRITY COLLECTION</span>
-              <h3 className="celeb-title">Inspired By Celebrity Style</h3>
+              <span className="celeb-badge">SIGNATURE COLLECTION</span>
+              <h3 className="celeb-title">Exclusive Designer Pieces</h3>
               <p className="celeb-desc">
-                Curated looks & premium styling inspired by the stars
+                Handpicked boutique outfits designed to express your unique identity.
               </p>
               <button 
                 className="celeb-btn"
@@ -55,6 +52,7 @@ export default function CelebrityCollection() {
             {/* Shimmer sweep animation overlay */}
             <div className="celeb-shimmer-sweep"></div>
           </div>
+
 
           {/* Right Panel containing 2 Stacked Cards */}
           <div className="celeb-right-panel">

@@ -13,6 +13,9 @@ import AboutView from './components/AboutView';
 import OffersView from './components/OffersView';
 import NewArrivalsView from './components/NewArrivalsView';
 import CelebrityView from './components/CelebrityView';
+import WhyChooseUs from './components/WhyChooseUs';
+import AboutPreview from './components/AboutPreview';
+
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -78,6 +81,9 @@ function App() {
           <CelebrityCollection />
           <PremiumCollection />
           <GiftsByOccasion />
+          <WhyChooseUs />
+          <AboutPreview />
+
         </>
       )}
       {currentView === 'shop' && <ShopView />}
