@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import { apiService } from '../services/apiService';
 
-export default function ProductsSection() {
+export default function ProductsSection({ authUser, setAuthUser }) {
   const [activeTab, setActiveTab] = useState('ALL');
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
   
   // Slider state for New Arrivals (index-based)
   const [currentArrivalIndex, setCurrentArrivalIndex] = useState(0);
@@ -15,11 +16,30 @@ export default function ProductsSection() {
     window.dispatchEvent(new Event('popstate'));
   };
 
+  useEffect(() => {
+    setWishlist(authUser?.wishlist || []);
+  }, [authUser]);
+
   const toggleWishlist = (id) => {
+    let updated;
     if (wishlist.includes(id)) {
-      setWishlist(wishlist.filter(item => item !== id));
+      updated = wishlist.filter(item => item !== id);
+      alert('Removed from wishlist!');
     } else {
-      setWishlist([...wishlist, id]);
+      updated = [...wishlist, id];
+      alert('Added to wishlist successfully!');
+    }
+    setWishlist(updated);
+    if (authUser) {
+      apiService.syncWishlist(updated).then(res => {
+        if (res && setAuthUser) {
+          setAuthUser(prev => {
+            const newUser = { ...prev, wishlist: res };
+            localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+            return newUser;
+          });
+        }
+      });
     }
   };
 

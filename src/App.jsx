@@ -119,7 +119,7 @@ function App() {
         <>
           <Hero />
           <CategoryCards />
-          <ProductsSection />
+          <ProductsSection authUser={authUser} setAuthUser={setAuthUser} />
           <CelebrityCollection />
           <PremiumCollection />
           <GiftsByOccasion />

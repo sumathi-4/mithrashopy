@@ -393,12 +393,12 @@ export const apiService = {
     }
   },
 
-  async syncCart(cart) {
+  async syncCart(cart, cartItems = null) {
     try {
-      const res = await apiRequest('/api/user/cart', 'POST', { cart });
-      return res.cart;
+      const res = await apiRequest('/api/user/cart', 'POST', { cart, cartItems });
+      return res;
     } catch (err) {
-      return cart;
+      return { success: false, cart, cartItems };
     }
   },
 

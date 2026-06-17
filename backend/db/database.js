@@ -32,30 +32,88 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, default: 'user' },
   is_active: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now },
-  cart: { type: [String], default: [] },
-  wishlist: { type: [String], default: [] },
+  cart: { type: [String], default: [] }, // Backwards compatibility: array of product IDs
+  cartItems: [{
+    productId: { type: Number, required: true },
+    variant: {
+      size: { type: String, default: null },
+      color: { type: String, default: null }
+    },
+    quantity: { type: Number, default: 1 }
+  }],
+  wishlist: { type: [String], default: [] }, // Backwards compatibility: array of product IDs
+  wishlistItems: [{
+    productId: { type: Number, required: true }
+  }],
   addresses: { type: [AddressSchema], default: [] },
   dob: { type: String, default: '15/08/1995' },
-  gender: { type: String, default: 'Female' }
+  gender: { type: String, default: 'Female' },
+  profileImage: { type: String, default: '' },
+  orderIds: { type: [String], default: [] }
+});
+
+const ProductVariantSchema = new mongoose.Schema({
+  size: { type: String, default: null },
+  color: { type: String, default: null },
+  stock: { type: Number, default: 0 },
+  price: { type: Number, default: null }, // If null, fallback to product base price
+  sku: { type: String, default: null }
 });
 
 const ProductSchema = new mongoose.Schema({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   category: { type: String, default: 'Clothing > Kids' },
+  subCategory: { type: String, default: '' },
   catalogue: { type: String, default: 'Catalogue A' },
   price: { type: Number, required: true },
   stock: { type: Number, default: 0 },
   sales: { type: Number, default: 0 },
   status: { type: String, default: 'Active' },
-  image: { type: String, default: 'Kids' }
+  image: { type: String, default: 'Kids' }, // Backwards compatibility
+  images: { type: [String], default: [] }, // Support multiple images
+  variants: { type: [ProductVariantSchema], default: [] }, // Size, color, stock variants
+  lowStockThreshold: { type: Number, default: 5 },
+  isLowStock: { type: Boolean, default: false },
+  description: { type: String, default: '' }
+});
+
+// Auto-populate the images array with the main image if empty
+ProductSchema.pre('save', function (next) {
+  if (this.image && (!this.images || this.images.length === 0)) {
+    this.images = [this.image];
+  }
+  if (this.stock <= this.lowStockThreshold) {
+    this.isLowStock = true;
+  } else {
+    this.isLowStock = false;
+  }
+  next();
 });
 
 const CategorySchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  parent: { type: String, default: '—' },
+  parent: { type: String, default: '—' }, // Backwards compatibility
+  parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null }, // Hierarchical unlimited subcategories
   count: { type: Number, default: 0 },
   status: { type: String, default: 'Active' }
+});
+
+// Middleware to keep the 'parent' string synchronized with the parent's name
+CategorySchema.pre('save', async function (next) {
+  if (this.parentId) {
+    try {
+      const parentCategory = await mongoose.model('Category').findById(this.parentId);
+      if (parentCategory) {
+        this.parent = parentCategory.name;
+      }
+    } catch (err) {
+      // Fail silently or handle error
+    }
+  } else if (this.parent === '—' || !this.parent) {
+    this.parent = '—';
+  }
+  next();
 });
 
 const CatalogueSchema = new mongoose.Schema({
@@ -64,18 +122,33 @@ const CatalogueSchema = new mongoose.Schema({
   count: { type: Number, default: 0 },
   status: { type: String, default: 'Active' },
   revenue: { type: String, default: '₹0' },
-  image: { type: String, default: 'Kids' }
+  image: { type: String, default: 'Kids' },
+  visibility: { type: String, enum: ['Public', 'Internal'], default: 'Internal' } // For hiding/tracking Catalogue A/B internally
+});
+
+const OrderItemSchema = new mongoose.Schema({
+  productId: { type: Number, required: true },
+  name: { type: String, required: true },
+  variant: {
+    size: { type: String, default: null },
+    color: { type: String, default: null }
+  },
+  catalogue: { type: String, default: null },
+  quantity: { type: Number, default: 1 },
+  price: { type: Number, required: true }
 });
 
 const OrderSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   userId: { type: String },
   customer: { type: String, required: true },
-  product: { type: String, required: true },
+  product: { type: String, required: true }, // Backwards compatibility: Summary string of products
   amount: { type: String, required: true },
   payment: { type: String, default: 'Razorpay' },
   status: { type: String, default: 'Pending' },
-  date: { type: String, required: true }
+  date: { type: String, required: true },
+  items: { type: [OrderItemSchema], default: [] }, // Detailed order items containing variants and catalogue details
+  catalogueDetails: { type: Map, of: String } // Key-value catalogue info for analytics
 });
 
 const CouponSchema = new mongoose.Schema({
@@ -85,7 +158,13 @@ const CouponSchema = new mongoose.Schema({
   minCart: { type: String, default: '₹0' },
   expiry: { type: String, required: true },
   usage: { type: String, default: '0/500' },
-  status: { type: String, default: 'Active' }
+  status: { type: String, default: 'Active' },
+  maxDiscount: { type: Number, default: null },
+  usageCount: { type: Number, default: 0 },
+  userUsage: [{
+    userId: { type: String, required: true },
+    count: { type: Number, default: 1 }
+  }]
 });
 
 const ReviewSchema = new mongoose.Schema({
@@ -97,7 +176,9 @@ const ReviewSchema = new mongoose.Schema({
   comment: { type: String, required: true },
   date: { type: String, required: true },
   status: { type: String, default: 'Pending' },
-  reply: { type: String, default: '' }
+  reply: { type: String, default: '' },
+  userId: { type: String, default: null },
+  verifiedPurchase: { type: Boolean, default: false }
 });
 
 const BannerSchema = new mongoose.Schema({
@@ -123,7 +204,9 @@ const ContactQuerySchema = new mongoose.Schema({
   email: { type: String, required: true },
   message: { type: String, required: true },
   date: { type: String, required: true },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, default: 'Pending' },
+  phone: { type: String, default: null },
+  subject: { type: String, default: null }
 });
 
 const SettingsSchema = new mongoose.Schema({
@@ -131,6 +214,30 @@ const SettingsSchema = new mongoose.Schema({
   supportEmail: { type: String, default: 'support@mithirashoppy.com' },
   taxPercentage: { type: Number, default: 18 },
   defaultCurrency: { type: String, default: 'INR' }
+});
+
+// ─── Future-Ready Schemas ───────────────────────────────────────────────────
+const NewsletterSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  subscribedAt: { type: Date, default: Date.now },
+  active: { type: Boolean, default: true }
+});
+
+const CampaignSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  type: { type: String, default: 'Email' }, // e.g., Email, PPC, Social
+  status: { type: String, default: 'Active' },
+  startDate: { type: Date, default: Date.now },
+  endDate: { type: Date, default: null },
+  budget: { type: Number, default: 0 },
+  revenueGenerated: { type: Number, default: 0 }
+});
+
+const AnalyticsSchema = new mongoose.Schema({
+  event: { type: String, required: true }, // e.g., page_view, add_to_cart, checkout
+  userId: { type: String, default: null },
+  metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -343,6 +450,10 @@ const dbHelpers = {
   }
 };
 
+const Newsletter = mongoose.model('Newsletter', NewsletterSchema);
+const Campaign = mongoose.model('Campaign', CampaignSchema);
+const Analytics = mongoose.model('Analytics', AnalyticsSchema);
+
 module.exports = {
   dbHelpers,
   seedAdmin,
@@ -357,5 +468,8 @@ module.exports = {
   Banner,
   Announcement,
   ContactQuery,
-  Settings
+  Settings,
+  Newsletter,
+  Campaign,
+  Analytics
 };

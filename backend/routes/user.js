@@ -183,7 +183,7 @@ router.delete('/addresses/:id', authenticate, async (req, res) => {
 router.get('/cart', authenticate, async (req, res) => {
   try {
     const user = await User.findOne({ id: req.user.id }).lean();
-    res.json({ success: true, cart: user.cart || [] });
+    res.json({ success: true, cart: user.cart || [], cartItems: user.cartItems || [] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch cart.' });
   }
@@ -191,11 +191,16 @@ router.get('/cart', authenticate, async (req, res) => {
 
 router.post('/cart', authenticate, async (req, res) => {
   try {
-    const { cart } = req.body;
-    if (!Array.isArray(cart)) return res.status(400).json({ success: false, message: 'Cart list must be an array.' });
+    const { cart, cartItems } = req.body;
+    if (cart && !Array.isArray(cart)) return res.status(400).json({ success: false, message: 'Cart list must be an array.' });
 
-    await User.updateOne({ id: req.user.id }, { $set: { cart } });
-    res.json({ success: true, message: 'Cart synchronized.', cart });
+    const updateObj = {};
+    if (cart !== undefined) updateObj.cart = cart;
+    if (cartItems !== undefined) updateObj.cartItems = cartItems;
+
+    await User.updateOne({ id: req.user.id }, { $set: updateObj });
+    const user = await User.findOne({ id: req.user.id }).lean();
+    res.json({ success: true, message: 'Cart synchronized.', cart: user.cart || [], cartItems: user.cartItems || [] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to sync cart.' });
   }

@@ -654,7 +654,8 @@ export default function ShopView({ authUser, setAuthUser }) {
   };
 
   const getProductSizes = (p) => {
-    const charCode = p.id.charCodeAt(p.id.length - 1) || 0;
+    const idStr = String(p.id || '');
+    const charCode = idStr.charCodeAt(idStr.length - 1) || 0;
     const sizes = ['S', 'M', 'L', 'XL'];
     if (charCode % 2 === 0) sizes.push('XS');
     if (charCode % 3 === 0) sizes.push('2XL');
@@ -664,7 +665,8 @@ export default function ShopView({ authUser, setAuthUser }) {
   };
 
   const getProductColors = (p) => {
-    const charCode = p.id.charCodeAt(p.id.length - 1) || 0;
+    const idStr = String(p.id || '');
+    const charCode = idStr.charCodeAt(idStr.length - 1) || 0;
     const colors = ['White', 'Black'];
     if (charCode % 2 === 0) colors.push('Pink');
     if (charCode % 3 === 0) colors.push('Red');
@@ -770,7 +772,7 @@ export default function ShopView({ authUser, setAuthUser }) {
       apiService.syncCart(updated).then(res => {
         if (res && setAuthUser) {
           setAuthUser(prev => {
-            const newUser = { ...prev, cart: res };
+            const newUser = { ...prev, cart: res.cart || res, cartItems: res.cartItems || prev.cartItems };
             localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
             return newUser;
           });

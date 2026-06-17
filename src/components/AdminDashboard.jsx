@@ -422,7 +422,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
 
   // Form states & Modals states
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '' });
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -882,15 +882,21 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
     
+    const imagesArray = newProduct.images ? newProduct.images.split(',').map(img => img.trim()).filter(Boolean) : [];
+    const mainImg = imagesArray[0] || (newProduct.category.includes('Clothing') ? 'Kids' : 'Accessories');
+
     const productToAdd = {
       name: newProduct.name,
       category: newProduct.category,
+      subCategory: newProduct.subCategory,
       catalogue: newProduct.catalogue,
       price: parseFloat(newProduct.price),
       stock: parseInt(newProduct.stock, 10),
       sales: 0,
       status: newProduct.status,
-      image: newProduct.category.includes('Clothing') ? 'Kids' : 'Accessories'
+      image: mainImg,
+      images: imagesArray.length > 0 ? imagesArray : [mainImg],
+      description: newProduct.description
     };
 
     try {
@@ -900,26 +906,30 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setProducts([{ ...productToAdd, id: Date.now() }, ...products]);
     }
     setShowAddProductModal(false);
-    setNewProduct({ name: '', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active' });
+    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '' });
   };
 
   const handleEditProductSubmit = async (e) => {
     e.preventDefault();
     if (!editProductItem.name || !editProductItem.price || !editProductItem.stock) return;
 
+    const imagesArray = typeof editProductItem.images === 'string' 
+      ? editProductItem.images.split(',').map(img => img.trim()).filter(Boolean) 
+      : (Array.isArray(editProductItem.images) ? editProductItem.images : []);
+
+    const updatedData = {
+      ...editProductItem,
+      price: parseFloat(editProductItem.price),
+      stock: parseInt(editProductItem.stock, 10),
+      image: imagesArray[0] || editProductItem.image,
+      images: imagesArray.length > 0 ? imagesArray : (editProductItem.image ? [editProductItem.image] : [])
+    };
+
     try {
-      const saved = await apiService.updateProduct(editProductItem.id, editProductItem);
-      setProducts(products.map(p => p.id === editProductItem.id ? saved : p));
+      const saved = await apiService.updateProduct(updatedData.id, updatedData);
+      setProducts(products.map(p => p.id === updatedData.id ? saved : p));
     } catch (err) {
-      setProducts(products.map(p => p.id === editProductItem.id ? {
-        ...p,
-        name: editProductItem.name,
-        category: editProductItem.category,
-        catalogue: editProductItem.catalogue,
-        price: parseFloat(editProductItem.price),
-        stock: parseInt(editProductItem.stock, 10),
-        status: editProductItem.status
-      } : p));
+      setProducts(products.map(p => p.id === updatedData.id ? updatedData : p));
     }
 
     setEditProductItem(null);
@@ -3920,6 +3930,19 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </div>
                 
                 <div className="form-field">
+                  <label>SubCategory</label>
+                  <input 
+                    type="text" 
+                    value={newProduct.subCategory}
+                    onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value })}
+                    placeholder="e.g. Party Wear" 
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-field-row">
+                <div className="form-field">
                   <label>Catalogue</label>
                   <select 
                     value={newProduct.catalogue}
@@ -3929,6 +3952,18 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {catalogues.map(cat => (
                       <option key={cat.name} value={cat.name}>{cat.name}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label>Status</label>
+                  <select 
+                    value={newProduct.status}
+                    onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Low Stock">Low Stock</option>
                   </select>
                 </div>
               </div>
@@ -3960,15 +3995,26 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               </div>
 
               <div className="form-field">
-                <label>Status</label>
-                <select 
-                  value={newProduct.status}
-                  onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
+                <label>Images (Comma separated URLs)</label>
+                <input 
+                  type="text" 
+                  value={newProduct.images}
+                  onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
+                  placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
                   className="modal-input"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Low Stock">Low Stock</option>
-                </select>
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Description</label>
+                <textarea 
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  placeholder="Enter detailed product description..." 
+                  className="modal-input"
+                  rows="3"
+                  style={{ resize: 'vertical', width: '100%' }}
+                />
               </div>
 
               <div className="modal-actions-row">
@@ -4016,6 +4062,19 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </div>
                 
                 <div className="form-field">
+                  <label>SubCategory</label>
+                  <input 
+                    type="text" 
+                    value={editProductItem.subCategory || ''}
+                    onChange={(e) => setEditProductItem({ ...editProductItem, subCategory: e.target.value })}
+                    placeholder="e.g. Party Wear" 
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-field-row">
+                <div className="form-field">
                   <label>Catalogue</label>
                   <select 
                     value={editProductItem.catalogue}
@@ -4025,6 +4084,18 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {catalogues.map(cat => (
                       <option key={cat.name} value={cat.name}>{cat.name}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label>Status</label>
+                  <select 
+                    value={editProductItem.status}
+                    onChange={(e) => setEditProductItem({ ...editProductItem, status: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Low Stock">Low Stock</option>
                   </select>
                 </div>
               </div>
@@ -4054,15 +4125,26 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               </div>
 
               <div className="form-field">
-                <label>Status</label>
-                <select 
-                  value={editProductItem.status}
-                  onChange={(e) => setEditProductItem({ ...editProductItem, status: e.target.value })}
+                <label>Images (Comma separated URLs)</label>
+                <input 
+                  type="text" 
+                  value={Array.isArray(editProductItem.images) ? editProductItem.images.join(', ') : (editProductItem.images || editProductItem.image || '')}
+                  onChange={(e) => setEditProductItem({ ...editProductItem, images: e.target.value })}
+                  placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
                   className="modal-input"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Low Stock">Low Stock</option>
-                </select>
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Description</label>
+                <textarea 
+                  value={editProductItem.description || ''}
+                  onChange={(e) => setEditProductItem({ ...editProductItem, description: e.target.value })}
+                  placeholder="Enter detailed product description..." 
+                  className="modal-input"
+                  rows="3"
+                  style={{ resize: 'vertical', width: '100%' }}
+                />
               </div>
 
               <div className="modal-actions-row">
@@ -4083,41 +4165,72 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <button className="close-btn" onClick={() => setViewProductItem(null)}><X size={18} /></button>
             </div>
             
-            <div className="modal-body-view">
-              <div className="view-prod-img-wrap">
-                <img src={viewProductItem.image} alt={viewProductItem.name} className="view-img" />
-              </div>
-              <div className="view-prod-details">
-                <h4 className="view-title">{viewProductItem.name}</h4>
-                <div className="view-spec-table">
-                  <div className="spec-row">
-                    <span className="spec-lbl">Catalogue:</span>
-                    <span className="spec-val bold">{viewProductItem.catalogue || 'Catalogue A'}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Category:</span>
-                    <span className="spec-val bold">{viewProductItem.category || 'Clothing > Kids'}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Price:</span>
-                    <span className="spec-val bold text-orange">₹{(viewProductItem.price || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Available Stock:</span>
-                    <span className="spec-val bold">{viewProductItem.stock || 0} items</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Total Sales:</span>
-                    <span className="spec-val bold">{viewProductItem.sales || 0} orders</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Status:</span>
-                    <span className={`status-badge-re ${(viewProductItem.status || 'Active').toLowerCase().replace(' ', '-')}`}>{viewProductItem.status || 'Active'}</span>
+            <div className="modal-body-view" style={{ flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
+                <div className="view-prod-img-wrap" style={{ flexShrink: 0 }}>
+                  <img src={viewProductItem.image} alt={viewProductItem.name} className="view-img" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '10px' }} />
+                </div>
+                <div className="view-prod-details" style={{ flexGrow: 1, paddingLeft: 0 }}>
+                  <h4 className="view-title" style={{ fontSize: '1.25rem', marginBottom: '12px' }}>{viewProductItem.name}</h4>
+                  <div className="view-spec-table">
+                    <div className="spec-row">
+                      <span className="spec-lbl">Catalogue:</span>
+                      <span className="spec-val bold">{viewProductItem.catalogue || 'Catalogue A'}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">Category:</span>
+                      <span className="spec-val bold">{viewProductItem.category || 'Clothing > Kids'}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">SubCategory:</span>
+                      <span className="spec-val bold">{viewProductItem.subCategory || '—'}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">Price:</span>
+                      <span className="spec-val bold text-orange">₹{(viewProductItem.price || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">Available Stock:</span>
+                      <span className="spec-val bold">{viewProductItem.stock || 0} items</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">Total Sales:</span>
+                      <span className="spec-val bold">{viewProductItem.sales || 0} orders</span>
+                    </div>
+                    <div className="spec-row">
+                      <span className="spec-lbl">Status:</span>
+                      <span className={`status-badge-re ${(viewProductItem.status || 'Active').toLowerCase().replace(' ', '-')}`}>{viewProductItem.status || 'Active'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="modal-actions-row">
+
+              {/* Multiple Images Gallery */}
+              {Array.isArray(viewProductItem.images) && viewProductItem.images.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <span className="spec-lbl" style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Product Images Gallery:</span>
+                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
+                    {viewProductItem.images.map((img, idx) => (
+                      <img 
+                        key={idx} 
+                        src={img} 
+                        alt={`${viewProductItem.name} ${idx + 1}`} 
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eae6df' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div style={{ marginBottom: '16px', background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df' }}>
+                <span className="spec-lbl" style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>Description:</span>
+                <p style={{ fontSize: '0.9rem', color: '#555', margin: 0, lineHeight: '1.5' }}>
+                  {viewProductItem.description || 'No description provided for this product.'}
+                </p>
+              </div>
+
+              <div className="modal-actions-row" style={{ marginTop: '8px' }}>
                 <button type="button" className="btn-primary" onClick={() => setViewProductItem(null)}>Close View</button>
               </div>
             </div>

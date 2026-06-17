@@ -14,8 +14,38 @@ import {
 } from 'lucide-react';
 
 export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'dashboard';
+  });
   const [ordersFilter, setOrdersFilter] = useState('all');
+
+  const [cartItemsDetailed, setCartItemsDetailed] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [coupons, setCoupons] = useState([]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const [userOrders, setUserOrders] = useState([]);
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab) {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', tabName);
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('mithira_auth_token');
@@ -24,13 +54,182 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     if (onNavigate) onNavigate('/');
   };
 
-  // Static stats matching image card values
-  const stats = [
-    { label: 'Total Orders', value: '12', linkText: 'View all orders', tab: 'orders', color: '#8A72F6', icon: <ShoppingBag size={20} className="ua-card-icon-purple" /> },
-    { label: 'Wishlist', value: '8', linkText: 'View wishlist', tab: 'wishlist', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-pink" /> },
-    { label: 'Saved Addresses', value: '3', linkText: 'Manage addresses', tab: 'addresses', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-red" /> },
-    { label: 'Reward Points', value: '250', linkText: 'View rewards', tab: 'rewards', color: '#F2994A', icon: <Sparkles size={20} className="ua-card-icon-orange" /> }
-  ];
+
+  // Cart operations and calculations
+  const calculateSubtotal = () => {
+    return cartItemsDetailed.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  };
+
+  const calculateGST = () => {
+    return Math.round(calculateSubtotal() * 0.18);
+  };
+
+  const calculateShipping = () => {
+    const sub = calculateSubtotal();
+    if (sub === 0 || sub >= 999) return 0;
+    return 99;
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedCoupon) return 0;
+    const sub = calculateSubtotal();
+    const minStr = appliedCoupon.minCart || '₹0';
+    const minVal = Number(minStr.replace(/[^0-9]/g, ''));
+    if (sub < minVal) return 0;
+
+    const discStr = appliedCoupon.discount || '';
+    if (discStr.includes('%')) {
+      const percentage = Number(discStr.replace(/[^0-9]/g, ''));
+      return Math.round((sub * percentage) / 100);
+    } else if (discStr.includes('OFF')) {
+      const flat = Number(discStr.replace(/[^0-9]/g, ''));
+      return flat;
+    }
+    return 0;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateGST() + calculateShipping() - calculateDiscount();
+  };
+
+  const applyCouponObject = (coupon) => {
+    const sub = calculateSubtotal();
+    const minStr = coupon.minCart || '₹0';
+    const minVal = Number(minStr.replace(/[^0-9]/g, ''));
+    if (sub < minVal) {
+      alert(`Minimum spend of ₹${minVal} required for coupon ${coupon.code}`);
+      return;
+    }
+    setAppliedCoupon(coupon);
+    alert(`Coupon ${coupon.code} applied successfully!`);
+  };
+
+  const handleApplyPromoCode = () => {
+    if (!couponCodeInput.trim()) return;
+    const match = coupons.find(c => c.code === couponCodeInput.trim().toUpperCase());
+    if (match) {
+      applyCouponObject(match);
+    } else {
+      alert('Invalid or inactive coupon code.');
+    }
+  };
+
+  const updateCartItemQuantity = (productId, newQty, variant) => {
+    if (newQty < 1) return;
+    const updated = cartItemsDetailed.map(item => {
+      const sizeMatch = !variant || !variant.size || item.selectedVariant?.size === variant.size;
+      const colorMatch = !variant || !variant.color || item.selectedVariant?.color === variant.color;
+      if (item.id === productId && sizeMatch && colorMatch) {
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+    setCartItemsDetailed(updated);
+    syncCartToBackend(updated);
+  };
+
+  const updateCartItemVariant = (productId, oldVariant, newVariant) => {
+    const updated = cartItemsDetailed.map(item => {
+      const sizeMatch = !oldVariant || !oldVariant.size || item.selectedVariant?.size === oldVariant.size;
+      const colorMatch = !oldVariant || !oldVariant.color || item.selectedVariant?.color === oldVariant.color;
+      if (item.id === productId && sizeMatch && colorMatch) {
+        return { ...item, selectedVariant: newVariant };
+      }
+      return item;
+    });
+    setCartItemsDetailed(updated);
+    syncCartToBackend(updated);
+  };
+
+  const removeCartItem = (productId, variant) => {
+    const updated = cartItemsDetailed.filter(item => {
+      const matchProduct = item.id === productId;
+      const sizeMatch = !variant || !variant.size || item.selectedVariant?.size === variant.size;
+      const colorMatch = !variant || !variant.color || item.selectedVariant?.color === variant.color;
+      return !(matchProduct && sizeMatch && colorMatch);
+    });
+    setCartItemsDetailed(updated);
+    syncCartToBackend(updated);
+  };
+
+  const syncCartToBackend = (detailedItems) => {
+    if (authUser) {
+      const cartIds = detailedItems.map(item => String(item.id));
+      const cartItemsPayload = detailedItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        variant: {
+          size: item.selectedVariant?.size || null,
+          color: item.selectedVariant?.color || null
+        }
+      }));
+
+      apiService.syncCart(cartIds, cartItemsPayload).then(res => {
+        if (res && setAuthUser) {
+          setAuthUser(prev => {
+            const newUser = { ...prev, cart: res.cart, cartItems: res.cartItems };
+            localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+            return newUser;
+          });
+        }
+      });
+    }
+  };
+
+  const handlePlaceOrder = () => {
+    if (cartItemsDetailed.length === 0) return;
+    if (!selectedAddressId) {
+      alert('Please select a delivery address.');
+      return;
+    }
+
+    const selectedAddr = addresses.find(a => a.id === selectedAddressId);
+    const orderItems = cartItemsDetailed.map(item => ({
+      productId: item.id,
+      name: item.name,
+      variant: {
+        size: item.selectedVariant?.size || null,
+        color: item.selectedVariant?.color || null
+      },
+      catalogue: item.catalogue || 'Catalogue A',
+      quantity: item.quantity,
+      price: item.price
+    }));
+
+    const catDetails = {};
+    orderItems.forEach(item => {
+      catDetails[item.productId] = item.catalogue;
+    });
+
+    const orderPayload = {
+      product: orderItems.map(item => `${item.name} (${item.quantity})`).join(', '),
+      amount: String(calculateTotal()),
+      payment: paymentMethod,
+      items: orderItems,
+      catalogueDetails: catDetails
+    };
+
+    apiService.createOrder(orderPayload).then(newOrder => {
+      if (newOrder) {
+        alert('Order placed successfully! Thank you for shopping with us.');
+        apiService.syncCart([], []).then(res => {
+          if (res && setAuthUser) {
+            setAuthUser(prev => {
+              const newUser = { ...prev, cart: res.cart, cartItems: res.cartItems };
+              localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+              return newUser;
+            });
+          }
+        });
+        setUserOrders(prev => [newOrder, ...prev]);
+        setAppliedCoupon(null);
+        setCouponCodeInput('');
+        handleTabChange('orders');
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
+    });
+  };
 
   // Dummy full orders with actual details & status styling to replicate image exactly
   const allOrdersList = [
@@ -189,10 +388,23 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
   const [allProducts, setAllProducts] = useState([]);
 
+  // Dynamic stats matching database values
+  const stats = [
+    { label: 'Total Orders', value: String(userOrders.length), linkText: 'View all orders', tab: 'orders', color: '#8A72F6', icon: <ShoppingBag size={20} className="ua-card-icon-purple" /> },
+    { label: 'Wishlist', value: String(wishlistItems.length), linkText: 'View wishlist', tab: 'wishlist', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-pink" /> },
+    { label: 'Saved Addresses', value: String(addresses.length), linkText: 'Manage addresses', tab: 'addresses', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-red" /> },
+    { label: 'Reward Points', value: '250', linkText: 'View rewards', tab: 'rewards', color: '#F2994A', icon: <Sparkles size={20} className="ua-card-icon-orange" /> }
+  ];
+
   useEffect(() => {
     apiService.getProducts().then(prods => {
       if (prods && prods.length > 0) {
         setAllProducts(prods);
+      }
+    });
+    apiService.getCoupons().then(list => {
+      if (list) {
+        setCoupons(list.filter(c => c.status === 'Active'));
       }
     });
   }, []);
@@ -204,8 +416,60 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           setAddresses(data);
         }
       });
+      apiService.getOrders().then(list => {
+        if (list) {
+          setUserOrders(list);
+        }
+      });
     }
   }, [authUser]);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const def = addresses.find(a => a.isDefault);
+      if (def) {
+        setSelectedAddressId(def.id);
+      } else {
+        setSelectedAddressId(addresses[0].id);
+      }
+    }
+  }, [addresses]);
+
+  useEffect(() => {
+    if (authUser && allProducts.length > 0) {
+      const userCartItems = authUser.cartItems || [];
+      const userCartIds = authUser.cart || [];
+      let resolved = [];
+      if (userCartItems.length > 0) {
+        resolved = userCartItems.map(item => {
+          const prod = allProducts.find(p => p.id === item.productId);
+          if (prod) {
+            return {
+              ...prod,
+              quantity: item.quantity || 1,
+              selectedVariant: item.variant || { size: null, color: null }
+            };
+          }
+          return null;
+        }).filter(Boolean);
+      } else {
+        resolved = userCartIds.map(id => {
+          const prod = allProducts.find(p => p.id === Number(id) || p.id === id);
+          if (prod) {
+            return {
+              ...prod,
+              quantity: 1,
+              selectedVariant: { size: prod.variants?.[0]?.size || null, color: prod.variants?.[0]?.color || null }
+            };
+          }
+          return null;
+        }).filter(Boolean);
+      }
+      setCartItemsDetailed(resolved);
+    } else {
+      setCartItemsDetailed([]);
+    }
+  }, [authUser, allProducts]);
 
   useEffect(() => {
     if (authUser) {
@@ -257,7 +521,14 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
   const handleDeleteAddress = (addressId) => {
     apiService.deleteAddress(addressId).then(updated => {
-      setAddresses(prev => updated || prev.filter(addr => addr.id !== addressId));
+      const newList = updated || addresses.filter(addr => addr.id !== addressId);
+      setAddresses(newList);
+      if (authUser && setAuthUser) {
+        const newUser = { ...authUser, addresses: newList };
+        setAuthUser(newUser);
+        localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+      }
+      alert('Address deleted successfully!');
     });
   };
 
@@ -265,39 +536,77 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     e.preventDefault();
     if (editingAddress) {
       apiService.editAddress(editingAddress.id, addressForm).then(updated => {
-        if (updated) {
-          setAddresses(updated);
-        } else {
-          setAddresses(prev => prev.map(addr => addr.id === editingAddress.id ? { ...addressForm } : addr));
+        const newList = updated || addresses.map(addr => addr.id === editingAddress.id ? { ...addressForm } : addr);
+        setAddresses(newList);
+        if (authUser && setAuthUser) {
+          const newUser = { ...authUser, addresses: newList };
+          setAuthUser(newUser);
+          localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
         }
+        alert('Address updated successfully!');
       });
     } else {
       apiService.addAddress(addressForm).then(updated => {
+        let newList;
         if (updated) {
-          setAddresses(updated);
+          newList = updated;
         } else {
           const newAddress = {
             ...addressForm,
             id: 'addr_' + Date.now()
           };
-          setAddresses(prev => [...prev, newAddress]);
+          newList = [...addresses, newAddress];
         }
+        setAddresses(newList);
+        if (authUser && setAuthUser) {
+          const newUser = { ...authUser, addresses: newList };
+          setAuthUser(newUser);
+          localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+        }
+        alert('Address added successfully!');
       });
     }
     setIsAddressModalOpen(false);
   };
 
-  const filteredOrders = allOrdersList.filter(order => {
+  const resolvedUserOrders = userOrders.map(order => {
+    const firstItem = order.items?.[0];
+    const matchedProduct = firstItem ? allProducts.find(p => p.id === firstItem.productId) : null;
+    const img = matchedProduct?.image || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
+    
+    let statusColorClass = 'ua-status-processing';
+    if (order.status?.toLowerCase() === 'delivered') statusColorClass = 'ua-status-delivered';
+    else if (order.status?.toLowerCase() === 'shipped') statusColorClass = 'ua-status-shipped';
+    else if (order.status?.toLowerCase() === 'cancelled') statusColorClass = 'ua-status-cancelled';
+
+    return {
+      id: order.id,
+      date: order.date,
+      itemsCount: order.items?.reduce((acc, it) => acc + it.quantity, 0) || 1,
+      image: img,
+      title: order.product,
+      price: order.amount,
+      status: order.status || 'Pending',
+      statusDate: order.date,
+      statusColorClass,
+      category: order.status?.toLowerCase() || 'pending',
+      rawOrder: order
+    };
+  });
+
+  const activeOrdersList = resolvedUserOrders.length > 0 ? resolvedUserOrders : allOrdersList;
+
+  const filteredOrders = activeOrdersList.filter(order => {
     if (ordersFilter === 'all') return true;
     return order.category === ordersFilter;
   });
 
   const getFilterCounts = (cat) => {
-    if (cat === 'all') return allOrdersList.length;
-    return allOrdersList.filter(o => o.category === cat).length;
+    if (cat === 'all') return activeOrdersList.length;
+    return activeOrdersList.filter(o => o.category === cat).length;
   };
 
-  const recentOrders = allOrdersList.slice(0, 3);
+  const recentOrders = activeOrdersList.slice(0, 3);
 
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -395,49 +704,56 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           <nav className="ua-nav">
             <button 
               className={`ua-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabChange('dashboard')}
             >
               <User size={18} />
               <span>Dashboard</span>
             </button>
             <button 
+              className={`ua-nav-item ${activeTab === 'cart' ? 'active' : ''}`}
+              onClick={() => handleTabChange('cart')}
+            >
+              <ShoppingBag size={18} />
+              <span>My Cart ({cartItemsDetailed.reduce((acc, item) => acc + item.quantity, 0)})</span>
+            </button>
+            <button 
               className={`ua-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
-              onClick={() => setActiveTab('orders')}
+              onClick={() => handleTabChange('orders')}
             >
               <ShoppingBag size={18} />
               <span>My Orders</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'wishlist' ? 'active' : ''}`}
-              onClick={() => setActiveTab('wishlist')}
+              onClick={() => handleTabChange('wishlist')}
             >
               <Heart size={18} />
               <span>Wishlist</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'addresses' ? 'active' : ''}`}
-              onClick={() => setActiveTab('addresses')}
+              onClick={() => handleTabChange('addresses')}
             >
               <MapPin size={18} />
               <span>Addresses</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
+              onClick={() => handleTabChange('profile')}
             >
               <Settings size={18} />
               <span>Profile Settings</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'security' ? 'active' : ''}`}
-              onClick={() => setActiveTab('security')}
+              onClick={() => handleTabChange('security')}
             >
               <ShieldCheck size={18} />
               <span>Security</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'help' ? 'active' : ''}`}
-              onClick={() => setActiveTab('help')}
+              onClick={() => handleTabChange('help')}
             >
               <AlertTriangle size={18} />
               <span>Delete Account</span>
@@ -454,6 +770,253 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
         {/* Right Dashboard Area */}
         <main className="ua-main-content">
+          {activeTab === 'cart' && (
+            <div className="ua-cart-view">
+              <div className="ua-cart-header">
+                <h2 className="ua-cart-title">My Shopping Cart ({cartItemsDetailed.length})</h2>
+                <p className="ua-cart-sub">Secure Checkout &amp; Fast Delivery</p>
+              </div>
+
+              {cartItemsDetailed.length > 0 ? (
+                <div className="ua-cart-grid">
+                  {/* Left Column: Cart Items & Address Selector */}
+                  <div className="ua-cart-left-col">
+                    <div className="ua-cart-items-card">
+                      {cartItemsDetailed.map(item => {
+                        const subtotal = item.price * item.quantity;
+                        return (
+                          <div key={`${item.id}-${item.selectedVariant?.size || 's'}-${item.selectedVariant?.color || 'c'}`} className="ua-cart-item-row">
+                            <img src={item.image || 'Kids'} alt={item.name} className="ua-cart-item-img" />
+                            <div className="ua-cart-item-info">
+                              <h4 className="ua-cart-item-name">{item.name}</h4>
+                              <p className="ua-cart-item-catalogue">{item.catalogue || 'Catalogue A'}</p>
+                              
+                              {/* Variant selectors */}
+                              <div className="ua-cart-item-variants">
+                                {item.variants && item.variants.length > 0 && (
+                                  <>
+                                    {/* Size Selector */}
+                                    <div className="ua-variant-select-group">
+                                      <label>Size:</label>
+                                      <select
+                                        value={item.selectedVariant?.size || ''}
+                                        onChange={(e) => updateCartItemVariant(item.id, item.selectedVariant, { ...item.selectedVariant, size: e.target.value })}
+                                      >
+                                        <option value="">None</option>
+                                        {[...new Set(item.variants.map(v => v.size).filter(Boolean))].map(sz => (
+                                          <option key={sz} value={sz}>{sz}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+
+                                    {/* Color Selector */}
+                                    <div className="ua-variant-select-group">
+                                      <label>Color:</label>
+                                      <select
+                                        value={item.selectedVariant?.color || ''}
+                                        onChange={(e) => updateCartItemVariant(item.id, item.selectedVariant, { ...item.selectedVariant, color: e.target.value })}
+                                      >
+                                        <option value="">None</option>
+                                        {[...new Set(item.variants.map(v => v.color).filter(Boolean))].map(col => (
+                                          <option key={col} value={col}>{col}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+
+                              <div className="ua-cart-item-qty-price">
+                                <div className="ua-qty-controller">
+                                  <button onClick={() => updateCartItemQuantity(item.id, item.quantity - 1, item.selectedVariant)}>-</button>
+                                  <span>{item.quantity}</span>
+                                  <button onClick={() => updateCartItemQuantity(item.id, item.quantity + 1, item.selectedVariant)}>+</button>
+                                </div>
+                                <span className="ua-cart-item-price">₹{item.price} x {item.quantity} = ₹{subtotal}</span>
+                              </div>
+                            </div>
+                            <button 
+                              className="ua-cart-item-remove-btn" 
+                              onClick={() => removeCartItem(item.id, item.selectedVariant)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Address Selection Card */}
+                    <div className="ua-cart-address-card">
+                      <div className="ua-cart-card-header">
+                        <h3>Select Delivery Address</h3>
+                        <button className="ua-cart-add-addr-btn" onClick={() => handleTabChange('addresses')}>
+                          + Add New
+                        </button>
+                      </div>
+                      {addresses.length > 0 ? (
+                        <div className="ua-cart-address-list">
+                          {addresses.map(addr => (
+                            <label key={addr.id} className={`ua-cart-address-option ${selectedAddressId === addr.id ? 'selected' : ''}`}>
+                              <input 
+                                type="radio" 
+                                name="delivery_address" 
+                                checked={selectedAddressId === addr.id}
+                                onChange={() => setSelectedAddressId(addr.id)} 
+                              />
+                              <div className="ua-cart-addr-details">
+                                <span className="ua-cart-addr-type-badge">{addr.type}</span>
+                                <strong className="ua-cart-addr-name">{addr.name}</strong>
+                                <span className="ua-cart-addr-phone">{addr.phone}</span>
+                                <p className="ua-cart-addr-text">
+                                  {addr.street}, {addr.locality}, {addr.city} - {addr.pincode}, {addr.state}
+                                </p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="ua-cart-address-empty">
+                          <p>No saved addresses found. Please add an address to proceed with checkout.</p>
+                          <button onClick={() => handleTabChange('addresses')} className="ua-cart-btn-primary">Add Address</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Checkout Summary & Coupons */}
+                  <div className="ua-cart-right-col">
+                    {/* Coupon Application Card */}
+                    <div className="ua-checkout-coupon-card">
+                      <h3>Apply Coupons</h3>
+                      <div className="ua-coupon-input-group">
+                        <input 
+                          type="text" 
+                          placeholder="Enter Promo Code" 
+                          value={couponCodeInput} 
+                          onChange={e => setCouponCodeInput(e.target.value.toUpperCase())}
+                        />
+                        <button onClick={handleApplyPromoCode}>Apply</button>
+                      </div>
+
+                      {appliedCoupon && (
+                        <div className="ua-applied-coupon-badge">
+                          <span>Applied: <strong>{appliedCoupon.code}</strong> ({appliedCoupon.discount})</span>
+                          <button onClick={() => setAppliedCoupon(null)}>Remove</button>
+                        </div>
+                      )}
+
+                      {coupons.length > 0 && (
+                        <div className="ua-available-coupons">
+                          <h4>Available Offers:</h4>
+                          <div className="ua-coupon-offers-list">
+                            {coupons.map(cp => (
+                              <div key={cp.code} className="ua-coupon-offer-item">
+                                <div className="ua-coi-details">
+                                  <strong>{cp.code}</strong>
+                                  <span>{cp.discount} (Min. Spend: {cp.minCart})</span>
+                                </div>
+                                <button onClick={() => {
+                                  setCouponCodeInput(cp.code);
+                                  applyCouponObject(cp);
+                                }}>Apply</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Order Summary Details Card */}
+                    <div className="ua-checkout-summary-card">
+                      <h3>Order Summary</h3>
+                      <div className="ua-summary-row">
+                        <span>Items Price ({cartItemsDetailed.reduce((acc, item) => acc + item.quantity, 0)} items)</span>
+                        <span>₹{calculateSubtotal()}</span>
+                      </div>
+                      <div className="ua-summary-row">
+                        <span>Estimated GST / Tax (18%)</span>
+                        <span>₹{calculateGST()}</span>
+                      </div>
+                      <div className="ua-summary-row">
+                        <span>Shipping Fee</span>
+                        {calculateShipping() === 0 ? (
+                          <span className="ua-free-shipping">FREE</span>
+                        ) : (
+                          <span>₹{calculateShipping()}</span>
+                        )}
+                      </div>
+
+                      {appliedCoupon && (
+                        <div className="ua-summary-row ua-discount-row">
+                          <span>Coupon Discount ({appliedCoupon.code})</span>
+                          <span>-₹{calculateDiscount()}</span>
+                        </div>
+                      )}
+
+                      <div className="ua-summary-row ua-total-row">
+                        <span>Total Payable</span>
+                        <span>₹{calculateTotal()}</span>
+                      </div>
+
+                      {/* Payment Method Selector */}
+                      <div className="ua-payment-method-selector">
+                        <h4>Payment Method</h4>
+                        <div className="ua-payment-options">
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="payment_method" 
+                              value="Razorpay" 
+                              checked={paymentMethod === 'Razorpay'}
+                              onChange={() => setPaymentMethod('Razorpay')}
+                            />
+                            Razorpay / Card
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="payment_method" 
+                              value="UPI" 
+                              checked={paymentMethod === 'UPI'}
+                              onChange={() => setPaymentMethod('UPI')}
+                            />
+                            UPI / NetBanking
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="payment_method" 
+                              value="COD" 
+                              checked={paymentMethod === 'COD'}
+                              onChange={() => setPaymentMethod('COD')}
+                            />
+                            Cash on Delivery (COD)
+                          </label>
+                        </div>
+                      </div>
+
+                      <button 
+                        className="ua-cart-btn-primary ua-btn-checkout" 
+                        onClick={handlePlaceOrder}
+                        disabled={cartItemsDetailed.length === 0 || !selectedAddressId}
+                      >
+                        Place Order (₹{calculateTotal()})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="ua-cart-empty">
+                  <ShoppingBag size={64} className="empty-cart-icon" />
+                  <h3>Your shopping cart is empty</h3>
+                  <p>Check out our beautiful collections and add items to your cart.</p>
+                  <button onClick={() => onNavigate('/Shop')} className="ua-cart-btn-primary">Shop Now</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'dashboard' && (
             <>
               {/* Welcome Section */}
@@ -478,7 +1041,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                     <button 
                       className="ua-stat-action" 
                       style={{ color: stat.color }}
-                      onClick={() => setActiveTab(stat.tab)}
+                      onClick={() => handleTabChange(stat.tab)}
                     >
                       {stat.linkText}
                     </button>
@@ -490,7 +1053,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
               <div className="ua-orders-section">
                 <div className="ua-section-header">
                   <h3 className="ua-section-title">Recent Orders</h3>
-                  <button className="ua-view-all-link" onClick={() => setActiveTab('orders')}>
+                  <button className="ua-view-all-link" onClick={() => handleTabChange('orders')}>
                     View All Orders
                   </button>
                 </div>
@@ -689,7 +1252,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                                   apiService.syncCart(updatedCart).then(res => {
                                     if (res && setAuthUser) {
                                       setAuthUser(prev => {
-                                        const newUser = { ...prev, cart: res };
+                                        const newUser = { ...prev, cart: res.cart || res, cartItems: res.cartItems || prev.cartItems };
                                         localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
                                         return newUser;
                                       });

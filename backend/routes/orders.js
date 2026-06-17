@@ -23,34 +23,85 @@ router.get('/', authenticate, async (req, res) => {
 // POST /api/orders - Place a new order
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { product, amount, payment } = req.body;
-    if (!product || !amount) {
-      return res.status(400).json({ success: false, message: 'Product title and amount are required.' });
+    const { product, amount, payment, items, catalogueDetails } = req.body;
+    if ((!product && (!items || items.length === 0)) || !amount) {
+      return res.status(400).json({ success: false, message: 'Product details and amount are required.' });
     }
+
+    const orderItems = items || [];
+    const summaryProduct = product || orderItems.map(item => `${item.name} (${item.quantity})`).join(', ');
 
     const newOrder = await Order.create({
       id: '#ORD' + Math.floor(1000 + Math.random() * 9000),
       userId: req.user.id,
       customer: req.user.name,
-      product: product,
+      product: summaryProduct,
       amount: amount.startsWith('₹') ? amount : `₹${amount}`,
       payment: payment || 'Razorpay',
       status: 'Pending',
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      items: orderItems,
+      catalogueDetails: catalogueDetails || {}
     });
 
-    // Increment sales for matched product if we have it
-    const matchedProd = await Product.findOne({ name: product });
-    if (matchedProd) {
-      await Product.updateOne(
-        { id: matchedProd.id },
-        { 
-          $set: { 
-            sales: (matchedProd.sales || 0) + 1,
-            stock: Math.max(0, (matchedProd.stock || 1) - 1)
-          } 
+    // Update stock and sales for products
+    for (const item of orderItems) {
+      const dbProduct = await Product.findOne({ id: item.productId });
+      if (dbProduct) {
+        let updatedStock = Math.max(0, (dbProduct.stock || 0) - item.quantity);
+        let updatedSales = (dbProduct.sales || 0) + item.quantity;
+        let variants = dbProduct.variants || [];
+
+        // If specific variant matches size/color, decrement that variant's stock
+        if (item.variant && (item.variant.size || item.variant.color)) {
+          variants = variants.map(v => {
+            const vObj = v.toObject ? v.toObject() : v;
+            if (
+              (!item.variant.size || vObj.size === item.variant.size) &&
+              (!item.variant.color || vObj.color === item.variant.color)
+            ) {
+              return { ...vObj, stock: Math.max(0, (vObj.stock || 0) - item.quantity) };
+            }
+            return vObj;
+          });
         }
-      );
+
+        // Low stock warning recalculation
+        const lowStockThreshold = dbProduct.lowStockThreshold || 5;
+        const isLowStock = updatedStock <= lowStockThreshold;
+
+        await Product.updateOne(
+          { id: dbProduct.id },
+          { 
+            $set: { 
+              stock: updatedStock,
+              sales: updatedSales,
+              variants,
+              isLowStock
+            } 
+          }
+        );
+      }
+    }
+
+    // Fallback legacy logic if no items array was passed (e.g. legacy client)
+    if (orderItems.length === 0 && product) {
+      const matchedProd = await Product.findOne({ name: product });
+      if (matchedProd) {
+        const updatedStock = Math.max(0, (matchedProd.stock || 1) - 1);
+        const lowStockThreshold = matchedProd.lowStockThreshold || 5;
+        const isLowStock = updatedStock <= lowStockThreshold;
+        await Product.updateOne(
+          { id: matchedProd.id },
+          { 
+            $set: { 
+              sales: (matchedProd.sales || 0) + 1,
+              stock: updatedStock,
+              isLowStock
+            } 
+          }
+        );
+      }
     }
 
     res.status(201).json({ success: true, message: 'Order placed successfully!', order: newOrder });

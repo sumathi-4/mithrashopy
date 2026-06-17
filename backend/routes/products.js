@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/products - Create a new product
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, category, catalogue, price, stock, status, image } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images } = req.body;
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
@@ -48,12 +48,15 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       id,
       name: name.trim(),
       category: category || 'Clothing > Kids',
+      subCategory: subCategory || '',
       catalogue: catalogue || 'Catalogue A',
       price: parseFloat(price) || 0,
       stock: parseInt(stock, 10) || 0,
       sales: 0,
       status: status || 'Active',
-      image: image || 'Kids'
+      image: image || 'Kids',
+      images: images || (image ? [image] : []),
+      description: description || ''
     });
 
     res.status(201).json({ success: true, message: 'Product added successfully!', product: newProduct });
@@ -69,16 +72,19 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const { name, category, catalogue, price, stock, status, image } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images } = req.body;
 
     const updateFields = {};
     if (name !== undefined) updateFields.name = name.trim();
     if (category !== undefined) updateFields.category = category;
+    if (subCategory !== undefined) updateFields.subCategory = subCategory;
     if (catalogue !== undefined) updateFields.catalogue = catalogue;
     if (price !== undefined) updateFields.price = parseFloat(price) || 0;
     if (stock !== undefined) updateFields.stock = parseInt(stock, 10) || 0;
     if (status !== undefined) updateFields.status = status;
     if (image !== undefined) updateFields.image = image;
+    if (description !== undefined) updateFields.description = description;
+    if (images !== undefined) updateFields.images = images;
 
     const updated = await Product.findOneAndUpdate(
       { id },
