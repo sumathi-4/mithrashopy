@@ -102,5 +102,5 @@ app.listen(PORT, () => {
 
   // Seed data
   seedAdmin();
-  seedStoreData();
+  // seedStoreData(); // disabled to keep database empty
 });

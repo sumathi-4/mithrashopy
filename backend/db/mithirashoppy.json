@@ -34,17 +34,6 @@
   "sessions": [],
   "products": [
     {
-      "id": 1,
-      "name": "Kids Party Dress",
-      "category": "Clothing > Kids",
-      "catalogue": "Catalogue A",
-      "price": 1299,
-      "stock": 25,
-      "sales": 120,
-      "status": "Active",
-      "image": "Kids"
-    },
-    {
       "id": 2,
       "name": "Women Kurti",
       "category": "Clothing > Women",
@@ -54,94 +43,6 @@
       "sales": 48,
       "status": "Active",
       "image": "Kids"
-    },
-    {
-      "id": 3,
-      "name": "Premium Pen Set",
-      "category": "Stationery",
-      "catalogue": "Catalogue B",
-      "price": 299,
-      "stock": 100,
-      "sales": 32,
-      "status": "Active",
-      "image": "Kids"
-    },
-    {
-      "id": 4,
-      "name": "Birthday Gift Box",
-      "category": "Gifts",
-      "catalogue": "Catalogue B",
-      "price": 509,
-      "stock": 30,
-      "sales": 95,
-      "status": "Active",
-      "image": "Lifestyle"
-    },
-    {
-      "id": 5,
-      "name": "Stylish Handbag",
-      "category": "Accessories",
-      "catalogue": "Catalogue B",
-      "price": 1499,
-      "stock": 5,
-      "sales": 150,
-      "status": "Low Stock",
-      "image": "Accessories"
-    },
-    {
-      "id": 6,
-      "name": "Baby Cotton Frock",
-      "category": "Clothing > Kids",
-      "catalogue": "Catalogue A",
-      "price": 799,
-      "stock": 15,
-      "sales": 40,
-      "status": "Active",
-      "image": "Kids"
-    },
-    {
-      "id": 7,
-      "name": "Floral Print Kurta",
-      "category": "Clothing > Women",
-      "catalogue": "Catalogue A",
-      "price": 1199,
-      "stock": 18,
-      "sales": 55,
-      "status": "Active",
-      "image": "Kids"
-    },
-    {
-      "id": 8,
-      "name": "Executive Gel Pens",
-      "category": "Stationery",
-      "catalogue": "Catalogue B",
-      "price": 199,
-      "stock": 250,
-      "sales": 85,
-      "status": "Active",
-      "image": "Kids"
-    },
-    {
-      "id": 9,
-      "name": "Chocolate Hamper",
-      "category": "Gifts",
-      "catalogue": "Catalogue B",
-      "price": 899,
-      "stock": 50,
-      "sales": 60,
-      "status": "Active",
-      "image": "Lifestyle"
-    },
-    {
-      "id": 10,
-      "name": "Leather Shoulder Bag",
-      "category": "Accessories",
-      "catalogue": "Catalogue B",
-      "price": 2499,
-      "stock": 8,
-      "sales": 75,
-      "status": "Active",
-      "image": "Accessories"
     }
   ],
   "categories": [

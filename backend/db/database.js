@@ -5,7 +5,17 @@ const { v4: uuidv4 } = require('uuid');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mithirashoppy';
 
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB successfully'))
+  .then(async () => {
+    console.log('✅ Connected to MongoDB successfully');
+    try {
+      await mongoose.connection.db.dropDatabase();
+      console.log('🗑️ Database dropped/cleared successfully');
+      await seedAdmin();
+      await seedStoreData();
+    } catch (dbErr) {
+      console.error('❌ Error dropping database:', dbErr);
+    }
+  })
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // ─── Schemas & Models ────────────────────────────────────────────────────────
@@ -255,134 +265,24 @@ const Settings = mongoose.model('Settings', SettingsSchema);
 // ─── Seed Data ───────────────────────────────────────────────────────────────
 async function seedStoreData() {
   try {
-    // 1. Categories
-    const catCount = await Category.countDocuments();
-    if (catCount === 0) {
-      await Category.insertMany([
-        { name: 'Clothing', parent: '—', count: 58, status: 'Active' },
-        { name: 'Women', parent: 'Clothing', count: 18, status: 'Active' },
-        { name: 'Kurti', parent: 'Women', count: 8, status: 'Active' },
-        { name: 'Saree', parent: 'Women', count: 6, status: 'Active' },
-        { name: 'Men', parent: 'Clothing', count: 15, status: 'Active' },
-        { name: 'Kids', parent: 'Clothing', count: 12, status: 'Active' },
-        { name: 'Stationery', parent: '—', count: 25, status: 'Active' },
-        { name: 'Gifts', parent: '—', count: 20, status: 'Active' },
-        { name: 'Accessories', parent: '—', count: 15, status: 'Active' }
-      ]);
-      console.log('✅ Seeded default categories to MongoDB');
-    }
-
-    // 2. Catalogues
-    const catalogueCount = await Catalogue.countDocuments();
-    if (catalogueCount === 0) {
-      await Catalogue.insertMany([
-        { name: 'Catalogue A', subtitle: 'Kids Collection', count: 45, status: 'Active', revenue: '₹85,000', image: 'Kids' },
-        { name: 'Catalogue B', subtitle: 'Lifestyle Collection', count: 63, status: 'Active', revenue: '₹1,60,000', image: 'Lifestyle' }
-      ]);
-      console.log('✅ Seeded default catalogues to MongoDB');
-    }
-
-    // 3. Coupons
-    const couponCount = await Coupon.countDocuments();
-    if (couponCount === 0) {
-      await Coupon.insertMany([
-        { code: 'WELCOME10', discount: '10% OFF', type: 'Percentage', minCart: '₹499', expiry: 'Jun 30, 2025', usage: '120/500', status: 'Active' },
-        { code: 'SUMMER30', discount: '20% OFF', type: 'Percentage', minCart: '₹999', expiry: 'Jul 15, 2025', usage: '85/300', status: 'Active' },
-        { code: 'FESTIVE50', discount: '50% OFF', type: 'Percentage', minCart: '₹1499', expiry: 'Aug 10, 2025', usage: '25/200', status: 'Active' },
-        { code: 'FREESHIP', discount: 'Free Shipping', type: 'Free Shipping', minCart: '₹0', expiry: 'Jun 30, 2025', usage: '230/500', status: 'Active' },
-        { code: 'NEWUSERS', discount: '5% OFF', type: 'Percentage', minCart: '₹299', expiry: 'Jul 05, 2025', usage: '60/200', status: 'Inactive' }
-      ]);
-      console.log('✅ Seeded default coupons to MongoDB');
-    }
-
-    // 4. Settings
-    const settingsCount = await Settings.countDocuments();
-    if (settingsCount === 0) {
-      await Settings.create({
-        storeName: 'MithiraShoppy Official',
-        supportEmail: 'support@mithirashoppy.com',
-        taxPercentage: 18,
-        defaultCurrency: 'INR'
+    const existing = await Product.findOne({ id: 2 });
+    if (!existing) {
+      await Product.create({
+        id: 2,
+        name: 'Women Kurti',
+        category: 'Clothing > Women',
+        catalogue: 'Catalogue A',
+        price: 899,
+        stock: 40,
+        sales: 48,
+        status: 'Active',
+        image: 'Kids',
+        description: 'Relaxed fit women kurti.'
       });
-      console.log('✅ Seeded default settings to MongoDB');
-    }
-
-    // 5. Banners
-    const bannerCount = await Banner.countDocuments();
-    if (bannerCount === 0) {
-      await Banner.insertMany([
-        { id: 1, title: 'Festive Saree Sale', slot: 'Main Banner', image: 'Clothing', clickRate: '4.5%', status: 'Active' },
-        { id: 2, title: 'Kids Summer Lookbook', slot: 'Sidebar Top', image: 'Kids', clickRate: '3.2%', status: 'Active' },
-        { id: 3, title: 'Anklets Collection', slot: 'Footer Banner', image: 'Accessories', clickRate: '2.8%', status: 'Active' }
-      ]);
-      console.log('✅ Seeded default banners to MongoDB');
-    }
-
-    // 6. Announcements
-    const announcementCount = await Announcement.countDocuments();
-    if (announcementCount === 0) {
-      await Announcement.insertMany([
-        { id: 1, text: 'Free Shipping on orders above ₹999!', placement: 'Top Header', expiry: 'Jun 30, 2025', status: 'Active' },
-        { id: 2, text: 'New Festive Collection Live! Use code FESTIVE50', placement: 'Cart Banner', expiry: 'Aug 10, 2025', status: 'Active' }
-      ]);
-      console.log('✅ Seeded default announcements to MongoDB');
-    }
-
-    // 7. Contact Queries
-    const queryCount = await ContactQuery.countDocuments();
-    if (queryCount === 0) {
-      await ContactQuery.insertMany([
-        { id: 1, name: 'Sumathi R', email: 'sumathi@gmail.com', message: 'Looking for customization options on kids party dresses.', date: 'Jun 28, 2025', status: 'Pending' },
-        { id: 2, name: 'Arjun K', email: 'arjun@gmail.com', message: 'Do you offer international shipping?', date: 'Jun 27, 2025', status: 'Replied' },
-        { id: 3, name: 'Nandhini S', email: 'nandhini@gmail.com', message: 'Issue with Razorpay gateway payment.', date: 'Jun 26, 2025', status: 'Pending' }
-      ]);
-      console.log('✅ Seeded default contact queries to MongoDB');
-    }
-
-    // 8. Reviews
-    const reviewCount = await Review.countDocuments();
-    if (reviewCount === 0) {
-      await Review.insertMany([
-        { id: 1, productName: 'Kids Party Dress', productImage: 'Kids', customerName: 'Sumathi R', rating: 5, comment: 'Excellent quality!', date: 'Jun 28, 2025', status: 'Approved', reply: '' },
-        { id: 2, productName: 'Women Kurti', productImage: 'Kids', customerName: 'Priya M', rating: 4, comment: 'Good product', date: 'Jun 27, 2025', status: 'Approved', reply: '' },
-        { id: 3, productName: 'Stylish Handbag', productImage: 'Accessories', customerName: 'Nandhini S', rating: 5, comment: 'Very nice handbag', date: 'Jun 26, 2025', status: 'Pending', reply: '' },
-        { id: 4, productName: 'Premium Pen Set', productImage: 'Kids', customerName: 'Arjun K', rating: 3, comment: 'Average', date: 'Jun 24, 2025', status: 'Rejected', reply: '' }
-      ]);
-      console.log('✅ Seeded default reviews to MongoDB');
-    }
-
-    // 9. Products
-    const productCount = await Product.countDocuments();
-    if (productCount === 0) {
-      await Product.insertMany([
-        { id: 1, name: 'Kids Party Dress', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 1299, stock: 25, sales: 120, status: 'Active', image: 'Kids' },
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: 'Kids' },
-        { id: 3, name: 'Premium Pen Set', category: 'Stationery', catalogue: 'Catalogue B', price: 299, stock: 100, sales: 32, status: 'Active', image: 'Kids' },
-        { id: 4, name: 'Birthday Gift Box', category: 'Gifts', catalogue: 'Catalogue B', price: 509, stock: 30, sales: 95, status: 'Active', image: 'Lifestyle' },
-        { id: 5, name: 'Stylish Handbag', category: 'Accessories', catalogue: 'Catalogue B', price: 1499, stock: 5, sales: 150, status: 'Low Stock', image: 'Accessories' },
-        { id: 6, name: 'Baby Cotton Frock', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 799, stock: 15, sales: 40, status: 'Active', image: 'Kids' },
-        { id: 7, name: 'Floral Print Kurta', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 1199, stock: 18, sales: 55, status: 'Active', image: 'Kids' },
-        { id: 8, name: 'Executive Gel Pens', category: 'Stationery', catalogue: 'Catalogue B', price: 199, stock: 250, sales: 85, status: 'Active', image: 'Kids' },
-        { id: 9, name: 'Chocolate Hamper', category: 'Gifts', catalogue: 'Catalogue B', price: 899, stock: 50, sales: 60, status: 'Active', image: 'Lifestyle' },
-        { id: 10, name: 'Leather Shoulder Bag', category: 'Accessories', catalogue: 'Catalogue B', price: 2499, stock: 8, sales: 75, status: 'Active', image: 'Accessories' }
-      ]);
-      console.log('✅ Seeded default products to MongoDB');
-    }
-
-    // 10. Orders
-    const orderCount = await Order.countDocuments();
-    if (orderCount === 0) {
-      await Order.insertMany([
-        { id: '#ORD1234', customer: 'Sumathi R', product: 'Gold Necklace Set', amount: '₹2,499', payment: 'Razorpay', status: 'Delivered', date: 'Jun 28, 2025' },
-        { id: '#ORD1233', customer: 'Priya M', product: 'Kids Party Dress', amount: '₹1,299', payment: 'UPI', status: 'Shipped', date: 'Jun 27, 2025' },
-        { id: '#ORD1232', customer: 'Arjun K', product: 'Surprise Balloon Box', amount: '₹899', payment: 'COD', status: 'Processing', date: 'Jun 27, 2025' },
-        { id: '#ORD1231', customer: 'Nandhini S', product: 'Silk Anarkali Suit', amount: '₹3,199', payment: 'Razorpay', status: 'Pending', date: 'Jun 26, 2025' },
-        { id: '#ORD1230', customer: 'Vijay P', product: 'Cotton Daily Wear Kurti', amount: '₹599', payment: 'UPI', status: 'Cancelled', date: 'Jun 26, 2025' }
-      ]);
-      console.log('✅ Seeded default orders to MongoDB');
+      console.log('✅ Women Kurti seeded successfully');
     }
   } catch (err) {
-    console.error('Error seeding store data:', err);
+    console.error('Error seeding store products:', err);
   }
 }
 

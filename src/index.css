@@ -8441,6 +8441,166 @@ ul {
   box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
 }
 
+/* Product Details Accordions */
+.product-details-accordion-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.detail-accordion-item {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.detail-accordion-item:hover {
+  border-color: rgba(234, 109, 38, 0.3);
+}
+
+.detail-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.detail-accordion-header:hover {
+  color: #ea6d26;
+  background-color: rgba(234, 109, 38, 0.03);
+}
+
+.accordion-chevron {
+  transition: transform 0.3s ease;
+  color: #666666;
+}
+
+.accordion-chevron.rotated {
+  transform: rotate(180deg);
+  color: #ea6d26;
+}
+
+.detail-accordion-content {
+  padding: 16px 18px;
+  background-color: #fafafa;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #444444;
+}
+
+/* Specs Table Mini */
+.specs-table-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.specs-row-mini {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
+.specs-row-mini:last-child {
+  border-bottom: none;
+}
+
+.specs-key {
+  font-weight: 600;
+  color: #666666;
+}
+
+.specs-val {
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: right;
+}
+
+/* Reviews Accordion List */
+.reviews-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-accordion-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.review-card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.review-cust-name {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 0.85rem;
+}
+
+.review-date {
+  font-size: 0.75rem;
+  color: #888888;
+}
+
+.review-rating-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.review-comment-text {
+  font-size: 0.85rem;
+  color: #444444;
+  margin: 0 0 8px 0;
+}
+
+.review-admin-reply {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: rgba(234, 109, 38, 0.04);
+  border-left: 3px solid #ea6d26;
+  border-radius: 4px;
+}
+
+.reply-badge {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #ea6d26;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.reply-text {
+  font-size: 0.8rem;
+  color: #444444;
+  margin: 0;
+}
+
+.no-reviews-text {
+  color: #888888;
+  font-style: italic;
+  margin: 0;
+}
+
 /* Similar Products Bottom Section */
 .product-detail-similar-section {
   margin-top: 50px;
@@ -8830,7 +8990,8 @@ ul {
   width: 65px;
   flex-shrink: 0;
   overflow-y: auto;
-  max-height: 420px;
+  max-height: 550px;
+  height: 100%;
   padding-right: 5px;
 }
 
@@ -8874,7 +9035,9 @@ ul {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  height: 420px;
+  height: 100%;
+  min-height: 480px;
+  aspect-ratio: 3 / 4;
 }
 
 .quickview-split-layout .quickview-split-img {
@@ -9132,29 +9295,35 @@ ul {
 }
 
 /* Dynamic Color selectors */
-.modal-section-title span.color-name {
-  color: var(--theme-primary);
-  font-weight: 700;
-}
 
 .modal-color-dots {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 2px 0;
 }
 
 .modal-color-dot {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.15);
   transition: all 0.2s ease;
   position: relative;
   padding: 0;
+  flex-shrink: 0;
+}
+
+.modal-color-dot:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(0,0,0,0.3);
 }
 
 .modal-color-dot.active {
-  transform: scale(1.1);
+  transform: scale(1.12);
   box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--theme-primary);
 }
 
@@ -9196,9 +9365,37 @@ ul {
   font-weight: 700;
 }
 
+/* ── Modal section blocks (Color selector, Size selector, etc.) ── */
+.modal-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.modal-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #555555;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.4;
+}
+
+.modal-section-title span.color-name {
+  color: var(--theme-primary);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+
 /* Quantity controls */
 .modal-section-block.quantity-section {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
   margin-top: 5px;
@@ -16072,6 +16269,370 @@ ul {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   PREMIUM CLOTHING PRODUCT CARD STYLING
+   ========================================================================== */
+.clothing-product-card {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 154, 108, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.clothing-product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(144, 89, 93, 0.1);
+  border-color: rgba(196, 154, 108, 0.4);
+}
+
+/* Image Wrapper and Badges */
+.clothing-img-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.15;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fbf9f8 0%, #f4eff0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clothing-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clothing-product-card:hover .clothing-img {
+  transform: scale(1.08);
+}
+
+.clothing-discount-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 3px 8px rgba(183, 28, 28, 0.3);
+  z-index: 2;
+}
+
+.clothing-wishlist-float-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #665256;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clothing-wishlist-float-btn:hover {
+  background: #ffffff;
+  color: #d83a95;
+  transform: scale(1.1);
+}
+
+.clothing-wishlist-float-btn.active {
+  background: #ffffff;
+  color: #d83a95;
+  border-color: #ffffff;
+}
+
+/* Hover Overlay Styles */
+.clothing-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(90, 70, 75, 0.3);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 3;
+}
+
+.clothing-img-wrapper:hover .clothing-hover-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clothing-hover-action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: none;
+  color: #665256;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(15px);
+}
+
+.clothing-img-wrapper:hover .clothing-hover-action-btn {
+  transform: translateY(0);
+}
+
+.clothing-hover-action-btn:hover {
+  background: #d83a95;
+  color: #ffffff;
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(233, 79, 168, 0.35);
+}
+
+.clothing-hover-action-btn.hover-wishlist-btn.active {
+  color: #e53935;
+}
+
+.clothing-hover-action-btn.hover-cart-btn.in-cart {
+  background: #d83a95;
+  color: #ffffff;
+}
+
+/* Details Section */
+.clothing-info-section {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.clothing-brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clothing-brand-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #90595d;
+}
+
+.clothing-stock-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.stock-status-in {
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.stock-status-out {
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.clothing-product-title {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #2b2d2f;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.clothing-product-title:hover {
+  color: #d83a95;
+}
+
+/* Rating block */
+.clothing-rating-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clothing-rating-stars {
+  display: flex;
+  align-items: center;
+}
+
+.clothing-rating-text {
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 600;
+}
+
+/* Colors and Sizes Swatches */
+.clothing-colors-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clothing-color-swatch-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  display: inline-block;
+}
+
+.clothing-color-swatch-more {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 700;
+}
+
+.clothing-sizes-list {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.clothing-size-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #555;
+  background: #f5f5f5;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Price and CTA Row */
+.clothing-price-and-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+}
+
+.clothing-price-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.clothing-selling-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111111;
+  line-height: 1.1;
+}
+
+.clothing-original-price {
+  font-size: 0.82rem;
+  text-decoration: line-through;
+  color: #b0bec5;
+  font-weight: 600;
+}
+
+.clothing-card-add-cart-btn {
+  background: linear-gradient(135deg, #d83a95 0%, #a21a6c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  padding: 8px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(216, 58, 149, 0.2);
+}
+
+.clothing-card-add-cart-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(216, 58, 149, 0.35);
+}
+
+.clothing-card-add-cart-btn.in-cart {
+  background: #2b2d2f;
+  box-shadow: none;
+}
+
+.clothing-rating-badge-container {
+  display: flex;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.clothing-rating-pill-green {
+  background-color: #388e3c; /* e-commerce green */
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1;
+  font-family: var(--font-sans);
+}
+
+.clothing-rating-pill-green .rating-star-icon {
+  font-size: 0.75rem;
+  color: #ffffff;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+.clothing-rating-pill-green .rating-divider {
+  margin: 0 4px;
+  opacity: 0.6;
+  font-weight: normal;
+}
+
+.clothing-rating-pill-green .rating-count {
+  font-weight: 600;
+}
+
+
 
 
 

@@ -152,47 +152,28 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
   // --- Core Mock States (Stored in localStorage or state) ---
   const [products, setProducts] = useState(() => {
-    const local = localStorage.getItem('mithra_admin_products');
+    const clearedFlag = localStorage.getItem('mithra_products_cleared_v2');
     let rawProducts = [];
-    if (local) {
-      try {
-        rawProducts = JSON.parse(local);
-      } catch (e) {
-        // Fallback
+    if (clearedFlag) {
+      const local = localStorage.getItem('mithra_admin_products');
+      if (local) {
+        try {
+          rawProducts = JSON.parse(local);
+        } catch (e) {
+          // Fallback
+        }
       }
+    } else {
+      rawProducts = [
+        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
+      ];
+      localStorage.setItem('mithra_admin_products', JSON.stringify(rawProducts));
+      localStorage.setItem('mithra_products_cleared_v2', 'true');
     }
     
     if (!rawProducts || rawProducts.length === 0) {
       rawProducts = [
-        { id: 1, name: 'Kids Party Dress', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 1299, stock: 25, sales: 120, status: 'Active', image: kidsDressImg },
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg },
-        { id: 3, name: 'Premium Pen Set', category: 'Stationery', catalogue: 'Catalogue B', price: 299, stock: 100, sales: 32, status: 'Active', image: kidsDressImg },
-        { id: 4, name: 'Birthday Gift Box', category: 'Gifts', catalogue: 'Catalogue B', price: 509, stock: 30, sales: 95, status: 'Active', image: handbagImg },
-        { id: 5, name: 'Stylish Handbag', category: 'Accessories', catalogue: 'Catalogue B', price: 1499, stock: 5, sales: 150, status: 'Low Stock', image: handbagImg },
-        
-        { id: 6, name: 'Baby Cotton Frock', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 799, stock: 15, sales: 40, status: 'Active', image: kidsDressImg },
-        { id: 7, name: 'Floral Print Kurta', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 1199, stock: 18, sales: 55, status: 'Active', image: kidsDressImg },
-        { id: 8, name: 'Executive Gel Pens', category: 'Stationery', catalogue: 'Catalogue B', price: 199, stock: 250, sales: 85, status: 'Active', image: kidsDressImg },
-        { id: 9, name: 'Chocolate Hamper', category: 'Gifts', catalogue: 'Catalogue B', price: 899, stock: 50, sales: 60, status: 'Active', image: handbagImg },
-        { id: 10, name: 'Leather Shoulder Bag', category: 'Accessories', catalogue: 'Catalogue B', price: 2499, stock: 8, sales: 75, status: 'Active', image: handbagImg },
-        
-        { id: 11, name: 'Girls Denim Jacket', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 1599, stock: 12, sales: 30, status: 'Active', image: kidsDressImg },
-        { id: 12, name: 'Silk Anarkali Suit', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 3499, stock: 22, sales: 90, status: 'Active', image: kidsDressImg },
-        { id: 13, name: 'Calligraphy Ink Set', category: 'Stationery', catalogue: 'Catalogue B', price: 499, stock: 60, sales: 20, status: 'Active', image: kidsDressImg },
-        { id: 14, name: 'Surprise Balloon Box', category: 'Gifts', catalogue: 'Catalogue B', price: 299, stock: 35, sales: 110, status: 'Active', image: handbagImg },
-        { id: 15, name: 'Travel Backpack', category: 'Accessories', catalogue: 'Catalogue B', price: 1899, stock: 3, sales: 45, status: 'Low Stock', image: handbagImg },
-        
-        { id: 16, name: 'Toddler Jumpsuit', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 649, stock: 20, sales: 25, status: 'Active', image: kidsDressImg },
-        { id: 17, name: 'Designer Lehenga Choli', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 5999, stock: 10, sales: 65, status: 'Active', image: kidsDressImg },
-        { id: 18, name: 'Sketch Pens Collection', category: 'Stationery', catalogue: 'Catalogue B', price: 349, stock: 120, sales: 50, status: 'Active', image: kidsDressImg },
-        { id: 19, name: 'Personalized Photo Mug', category: 'Gifts', catalogue: 'Catalogue B', price: 399, stock: 45, sales: 140, status: 'Active', image: handbagImg },
-        { id: 20, name: 'Elegant Clutch Purse', category: 'Accessories', catalogue: 'Catalogue B', price: 999, stock: 7, sales: 55, status: 'Active', image: handbagImg },
-        
-        { id: 21, name: 'Girls Summer Skirt', category: 'Clothing > Kids', catalogue: 'Catalogue A', price: 499, stock: 30, sales: 35, status: 'Active', image: kidsDressImg },
-        { id: 22, name: 'Cotton Daily Wear Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 599, stock: 60, sales: 120, status: 'Active', image: kidsDressImg },
-        { id: 23, name: 'Fine Tip Fineliners', category: 'Stationery', catalogue: 'Catalogue B', price: 249, stock: 80, sales: 42, status: 'Active', image: kidsDressImg },
-        { id: 24, name: 'Anniversary Gift Box', category: 'Gifts', catalogue: 'Catalogue B', price: 1299, stock: 14, sales: 30, status: 'Active', image: handbagImg },
-        { id: 25, name: 'Canvas Tote Bag', category: 'Accessories', catalogue: 'Catalogue B', price: 799, stock: 4, sales: 88, status: 'Low Stock', image: handbagImg }
+        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
       ];
     }
     
@@ -463,6 +444,23 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   
   const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
   const [editCustomerItem, setEditCustomerItem] = useState(null);
+
+  const getCategoryProductCount = (catName) => {
+    const getSubCategoryNames = (name) => {
+      let list = [name];
+      const directSubs = categories.filter(c => c.parent === name);
+      directSubs.forEach(sub => {
+        list = list.concat(getSubCategoryNames(sub.name));
+      });
+      return list;
+    };
+    const targetCategories = getSubCategoryNames(catName);
+    return products.filter(p => {
+      if (!p.category) return false;
+      const parts = p.category.split('>').map(s => s.trim());
+      return parts.some(part => targetCategories.includes(part));
+    }).length;
+  };
 
   // Sync to local storage
   useEffect(() => {
@@ -1323,7 +1321,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <div className="re-stat-card">
                   <div className="stat-card-left">
                     <span className="stat-lbl">Total Products</span>
-                    <h3 className="stat-val">128</h3>
+                    <h3 className="stat-val">{products.length}</h3>
                     <span className="stat-trend positive">▲ 6.2% vs last month</span>
                   </div>
                   <div className="stat-card-right lightgreen-badge">
@@ -1832,7 +1830,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               </div>
                             </td>
                             <td className="text-gray">{cat.parent || '—'}</td>
-                            <td className="text-gray font-semibold">{cat.count}</td>
+                            <td className="text-gray font-semibold">{getCategoryProductCount(cat.name)}</td>
                             <td>
                               <span className={`status-badge-re ${cat.status.toLowerCase()}`}>
                                 {cat.status}
@@ -1847,7 +1845,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     originalName: cat.name,
                                     name: cat.name,
                                     parent: cat.parent,
-                                    count: cat.count,
+                                    count: getCategoryProductCount(cat.name),
                                     status: cat.status
                                   })}
                                 >
@@ -1914,7 +1912,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                 originalName: cat.name,
                                 name: cat.name,
                                 subtitle: cat.subtitle,
-                                count: cat.count,
+                                count: products.filter(p => p.catalogue === cat.name).length,
                                 status: cat.status,
                                 revenue: cat.revenue,
                                 image: cat.image
@@ -1934,7 +1932,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         <p className="cat-card-subtitle">{cat.subtitle}</p>
                         
                         <div className="cat-meta-info">
-                          <p className="cat-products-count">{cat.count} Products</p>
+                          <p className="cat-products-count">{products.filter(p => p.catalogue === cat.name).length} Products</p>
                           <div className="cat-status-wrap">
                             <span className={`cat-status-dot ${cat.status.toLowerCase()}`}></span>
                             <span className="cat-status-text">{cat.status}</span>
@@ -4496,7 +4494,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   </div>
                   <div className="spec-row">
                     <span className="spec-lbl">Total Products:</span>
-                    <span className="spec-val bold text-orange">{viewCategoryItem.count || 0} products</span>
+                    <span className="spec-val bold text-orange">{getCategoryProductCount(viewCategoryItem.name)} products</span>
                   </div>
                   <div className="spec-row">
                     <span className="spec-lbl">Status:</span>

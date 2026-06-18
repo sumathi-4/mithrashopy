@@ -51,6 +51,11 @@ import imgClothing from '../assets/hero_clothing.jpg';
 import imgStationery from '../assets/hero_stationery.jpg';
 import imgGifts from '../assets/hero_gifts.jpg';
 import imgAccessories from '../assets/hero_accessories.jpg';
+import clothingUser1 from '../assets/clothing_user_1.jpg';
+import clothingUser2 from '../assets/clothing_user_2.jpg';
+import clothingUser3 from '../assets/clothing_user_3.jpg';
+import clothingUser4 from '../assets/clothing_user_4.jpg';
+import clothingUser5 from '../assets/clothing_user_5.jpg';
 
 
 
@@ -86,15 +91,53 @@ const getProductImages = (modelNo, defaultImage) => {
 // Resolve all gallery images for a product
 const getAllProductImages = (prod) => {
   if (!prod) return [];
-  if (prod.subCategory === 'KIDS') {
-    return getProductImages(prod.modelNo, prod.image);
+  
+  // Kids clothing with model number
+  if (prod.category === 'CLOTHING' && prod.subCategory === 'KIDS' && prod.modelNo) {
+    const customImages = getProductImages(prod.modelNo, prod.image);
+    if (customImages.length > 1) return customImages;
   }
+  
+  // Generic clothing mapping for interactive thumbnails
+  if (prod.category === 'CLOTHING') {
+    const isKids = prod.subCategory === 'KIDS' || 
+                   (prod.category && prod.category.toLowerCase().includes('kids')) ||
+                   (prod.category && prod.category.toLowerCase().includes('child')) ||
+                   (prod.title && prod.title.toLowerCase().includes('kids')) || 
+                   (prod.title && prod.title.toLowerCase().includes('girl')) || 
+                   (prod.title && prod.title.toLowerCase().includes('boy')) || 
+                   (prod.title && prod.title.toLowerCase().includes('baby')) || 
+                   (prod.title && prod.title.toLowerCase().includes('frock')) || 
+                   (prod.title && prod.title.toLowerCase().includes('anarkali'));
+    if (isKids) {
+      return [clothingUser1, clothingUser5];
+    } else {
+      return [clothingUser2, clothingUser3, clothingUser4];
+    }
+  }
+  
+  if (prod.images && prod.images.length > 0) {
+    return prod.images;
+  }
+  
   return [prod.image];
 };
 
 // Retrieve themed colors for products based on category/model number
-const getProductColors = (prod) => {
+const getProductThemedColors = (prod) => {
   if (!prod) return [];
+
+  // If product has custom variants with colors, use them
+  if (prod.variants && prod.variants.length > 0) {
+    const uniqueColors = [...new Set(prod.variants.map(v => v.color).filter(Boolean))];
+    if (uniqueColors.length > 0) {
+      return uniqueColors.map(colorName => ({
+        name: colorName,
+        hex: getColorHex(colorName)
+      }));
+    }
+  }
+
   if (prod.subCategory === 'KIDS' && prod.modelNo) {
     const model = prod.modelNo.toUpperCase();
     if (model.includes('TQ-2')) return [{ name: 'Pink', hex: '#ff80b3' }, { name: 'Purple', hex: '#a366ff' }];
@@ -250,6 +293,21 @@ const getProductColors = (prod) => {
     ];
   }
   if (prod.category === 'CLOTHING') {
+    const isKids = prod.subCategory === 'KIDS' || 
+                   (prod.category && prod.category.toLowerCase().includes('kids')) ||
+                   (prod.category && prod.category.toLowerCase().includes('child')) ||
+                   (prod.title && prod.title.toLowerCase().includes('kids')) || 
+                   (prod.title && prod.title.toLowerCase().includes('girl')) || 
+                   (prod.title && prod.title.toLowerCase().includes('boy')) || 
+                   (prod.title && prod.title.toLowerCase().includes('baby')) || 
+                   (prod.title && prod.title.toLowerCase().includes('frock')) || 
+                   (prod.title && prod.title.toLowerCase().includes('anarkali'));
+    if (isKids && !prod.modelNo) {
+      return [
+        { name: 'Pure White', hex: '#ffffff' },
+        { name: 'Ocean Blue', hex: '#1e88e5' }
+      ];
+    }
     return [
       { name: 'Crimson Red', hex: '#b32142' },
       { name: 'Champagne Gold', hex: '#D4AF37' },
@@ -300,7 +358,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
         {/* Colors selector */}
         {colors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Color: {colors[activeImageIndex]?.name || colors[0]?.name || "Default"}</span>
+            <span className="modal-section-title">Color: <span className="color-name">{colors[activeImageIndex]?.name || colors[0]?.name || ""}</span></span>
             <div className="modal-color-dots">
               {colors.map((c, idx) => (
                 <button 
@@ -564,6 +622,35 @@ const renderCategorySpecs = (prod) => {
   return null;
 };
 
+const getColorHex = (name) => {
+  const colors = {
+    'White': '#ffffff',
+    'Black': '#111111',
+    'Pink': '#ff80ab',
+    'Red': '#e53935',
+    'Yellow': '#fdd835',
+    'Green': '#43a047',
+    'Purple': '#8e24aa',
+    'Blue': '#1e88e5',
+    'DarkRed': '#b71c1c',
+    'Crimson Red': '#b32142',
+    'Champagne Gold': '#D4AF37',
+    'Midnight Black': '#111111',
+    'Lavender': '#ce93d8',
+    'Soft Pink': '#f8bbd0',
+    'Plum': '#4a148c',
+    'Sage': '#81c784',
+    'Grey': '#9e9e9e',
+    'Peach': '#ffcc80',
+    'Cream': '#fff9c4',
+    'Aqua': '#80deea',
+    'Navy': '#3949ab',
+    'Maroon': '#880e4f',
+    'Olive': '#2e7d32'
+  };
+  return colors[name] || '#cccccc';
+};
+
 export default function ShopView({ authUser, setAuthUser }) {
   const [activeTab, setActiveTab] = useState('ALL');
   const [activeSubTab, setActiveSubTab] = useState('ALL');
@@ -613,6 +700,8 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [isOffersOpen, setIsOffersOpen] = useState(false);
 
   const [showMoreColors, setShowMoreColors] = useState(false);
+  const [activeDetailAccordion, setActiveDetailAccordion] = useState(null);
+  const [reviewsList, setReviewsList] = useState([]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -788,855 +877,44 @@ export default function ShopView({ authUser, setAuthUser }) {
 
   const allProductsStatic = [
     {
-      id: 'p1',
-      title: "Royal Jasmine Hair Gajra Ornament",
-      category: "ACCESSORIES",
-      price: 450,
-      rating: 5,
-      reviews: 42,
-      image: pHairUpdated,
-      badge: "PREMIUM"
-    },
-    {
-      id: 'p2',
-      title: "Antique Ginkgo Leaf Premium Ring",
-      category: "ACCESSORIES",
-      price: 500,
-      rating: 5,
-      reviews: 29,
-      image: pRing,
-      badge: "PREMIUM"
-    },
-    {
-      id: 'p3',
-      title: "Exquisite Kundan Choker Necklace",
-      category: "ACCESSORIES",
-      price: 1500,
-      rating: 5,
-      reviews: 64,
-      image: pNeck,
-      badge: "PREMIUM"
-    },
-    {
-      id: 't1',
-      title: "Girls Anarkali Dress",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 1699,
-      rating: 5,
-      reviews: 128,
-      image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't2',
-      title: "Premium Handbag",
-      category: "ACCESSORIES",
-      price: 2499,
-      rating: 5,
-      reviews: 96,
-      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't3',
-      title: "Premium Stationery Set",
-      category: "STATIONERY",
-      price: 699,
-      rating: 5,
-      reviews: 210,
-      image: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't4',
-      title: "Luxury Gift Hamper",
-      category: "GIFTS",
-      price: 1299,
-      rating: 5,
-      reviews: 176,
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't5',
-      title: "Gold Plated Necklace",
-      category: "ACCESSORIES",
-      price: 2199,
-      rating: 5,
-      reviews: 134,
-      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't6',
-      title: "Ladies Wrist Watch",
-      category: "ACCESSORIES",
-      price: 1599,
-      rating: 5,
-      reviews: 88,
-      image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 'n1',
-      title: "Floral Frock Dress",
+      id: 'p_women_kurti',
+      title: "Women Kurti",
       category: "CLOTHING",
       subCategory: "WOMEN",
-      price: 1499,
-      rating: 5,
-      reviews: 42,
-      image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-    {
-      id: 'n2',
-      title: "Blue School Kit",
-      category: "STATIONERY",
       price: 899,
-      rating: 4,
-      reviews: 18,
-      image: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-    {
-      id: 'n3',
-      title: "Birthday Gift Box",
-      category: "GIFTS",
-      price: 1099,
-      rating: 5,
-      reviews: 35,
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-    {
-      id: 'n4',
-      title: "Traditional Jhumka",
-      category: "ACCESSORIES",
-      price: 1799,
-      rating: 5,
-      reviews: 58,
-      image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-    {
-      id: 'n5',
-      title: "Premium Notebook",
-      category: "STATIONERY",
-      price: 399,
-      rating: 4,
-      reviews: 14,
-      image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-    {
-      id: 'n6',
-      title: "Cotton Kurta Set",
-      category: "CLOTHING",
-      subCategory: "MEN",
-      price: 1299,
-      rating: 5,
-      reviews: 64,
-      image: "https://images.unsplash.com/photo-1608748010899-18f300247112?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW"
-    },
-
-    // TIKQ KIDSWEAR COLLECTION FROM PDF (39 PRODUCTS)
-    {
-      id: 'k_tq_2',
-      title: "Misty Bow Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 69,
-      rating: 5,
-      reviews: 42,
-      image: kids_tq_2,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-2",
-      size: "4 yr",
-      moq: "Per size 6 pcs",
-      colours: "2 colours",
-      fabric: "Looper",
-      description: "Super soft matching set with floral detailing and a bow accent on top, designed for play and casual comfort."
-    },
-    {
-      id: 'k_tq_3',
-      title: "Kids Printed Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 163,
-      rating: 5,
-      reviews: 31,
-      image: kids_tq_3,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-3",
-      size: "2y, 4y, 6y",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "Looper",
-      description: "Comfortable nightwear set with soft elastic waistbands and all-over cartoon characters print."
-    },
-    {
-      id: 'k_tq_4',
-      title: "Kids Printed Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 194,
-      rating: 5,
-      reviews: 29,
-      image: kids_tq_4,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-4",
-      size: "8y, 10y, 12y",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "Looper",
-      description: "Warm long-sleeved nightwear set featuring cute screen printed chest graphics and cozy matching pants."
-    },
-    {
-      id: 'k_tq_6',
-      title: "Jacquard Classic T-Shirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 87,
-      rating: 5,
-      reviews: 54,
-      image: kids_tq_6,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-6",
-      size: "2y, 4y, 6y, 8y, 10y, 12y",
-      moq: "Per size 10 pcs",
-      colours: "10 colours",
-      fabric: "Jacquard",
-      description: "Aesthetic boys solid crew neck tee featuring textured jacquard breathable knits. Price varies by size (₹87 - ₹103)."
-    },
-    {
-      id: 'k_tq_7',
-      title: "Cozy Hat Design Tshirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 313,
-      rating: 5,
-      reviews: 18,
-      image: kids_tq_7,
-      badge: "TIKQ PREMIUM",
-      modelNo: "TQ-7",
-      size: "6yr, 8yr, 10yr",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "Freelancer",
-      description: "Trendy sweatshirt with a raised tactile hat patch and string decorations on chest."
-    },
-    {
-      id: 'k_tq_14',
-      title: "Boys Fullsleve Patchwork Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 136,
-      rating: 5,
-      reviews: 24,
-      image: kids_tq_14,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-14",
-      size: "2y, 4y, 6y",
-      moq: "All size mix 3 pcs",
-      colours: "4 colours",
-      fabric: "Waffel",
-      description: "Cozy waffel knit sweatshirt with adorable animal patches (dog, panda) paired with joggers."
-    },
-    {
-      id: 'k_tq_17',
-      title: "Summer Kids L/S",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 150,
-      rating: 5,
-      reviews: 35,
-      image: kids_tq_17,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-17",
-      size: "2y, 4y, 6y, 8y, 10y, 12y",
-      moq: "All size mix 6 pcs",
-      colours: "5 colours",
-      fabric: "Waffel",
-      description: "Breathable and light sleeveless vest and shorts lounge set, perfect for active summer play."
-    },
-    {
-      id: 'k_tq_18',
-      title: "BunnySprout Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 237,
-      rating: 5,
-      reviews: 21,
-      image: kids_tq_18,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-18",
-      size: "2yr, 4yr, 6yr",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "freelancer & valentino",
-      description: "Cute layered girls frock with long sleeves, charming bunny details, and decorative strings."
-    },
-    {
-      id: 'k_tq_19',
-      title: "Little Bunny Wear",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 118,
-      rating: 5,
-      reviews: 16,
-      image: kids_tq_19,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-19",
-      size: "2yr, 4yr, 6yr",
-      moq: "All size mix 6 pcs",
-      colours: "3 colours",
-      fabric: "Interlock cotton",
-      description: "Charming strap dress paired with a soft base tee, featuring a cute pocket bunny patch."
-    },
-    {
-      id: 'k_tq_21',
-      title: "Snowfall T-Shirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 88,
-      rating: 5,
-      reviews: 43,
-      image: kids_tq_21,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-21",
-      size: "4y, 6y, 8y",
-      moq: "Per size 6 pcs",
-      colours: "6 colours",
-      fabric: "Snowfall",
-      description: "Comfortable solid crew neck boys t-shirt in soft snowfall textured knit fabric."
-    },
-    {
-      id: 'k_tq_25',
-      title: "Tom and Jerry Tshirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 110,
-      rating: 5,
-      reviews: 32,
-      image: kids_tq_25,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-25",
-      size: "2yr, 4yr, 6yr",
-      moq: "Per size 10pcs",
-      colours: "5 colours",
-      fabric: "waffel",
-      description: "Playful half-color cartoon printed t-shirt made of high quality waffel knit fabric."
-    },
-    {
-      id: 'k_tq_32',
-      title: "Elegant Party Dress",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 94,
-      rating: 5,
-      reviews: 22,
-      image: kids_tq_32,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-32",
-      size: "2y, 4y, 6y",
-      moq: "All size mix 6 pcs",
-      colours: "1 colours",
-      fabric: "Premium Polyester",
-      description: "Chic shimmer party frock featuring stylish flutter sleeves and a waist bow belt."
-    },
-    {
-      id: 'k_tq_35',
-      title: "Butterfly Girls Frock",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 207,
-      rating: 5,
-      reviews: 37,
-      image: kids_tq_35,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-35",
-      size: "2y, 4y, 6y",
-      moq: "6 pcs [per size]",
-      colours: "6 colours",
-      fabric: "100% Cotton Bio Wash",
-      description: "Elegant short-sleeve casual frock with high-contrast colorful butterfly chest print."
-    },
-    {
-      id: 'k_tq_42',
-      title: "Softy T-Shirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 78,
-      rating: 5,
-      reviews: 49,
-      image: kids_tq_42,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-42",
-      size: "2y, 4y, 6y, 8y, 10y",
-      moq: "Per size 10 pcs",
-      colours: "8 colours",
-      fabric: "Softy",
-      description: "Sleek boys athletic activewear tee made of light, breathable, moisture-wicking softy fabric."
-    },
-    {
-      id: 'k_tq_52',
-      title: "Classic Comfort Tee",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 88,
-      rating: 5,
-      reviews: 14,
-      image: kids_tq_52,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-52",
-      size: "8y, 12y, 14Y",
-      moq: "Per size 8 pcs",
-      colours: "7 colours",
-      fabric: "Polyster",
-      description: "Trendy layered-sleeve graphic tee featuring an adorable sunglasses print on chest."
-    },
-    {
-      id: 'k_tq_57',
-      title: "Looper Printed Top",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 94,
-      rating: 5,
-      reviews: 26,
-      image: kids_tq_57,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-57",
-      size: "8yr, 10yr, 12yr",
-      moq: "Per size 10 pcs",
-      colours: "10 colours",
-      fabric: "Spun Looper",
-      description: "Cute girls relaxed summer tee featuring colorful cartoon chest prints and text highlights."
-    },
-    {
-      id: 'k_tq_60',
-      title: "Boys Looper Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 163,
-      rating: 5,
-      reviews: 30,
-      image: kids_tq_60,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-60",
-      size: "6y, 8y, 10y",
-      moq: "Per size 3 pcs",
-      colours: "6 colours",
-      fabric: "Spun Looper",
-      description: "Cozy boys long-sleeve sweatshirt and jogger pants set, featuring playful smile graphics."
-    },
-    {
-      id: 'k_tq_63',
-      title: "Advent Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 318,
-      rating: 5,
-      reviews: 17,
-      image: kids_tq_63,
-      badge: "TIKQ PREMIUM",
-      modelNo: "TQ-63",
-      size: "2yr, 4yr, 6yr",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "Freelancer",
-      description: "Super stylish boys formal-casual set featuring a buttoned shirt-jacket over a clean inner tee."
-    },
-    {
-      id: 'k_tq_64',
-      title: "Kids Jersey Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 120,
-      rating: 5,
-      reviews: 23,
-      image: kids_tq_64,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-64",
-      size: "2yr, 4yr, 6yr, 8 yr, 10yr, 12yr",
-      moq: "Per size 6 pcs",
-      colours: "6 colours",
-      fabric: "softy",
-      description: "Lightweight kids athletic jersey set featuring dynamic sports patterns, great for outdoor activities."
-    },
-    {
-      id: 'k_tq_77',
-      title: "Print & Playfull Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 238,
-      rating: 5,
-      reviews: 19,
-      image: kids_tq_77,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-77",
-      size: "8y, 10y, 12y",
-      moq: "All size mix 3 pcs",
-      colours: "9 colours",
-      fabric: "Looper",
-      description: "Dashing formal boys printed shirt paired with dark formal pants, ideal for kids parties."
-    },
-    {
-      id: 'k_tq_80',
-      title: "Anime F/S T-Shirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 100,
-      rating: 5,
-      reviews: 51,
-      image: kids_tq_80,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-80",
-      size: "2y, 4y, 6y, 8y, 10y, 12y, 14Y",
-      moq: "Per size 10 pcs",
-      colours: "7 colours",
-      fabric: "Polyster",
-      description: "Cool boys long-sleeve sweatshirt featuring high-quality premium Japanese anime character prints."
-    },
-    {
-      id: 'k_tq_87',
-      title: "Turbomax Outfit",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 138,
-      rating: 5,
-      reviews: 34,
-      image: kids_tq_87,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-87",
-      size: "10yr, 12yr, 14yr",
-      moq: "Per size 5 pcs",
-      colours: "5 colours",
-      fabric: "DOTKNIT",
-      description: "Durable dotknit sportswear set designed for soccer, running, and heavy physical training."
-    },
-    {
-      id: 'k_tq_89',
-      title: "Glowfit Tee",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 90,
-      rating: 5,
-      reviews: 20,
-      image: kids_tq_89,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-89",
-      size: "2Y, 4Y, 6Y, 8y, 10y, 12y",
-      moq: "Per size 10 pcs",
-      colours: "9 colours",
-      fabric: "Catonic Fabric",
-      description: "Lightweight summer tee in premium catonic fabric, offering great breathability and color retention."
-    },
-    {
-      id: 'k_tq_93',
-      title: "CosmoKid Co-Ord",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 163,
-      rating: 5,
-      reviews: 15,
-      image: kids_tq_93,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-93",
-      size: "2yr, 4yr, 6yr",
-      moq: "All size mix 3 pcs",
-      colours: "5 colours",
-      fabric: "hungamma",
-      description: "Lovely girls t-shirt and matching shorts co-ord set in a soft premium hungamma fabric."
-    },
-    {
-      id: 'k_tq_95',
-      title: "Catonic kids t-shirt",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 80,
-      rating: 5,
-      reviews: 28,
-      image: kids_tq_95,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-95",
-      size: "2y, 4y, 6y, 8y, 10y, 12y",
-      moq: "Per size 10 pcs",
-      colours: "5 colours",
-      fabric: "CATHONIC",
-      description: "Comfortable kids daily t-shirt in classic horizontal striped patterns."
-    },
-    {
-      id: 'k_tq_103',
-      title: "Kids Mickey Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 125,
-      rating: 5,
-      reviews: 41,
-      image: kids_tq_103,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-103",
-      size: "4y, 6y, 8y",
-      moq: "All size mix 3pcs",
-      colours: "1 colours",
-      fabric: "SPUNLOOPER",
-      description: "Cute polo collar t-shirt and shorts set, featuring a lovely Mickey Mouse chest character."
-    },
-    {
-      id: 'k_tq_109',
-      title: "Bright Blocks Outfit",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 225,
       rating: 5,
       reviews: 12,
       image: kids_tq_109,
-      badge: "TIKQ KIDS",
+      badge: "MITHRA WOMEN",
       modelNo: "TQ-109",
-      size: "10,12",
+      size: "S, M, L, XL",
       moq: "Per size 3 pcs",
       colours: "5 colours",
-      fabric: "POLYCOTTON",
-      description: "Relaxed fit boys shirt and shorts set with eye-catching typography block prints."
-    },
-    {
-      id: 'k_tq_110',
-      title: "Kiddie Glow Set",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 144,
-      rating: 5,
-      reviews: 27,
-      image: kids_tq_110,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-110",
-      size: "2yr, 4yr, 6yr",
-      moq: "Per size 6 pcs",
-      colours: "5 colours",
-      fabric: "PIKQ",
-      description: "Premium cotton tee and shorts set with a lovely preschool theme print."
-    },
-    {
-      id: 'k_tq_113',
-      title: "Pixel Po Tee",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 113,
-      rating: 5,
-      reviews: 33,
-      image: kids_tq_113,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-113",
-      size: "2y, 4y, 6y, 8y, 10y, 12y",
-      moq: "Per size 6 pcs",
-      colours: "6 colours",
-      fabric: "POLY COTTON",
-      description: "Elegant boys tee featuring high quality modern pixelated design prints."
-    },
-    {
-      id: 'k_tq_126',
-      title: "Kidz Milange Shorts",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 61,
-      rating: 5,
-      reviews: 45,
-      image: kids_tq_126,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-126",
-      size: "24, 26, 28, 30, 32, 34",
-      moq: "Per size 15 pcs",
-      colours: "5 colours",
-      fabric: "micro milange",
-      description: "Soft micro milange shorts with elastic waistbands, great for running and active playing."
-    },
-    {
-      id: 'k_tq_138',
-      title: "Kids Lycra Pant",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 94,
-      rating: 5,
-      reviews: 39,
-      image: kids_tq_138,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-138",
-      size: "30, 32, 34, 36",
-      moq: "Per size 6 pcs",
-      colours: "5 colours",
-      fabric: "LYCRARIB",
-      description: "Premium kids track pants featuring sport lines and adjustable drawstrings."
-    },
-    {
-      id: 'k_tq_137',
-      title: "Chillout Cotton Outfit",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 213,
-      rating: 5,
-      reviews: 18,
-      image: kids_tq_137,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-137",
-      size: "6y",
-      moq: "Per size 3 pcs",
-      colours: "3 colours",
       fabric: "COTTON",
-      description: "Soft organic cotton set with cute cycling bunny prints on top and matching bottom."
-    },
-    {
-      id: 'k_tq_145',
-      title: "Turbo Star Outfit",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 138,
-      rating: 5,
-      reviews: 22,
-      image: kids_tq_145,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-145",
-      size: "8Y, 10Y, 12Y, 14Y",
-      moq: "Per size 5 pcs",
-      colours: "5 colours",
-      fabric: "DOTKNIT",
-      description: "Aesthetic horizontal block colored dotknit shirt and shorts active set."
-    },
-    {
-      id: 'k_tq_148',
-      title: "Newborn Baby Rampers",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 188,
-      rating: 5,
-      reviews: 48,
-      image: kids_tq_148,
-      badge: "TIKQ BABY",
-      modelNo: "TQ-148",
-      size: "0-1M, 1-3M, 6-9M",
-      moq: "Per size 4 pcs",
-      colours: "4 colours",
-      fabric: "INTERLOCK COTTON",
-      description: "Ultra-soft baby rompers featuring striped patterns and quick diaper snap buttons."
-    },
-    {
-      id: 'k_tq_151',
-      title: "Newborn Baby Rampers Plain",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 150,
-      rating: 5,
-      reviews: 25,
-      image: kids_tq_151,
-      badge: "TIKQ BABY",
-      modelNo: "TQ-151",
-      size: "0-1M, 1-3M, 3-6M, 6-9M",
-      moq: "Per size 3 pcs",
-      colours: "3 colours",
-      fabric: "100% COTTON",
-      description: "Skin-friendly plain cotton rompers with cute cartoon chest animal patches."
-    },
-    {
-      id: 'k_tq_152',
-      title: "Smart Playtime Co-Ord",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 154,
-      rating: 5,
-      reviews: 29,
-      image: kids_tq_152,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-152",
-      size: "2Yr, 4Yr, 6Yr",
-      moq: "Per size 5 pcs",
-      colours: "5 colours",
-      fabric: "LOOPER",
-      description: "Fun all-over patterned casual tee and shorts play set in soft looper knit."
-    },
-    {
-      id: 'k_tq_157',
-      title: "Kids Cherged Co-Ord",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 169,
-      rating: 5,
-      reviews: 31,
-      image: kids_tq_157,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-157",
-      size: "2Yr, 4Yr, 6Yr",
-      moq: "Per size 4 pcs",
-      colours: "4 colours",
-      fabric: "LOOPER",
-      description: "Eye-catching pocket details and cute monster patch decoration on shorts and tee set."
-    },
-    {
-      id: 'k_tq_161',
-      title: "Girls Dreamy Comfort Wear",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 220,
-      rating: 5,
-      reviews: 19,
-      image: kids_tq_161,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-161",
-      size: "6Yr, 8Yr, 10Yr, 12Yr",
-      moq: "Per size 4 pcs",
-      colours: "4 colours",
-      fabric: "T-SHIRT COTTONBIO WASH, PANT TESLA",
-      description: "Premium wide-leg relaxed bottom set with a crop-cut floral t-shirt."
-    },
-    {
-      id: 'k_tq_165',
-      title: "Kids Casual Outfit",
-      category: "CLOTHING",
-      subCategory: "KIDS",
-      price: 188,
-      rating: 5,
-      reviews: 38,
-      image: kids_tq_165,
-      badge: "TIKQ KIDS",
-      modelNo: "TQ-165",
-      size: "2Yr, 4Yr, 6Yr",
-      moq: "Per size 5 pcs",
-      colours: "5 colours",
-      fabric: "COTTON 100% BIO WASH",
-      description: "Stylish basket-ball print comfy daily tee and shorts set in premium bio-wash cotton."
-    },
-
-    // COUPLES
-    {
-      id: 'c1',
-      title: "Royal Couple Silk Matching Set",
-      category: "CLOTHING",
-      subCategory: "COUPLES",
-      price: 4500,
-      rating: 5,
-      reviews: 28,
-      image: celebCouple,
-      badge: "MATCHING"
-    },
-    {
-      id: 'c2',
-      title: "Linen Fusion Festive Couple Wear",
-      category: "CLOTHING",
-      subCategory: "COUPLES",
-      price: 3800,
-      rating: 5,
-      reviews: 15,
-      image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80",
-      badge: "MATCHING"
+      description: "Relaxed fit women kurti."
     }
-  ].map(p => {
+  ].map((p, idx) => {
+    let finalImage = p.image;
+    if (p.category === 'CLOTHING') {
+      const isKids = p.subCategory === 'KIDS' || p.title.toLowerCase().includes('kids') || p.title.toLowerCase().includes('girl') || p.title.toLowerCase().includes('boy');
+      if (isKids) {
+        finalImage = (idx % 2 === 0) ? clothingUser1 : clothingUser5;
+      } else {
+        const pool = [clothingUser2, clothingUser3, clothingUser4];
+        finalImage = pool[idx % pool.length];
+      }
+    }
     if (p.modelNo) {
       return {
         ...p,
-        images: getProductImages(p.modelNo, p.image)
+        image: finalImage,
+        images: getProductImages(p.modelNo, finalImage)
       };
     }
-    return p;
+    return {
+      ...p,
+      image: finalImage
+    };
   });
 
   const [allProducts, setAllProducts] = useState(allProductsStatic);
@@ -1644,7 +922,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   useEffect(() => {
     apiService.getProducts().then((data) => {
       if (data && data.length > 0) {
-        const mapped = data.map(p => {
+        const mapped = data.map((p, idx) => {
           let catUpper = (p.category || 'CLOTHING').toUpperCase();
           let cleanCategory = 'CLOTHING';
           if (catUpper.includes('CLOTHING')) cleanCategory = 'CLOTHING';
@@ -1655,15 +933,41 @@ export default function ShopView({ authUser, setAuthUser }) {
 
           const title = p.name || p.title || 'Product';
           
+          let finalImage = p.image;
+          if (cleanCategory === 'CLOTHING') {
+            const isKids = p.subCategory === 'KIDS' || 
+                           catUpper.includes('KIDS') || 
+                           catUpper.includes('CHILD') || 
+                           title.toLowerCase().includes('kids') || 
+                           title.toLowerCase().includes('girl') || 
+                           title.toLowerCase().includes('boy') || 
+                           title.toLowerCase().includes('baby') || 
+                           title.toLowerCase().includes('frock') || 
+                           title.toLowerCase().includes('anarkali');
+            if (isKids) {
+              finalImage = (idx % 2 === 0) ? clothingUser1 : clothingUser5;
+            } else {
+              const pool = [clothingUser2, clothingUser3, clothingUser4];
+              finalImage = pool[idx % pool.length];
+            }
+          }
+
           return {
             ...p,
             title,
             category: cleanCategory,
-            images: p.modelNo ? getProductImages(p.modelNo, p.image) : [p.image || 'Kids']
+            image: finalImage,
+            images: p.modelNo ? getProductImages(p.modelNo, finalImage) : [finalImage]
           };
         });
         setAllProducts(mapped);
       }
+    });
+  }, []);
+
+  useEffect(() => {
+    apiService.getReviews().then((data) => {
+      if (data) setReviewsList(data);
     });
   }, []);
 
@@ -1865,7 +1169,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   if (fullDetailProduct) {
     const catTheme = getCategoryThemeClass(fullDetailProduct.category);
     const images = getAllProductImages(fullDetailProduct);
-    const colors = getProductColors(fullDetailProduct);
+    const colors = getProductThemedColors(fullDetailProduct);
     return (
       <div className={`shop-view-page shop-product-detail-page-view ${catTheme}`}>
         <div className="shop-content-container">
@@ -1955,17 +1259,6 @@ export default function ShopView({ authUser, setAuthUser }) {
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="product-detail-section-block description-block">
-                <span className="product-detail-section-title">Description</span>
-                <p className="product-detail-description-text">
-                  {fullDetailProduct.description || "Indulge in our handpicked selections crafted to match your cultural roots and premium choices. Made with pure fabric, exquisite design details, and comfortable fit. Designed for both casual elegance and luxury wear."}
-                </p>
-              </div>
-
-              {/* Category-specific Specifications */}
-              {renderCategorySpecs(fullDetailProduct)}
-
               {/* Actions */}
               <div className="product-detail-actions">
                 <button 
@@ -1996,11 +1289,164 @@ export default function ShopView({ authUser, setAuthUser }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="product-detail-whatsapp-btn"
+                  style={{ alignSelf: 'center', width: 'fit-content', padding: '10px 24px', fontSize: '0.85rem' }}
                 >
-                  <Phone size={16} />
-                  <span>Inquire via WhatsApp (+91 6384438557)</span>
+                  <Phone size={14} />
+                  <span>Inquire via WhatsApp</span>
                 </a>
               )}
+
+              {/* Collapsible Tabs / Accordions */}
+              <div className="product-details-accordion-wrap" style={{ marginTop: '20px' }}>
+                
+                {/* 1. Description Accordion */}
+                <div className="detail-accordion-item">
+                  <button 
+                    className="detail-accordion-header"
+                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'description' ? null : 'description')}
+                  >
+                    <span>Description</span>
+                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'description' ? 'rotated' : ''}`} />
+                  </button>
+                  {activeDetailAccordion === 'description' && (
+                    <div className="detail-accordion-content">
+                      <p style={{ margin: 0 }}>
+                        {fullDetailProduct.description || "Indulge in our handpicked selections crafted to match your cultural roots and premium choices. Made with pure fabric, exquisite design details, and comfortable fit. Designed for both casual elegance and luxury wear."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Specifications Accordion */}
+                <div className="detail-accordion-item">
+                  <button 
+                    className="detail-accordion-header"
+                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'specs' ? null : 'specs')}
+                  >
+                    <span>Specifications</span>
+                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'specs' ? 'rotated' : ''}`} />
+                  </button>
+                  {activeDetailAccordion === 'specs' && (
+                    <div className="detail-accordion-content">
+                      <div className="specs-table-mini">
+                        {fullDetailProduct.modelNo && (
+                          <div className="specs-row-mini">
+                            <span className="specs-key">Model No:</span>
+                            <span className="specs-val">{fullDetailProduct.modelNo}</span>
+                          </div>
+                        )}
+                        {fullDetailProduct.fabric && (
+                          <div className="specs-row-mini">
+                            <span className="specs-key">Fabric:</span>
+                            <span className="specs-val">{fullDetailProduct.fabric}</span>
+                          </div>
+                        )}
+                        {fullDetailProduct.size && (
+                          <div className="specs-row-mini">
+                            <span className="specs-key">Size:</span>
+                            <span className="specs-val">{fullDetailProduct.size}</span>
+                          </div>
+                        )}
+                        {fullDetailProduct.colours && (
+                          <div className="specs-row-mini">
+                            <span className="specs-key">Colours:</span>
+                            <span className="specs-val">{fullDetailProduct.colours}</span>
+                          </div>
+                        )}
+                        {fullDetailProduct.moq && (
+                          <div className="specs-row-mini">
+                            <span className="specs-key">MOQ:</span>
+                            <span className="specs-val">{fullDetailProduct.moq}</span>
+                          </div>
+                        )}
+                        <div className="specs-row-mini">
+                          <span className="specs-key">Pattern:</span>
+                          <span className="specs-val">{fullDetailProduct.pattern || "Regular Fit / Printed"}</span>
+                        </div>
+                        <div className="specs-row-mini">
+                          <span className="specs-key">Wash Care:</span>
+                          <span className="specs-val">{fullDetailProduct.washCare || "Machine Washable"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Reviews Accordion */}
+                <div className="detail-accordion-item">
+                  <button 
+                    className="detail-accordion-header"
+                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'reviews' ? null : 'reviews')}
+                  >
+                    <span>Reviews ({reviewsList.filter(rev => rev.productName === fullDetailProduct.title || rev.productName === fullDetailProduct.name).length})</span>
+                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'reviews' ? 'rotated' : ''}`} />
+                  </button>
+                  {activeDetailAccordion === 'reviews' && (
+                    <div className="detail-accordion-content">
+                      {(() => {
+                        const productReviews = reviewsList.filter(rev => 
+                          rev.productName === fullDetailProduct.title || 
+                          rev.productName === fullDetailProduct.name
+                        );
+                        if (productReviews.length === 0) {
+                          return <p className="no-reviews-text">No reviews yet. Be the first to review this product!</p>;
+                        }
+                        return (
+                          <div className="reviews-accordion-list">
+                            {productReviews.map(rev => (
+                              <div key={rev.id} className="review-accordion-card">
+                                <div className="review-card-top">
+                                  <span className="review-cust-name">{rev.customerName}</span>
+                                  <span className="review-date">{rev.date}</span>
+                                </div>
+                                <div className="review-rating-stars">
+                                  {Array.from({ length: 5 }, (_, i) => (
+                                    <Star 
+                                      key={i} 
+                                      size={12} 
+                                      fill={i < rev.rating ? "#FFCC00" : "none"} 
+                                      stroke={i < rev.rating ? "#FFCC00" : "#ccc"} 
+                                    />
+                                  ))}
+                                </div>
+                                <p className="review-comment-text">{rev.comment}</p>
+                                {rev.reply && (
+                                  <div className="review-admin-reply">
+                                    <span className="reply-badge">Seller Reply:</span>
+                                    <p className="reply-text">{rev.reply}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Shipping Info Accordion */}
+                <div className="detail-accordion-item">
+                  <button 
+                    className="detail-accordion-header"
+                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'shipping' ? null : 'shipping')}
+                  >
+                    <span>Shipping Information</span>
+                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'shipping' ? 'rotated' : ''}`} />
+                  </button>
+                  {activeDetailAccordion === 'shipping' && (
+                    <div className="detail-accordion-content">
+                      <ul className="shipping-info-list" style={{ paddingLeft: '20px', listStyleType: 'disc', margin: 0 }}>
+                        <li style={{ marginBottom: '6px' }}>Free shipping on all orders above ₹999.</li>
+                        <li style={{ marginBottom: '6px' }}>Standard delivery takes 3-5 business days depending on location.</li>
+                        <li style={{ marginBottom: '6px' }}>Cash on Delivery (COD) is available on all eligible postal addresses.</li>
+                        <li style={{ marginBottom: '6px' }}>We offer easy 7-day hassle-free returns and exchanges.</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+              </div>
 
             </div>
 
@@ -2013,29 +1459,132 @@ export default function ShopView({ authUser, setAuthUser }) {
               {allProducts
                 .filter(p => p.category === fullDetailProduct.category && p.id !== fullDetailProduct.id)
                 .slice(0, 4)
-                .map((simProd) => (
-                  <div 
-                    key={simProd.id} 
-                    className={`product-card shop-prod-card ${getThemeClass(simProd)}`}
-                    onClick={() => {
-                      setFullDetailProduct(simProd);
-                      setModalQty(1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="prod-img-wrapper">
-                      <img src={simProd.image} alt={simProd.title} className="prod-img" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
-                    </div>
-                    <div className="prod-details">
-                      <span className="prod-card-category">{simProd.category} {simProd.subCategory ? `| ${simProd.subCategory}` : ''}</span>
-                      <h4 className="prod-card-title">{simProd.title}</h4>
-                      <div className="prod-card-price-row">
-                        <span className="prod-card-price">₹{simProd.price.toLocaleString()}</span>
+                .map((simProd) => {
+                  const isClothing = simProd.category === 'CLOTHING';
+                  if (isClothing) {
+                    const brandName = simProd.modelNo ? "TIKQ Kids" : "Mithira Collection";
+                    const originalPrice = Math.round(simProd.price * 1.5);
+                    const discountPercentage = Math.round(((originalPrice - simProd.price) / originalPrice) * 100);
+                    const isWishlisted = wishlist.includes(simProd.id);
+                    const isInCart = cart.includes(simProd.id);
+                    const inStock = isProductInStock(simProd);
+
+                    return (
+                      <div 
+                        key={simProd.id} 
+                        className="clothing-product-card animate-fade-in-up"
+                        onClick={() => {
+                          setFullDetailProduct(simProd);
+                          setModalQty(1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(simProd); setModalQty(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                          <div className="clothing-discount-badge">
+                            {discountPercentage}% OFF
+                          </div>
+                          
+                          <button 
+                            className={`clothing-wishlist-float-btn ${isWishlisted ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); toggleWishlist(simProd.id); }}
+                            aria-label="Add to Wishlist"
+                          >
+                            <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
+                          </button>
+
+                          <img src={simProd.image} alt={simProd.title} className="clothing-img" />
+
+                          <div className="clothing-hover-overlay">
+                            <button 
+                              className={`clothing-hover-action-btn hover-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleWishlist(simProd.id); }}
+                              title="Add to Wishlist"
+                            >
+                              <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+                            </button>
+                            <button 
+                              className="clothing-hover-action-btn hover-quickview-btn"
+                              onClick={(e) => { e.stopPropagation(); setQuickViewProduct(simProd); }}
+                              title="Quick View"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button 
+                              className={`clothing-hover-action-btn hover-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(simProd.id, simProd.title); }}
+                              title="Add to Cart"
+                            >
+                              <ShoppingCart size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="clothing-info-section">
+                          <div className="clothing-brand-row">
+                            <span className="clothing-brand-name">{brandName}</span>
+                            <div className="clothing-stock-badge">
+                              {inStock ? (
+                                <span className="stock-status-in">In Stock</span>
+                              ) : (
+                                <span className="stock-status-out">Out of Stock</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <h4 className="clothing-product-title">
+                            {simProd.title}
+                          </h4>
+
+                          <div className="clothing-rating-badge-container">
+                            <div className="clothing-rating-pill-green">
+                              <span>{(simProd.rating || 5).toFixed(1)}</span>
+                              <span className="rating-star-icon">★</span>
+                              <span className="rating-divider">|</span>
+                              <span className="rating-count">{simProd.reviews || 0}</span>
+                            </div>
+                          </div>
+
+                          <div className="clothing-price-and-action">
+                            <div className="clothing-price-box">
+                              <span className="clothing-selling-price">₹{simProd.price.toLocaleString()}</span>
+                              <span className="clothing-original-price">₹{originalPrice.toLocaleString()}</span>
+                            </div>
+                            <button 
+                              className={`clothing-card-add-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(simProd.id, simProd.title); }}
+                            >
+                              {isInCart ? "IN CART" : "ADD TO CART"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div 
+                      key={simProd.id} 
+                      className={`product-card shop-prod-card ${getThemeClass(simProd)}`}
+                      onClick={() => {
+                        setFullDetailProduct(simProd);
+                        setModalQty(1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="prod-img-wrapper">
+                        <img src={simProd.image} alt={simProd.title} className="prod-img" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+                      </div>
+                      <div className="prod-details">
+                        <span className="prod-card-category">{simProd.category} {simProd.subCategory ? `| ${simProd.subCategory}` : ''}</span>
+                        <h4 className="prod-card-title">{simProd.title}</h4>
+                        <div className="prod-card-price-row">
+                          <span className="prod-card-price">₹{simProd.price.toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
 
@@ -2549,74 +2098,167 @@ export default function ShopView({ authUser, setAuthUser }) {
             {currentProducts.length > 0 ? (
               <>
                 <div className="shop-products-grid animate-fade-in-up">
-                  {currentProducts.map((prod) => (
-                    <div 
-                      key={prod.id} 
-                      className={`product-card shop-prod-card ${getThemeClass(prod)}`}
-                      onClick={() => setQuickViewProduct(prod)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="prod-img-wrapper" style={{ aspectRatio: '1 / 1.15' }}>
-                        {/* Gold Crown Motif on top-left */}
-                        <div className="prod-card-crown-motif">
-                          <img src={logoImg} alt="Logo" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
-                        </div>
-                        
-                        {/* Wishlist Button on top-right */}
-                        <button 
-                          className={`prod-wishlist-btn ${wishlist.includes(prod.id) ? 'active' : ''}`}
-                          onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
-                          aria-label="Add to Wishlist"
+                  {currentProducts.map((prod) => {
+                    const isClothing = prod.category === 'CLOTHING';
+                    
+                    if (isClothing) {
+                      const brandName = prod.modelNo ? "TIKQ Kids" : "Mithira Collection";
+                      const originalPrice = Math.round(prod.price * 1.5);
+                      const discountPercentage = Math.round(((originalPrice - prod.price) / originalPrice) * 100);
+                      const isWishlisted = wishlist.includes(prod.id);
+                      const isInCart = cart.includes(prod.id);
+                      const inStock = isProductInStock(prod);
+
+                      return (
+                        <div 
+                          key={prod.id} 
+                          className="clothing-product-card animate-fade-in-up"
+                          onClick={() => setFullDetailProduct(prod)}
                         >
-                          <Heart size={16} fill={wishlist.includes(prod.id) ? "currentColor" : "none"} />
-                        </button>
-                        
-                        <img src={prod.image} alt={prod.title} className="prod-img" />
-                        
-                        {/* Hover Actions */}
-                        <div className="shop-card-hover-overlay">
-                          <button 
-                            className="shop-action-icon-btn quick-view-btn"
-                            onClick={(e) => { e.stopPropagation(); setQuickViewProduct(prod); }}
-                            title="Quick View"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button 
-                            className={`shop-action-icon-btn add-cart-btn ${cart.includes(prod.id) ? 'in-cart' : ''}`}
-                            onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
-                            title="Add to Cart"
-                          >
-                            <ShoppingCart size={18} />
-                          </button>
+                          <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); }}>
+                            {/* Discount Badge */}
+                            <div className="clothing-discount-badge">
+                              {discountPercentage}% OFF
+                            </div>
+                            
+                            {/* Wishlist floating button (top-right of image) */}
+                            <button 
+                              className={`clothing-wishlist-float-btn ${isWishlisted ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                              aria-label="Add to Wishlist"
+                            >
+                              <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
+                            </button>
+
+                            <img src={prod.image} alt={prod.title} className="clothing-img" />
+
+                            {/* Image Hover Overlay */}
+                            <div className="clothing-hover-overlay">
+                              <button 
+                                className={`clothing-hover-action-btn hover-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                                title="Add to Wishlist"
+                              >
+                                <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+                              </button>
+                              <button 
+                                className="clothing-hover-action-btn hover-quickview-btn"
+                                onClick={(e) => { e.stopPropagation(); setQuickViewProduct(prod); }}
+                                title="Quick View"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button 
+                                className={`clothing-hover-action-btn hover-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
+                                title="Add to Cart"
+                              >
+                                <ShoppingCart size={16} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="clothing-info-section">
+                            <div className="clothing-brand-row">
+                              <span className="clothing-brand-name">{brandName}</span>
+                              <div className="clothing-stock-badge">
+                                {inStock ? (
+                                  <span className="stock-status-in">In Stock</span>
+                                ) : (
+                                  <span className="stock-status-out">Out of Stock</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <h4 className="clothing-product-title" onClick={() => setFullDetailProduct(prod)}>
+                              {prod.title}
+                            </h4>
+
+                            <div className="clothing-rating-badge-container">
+                              <div className="clothing-rating-pill-green">
+                                <span>{(prod.rating || 5).toFixed(1)}</span>
+                                <span className="rating-star-icon">★</span>
+                                <span className="rating-divider">|</span>
+                                <span className="rating-count">{prod.reviews || 0}</span>
+                              </div>
+                            </div>
+
+                            <div className="clothing-price-and-action">
+                              <div className="clothing-price-box">
+                                <span className="clothing-selling-price">₹{prod.price.toLocaleString()}</span>
+                                <span className="clothing-original-price">₹{originalPrice.toLocaleString()}</span>
+                              </div>
+                              <button 
+                                className={`clothing-card-add-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
+                              >
+                                {isInCart ? "IN CART" : "ADD TO CART"}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      );
+                    }
 
-                      {/* Details Footer - category, name, price, button */}
-                      <div className="prod-details">
-                        <span className="prod-card-category">{prod.category} {prod.subCategory ? `| ${prod.subCategory}` : ''}</span>
-                        <h4 
-                          className="prod-card-title"
-                          onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); }}
-                        >
-                          {prod.title}
-                        </h4>
-
-                        <div className="prod-card-price-row">
-                          <span className="prod-card-price">₹{prod.price.toLocaleString()}</span>
+                    // For non-clothing products, keep the original design exactly
+                    return (
+                      <div 
+                        key={prod.id} 
+                        className={`product-card shop-prod-card ${getThemeClass(prod)}`}
+                        onClick={() => setQuickViewProduct(prod)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="prod-img-wrapper" style={{ aspectRatio: '1 / 1.15' }}>
+                          <div className="prod-card-crown-motif">
+                            <img src={logoImg} alt="Logo" style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
+                          </div>
                           <button 
-                            className={`prod-card-buy-pill ${cart.includes(prod.id) ? 'active' : ''}`}
-                            onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
+                            className={`prod-wishlist-btn ${wishlist.includes(prod.id) ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                            aria-label="Add to Wishlist"
                           >
-                            {cart.includes(prod.id) ? "In Cart" : "ADD TO CART"}
+                            <Heart size={16} fill={wishlist.includes(prod.id) ? "currentColor" : "none"} />
                           </button>
+                          <img src={prod.image} alt={prod.title} className="prod-img" />
+                          <div className="shop-card-hover-overlay">
+                            <button 
+                              className="shop-action-icon-btn quick-view-btn"
+                              onClick={(e) => { e.stopPropagation(); setQuickViewProduct(prod); }}
+                              title="Quick View"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button 
+                              className={`shop-action-icon-btn add-cart-btn ${cart.includes(prod.id) ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
+                              title="Add to Cart"
+                            >
+                              <ShoppingCart size={18} />
+                            </button>
+                          </div>
                         </div>
+                        <div className="prod-details">
+                          <span className="prod-card-category">{prod.category} {prod.subCategory ? `| ${prod.subCategory}` : ''}</span>
+                          <h4 
+                            className="prod-card-title"
+                            onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); }}
+                          >
+                            {prod.title}
+                          </h4>
+                          <div className="prod-card-price-row">
+                            <span className="prod-card-price">₹{prod.price.toLocaleString()}</span>
+                            <button 
+                              className={`prod-card-buy-pill ${cart.includes(prod.id) ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(prod.id, prod.title); }}
+                            >
+                              {cart.includes(prod.id) ? "In Cart" : "ADD TO CART"}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="celeb-shimmer-sweep"></div>
                       </div>
-
-                      {/* Glowing animation shimmer element */}
-                      <div className="celeb-shimmer-sweep"></div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Pagination Controls */}
@@ -2672,7 +2314,7 @@ export default function ShopView({ authUser, setAuthUser }) {
       {/* 1. Quick View Side-by-Side Modal */}
       {quickViewProduct && (() => {
         const images = getAllProductImages(quickViewProduct);
-        const colors = getProductColors(quickViewProduct);
+        const colors = getProductThemedColors(quickViewProduct);
 
         const handlePrevThumbnail = () => {
           setActiveImageIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));

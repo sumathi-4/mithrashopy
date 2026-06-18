@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { apiService } from '../services/apiService';
+import clothingUser1 from '../assets/clothing_user_1.jpg';
+import clothingUser2 from '../assets/clothing_user_2.jpg';
+import clothingUser3 from '../assets/clothing_user_3.jpg';
 
 export default function ProductsSection({ authUser, setAuthUser }) {
   const [activeTab, setActiveTab] = useState('ALL');
@@ -51,7 +54,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       price: "₹1,699",
       rating: 5,
       reviews: 128,
-      image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
+      image: clothingUser1,
       badge: "BEST SELLER"
     },
     {
@@ -114,7 +117,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       price: "₹1,499",
       rating: 5,
       reviews: 42,
-      image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=1000&q=80",
+      image: clothingUser1,
       badge: "NEW",
       desc: "Vibrant traditional children's frock crafted in premium south cotton, featuring bright ethnic accents and details."
     },
@@ -169,7 +172,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       price: "₹1,299",
       rating: 5,
       reviews: 64,
-      image: "https://images.unsplash.com/photo-1608748010899-18f300247112?auto=format&fit=crop&w=1000&q=80",
+      image: clothingUser2,
       badge: "NEW",
       desc: "Premium organic cotton kurta paired with a matching dupatta, reflecting heritage ethnic motifs."
     }
