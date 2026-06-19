@@ -4,17 +4,15 @@
   --primary-rose: #8CC63F;      /* Brand Primary Green */
   --primary-rose-dark: #74a632;
   --bg-topbar: #1a1a1a;         /* Clean Dark Topbar */
-  --text-dark: #111111;         /* Deep dark text */
-  --text-muted: #555555;        /* Muted dark charcoal text */
+  --text-dark: #111111;         /* Zara/H&M style deep dark text */
+  --text-muted: #666666;        /* Muted gray text */
   --gold-accent: #FF8A00;       /* Brand Secondary Orange Accent */
-  --bg-champagne: #FFF3E0;      /* Highly warm peach/orange background tint */
-  --bg-soft-green: #EAF7E8;     /* Highly warm green background tint */
-  --font-serif: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif; /* Curvy brand header font */
+  --bg-champagne: #F4FBF0;      /* Super soft brand warm white/peach */
+  --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-sm: 0 4px 12px rgba(140, 198, 63, 0.1);
-  --shadow-md: 0 12px 36px rgba(255, 138, 0, 0.12);
-  --border-radius-curvy: 24px;
+  --shadow-sm: 0 4px 12px rgba(140, 198, 63, 0.08); /* Soft green shadow */
+  --shadow-md: 0 12px 36px rgba(140, 198, 63, 0.12); /* Soft green shadow */
 }
 
 * {
@@ -26,7 +24,7 @@
 body {
   font-family: var(--font-sans);
   color: var(--text-dark);
-  background-color: #FFFDF0; /* Extremely warm cotton-brand background */
+  background-color: #fff;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -2591,8 +2589,8 @@ ul {
 /* 3. Sitemap Footer (Glassmorphic Brown Glow & Golden Headings) */
 .sitemap-section {
   padding: 70px 5%;
-  background: linear-gradient(135deg, #1a1a1a 0%, #111111 100%); /* Deep charcoal gradient background */
-  border-top: 1px solid rgba(255, 138, 0, 0.15); /* Delicate orange divider border */
+  background: linear-gradient(135deg, #231613 0%, #170d0b 100%); /* Premium deep brown gradient */
+  border-top: 1px solid rgba(212, 175, 55, 0.15); /* Delicate gold divider border */
   position: relative;
   box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.3);
 }
@@ -2609,7 +2607,7 @@ ul {
   font-family: var(--font-serif);
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--gold-accent); /* Brand Orange heading color */
+  color: #d4af37; /* Luxury golden heading color from reference image */
   margin-bottom: 25px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2623,7 +2621,7 @@ ul {
   bottom: -6px;
   width: 30px;
   height: 1.5px;
-  background-color: var(--gold-accent); /* Orange underscore */
+  background-color: #d4af37; /* Gold heading underscore */
 }
 
 .sitemap-column ul {
@@ -2635,23 +2633,23 @@ ul {
 .sitemap-column ul a {
   font-family: var(--font-sans);
   font-size: 0.85rem;
-  color: #ffffff; /* Clean white link text */
+  color: #ffffff; /* Clean white link text as requested */
   opacity: 0.8;
   transition: var(--transition);
 }
 
 .sitemap-column ul a:hover {
-  color: var(--gold-accent); /* Brand Orange highlight on hover */
+  color: #d4af37; /* Shifts to golden highlight on hover */
   opacity: 1;
   padding-left: 4px;
-  text-shadow: 0 0 8px rgba(255, 138, 0, 0.4); /* Glassmorphic orange glow */
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4); /* Glassmorphic golden glow */
 }
 
 /* Brand Column Details */
 .brand-column .brand-logo {
   font-family: var(--font-serif);
   font-size: 1.8rem;
-  color: var(--gold-accent); /* Brand Orange logo branding */
+  color: #d4af37; /* Gold logo branding */
   margin-bottom: 8px;
 }
 
@@ -2673,9 +2671,9 @@ ul {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background-color: rgba(255, 138, 0, 0.1);
-  border: 1px solid rgba(255, 138, 0, 0.3);
-  color: var(--gold-accent); /* Orange icon */
+  background-color: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #d4af37; /* Gold icon */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2683,10 +2681,10 @@ ul {
 }
 
 .social-circle:hover {
-  background-color: var(--gold-accent);
-  color: #111111;
+  background-color: #d4af37;
+  color: #170d0b;
   transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(255, 138, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 }
 
 /* Contact Column Details */
@@ -2708,7 +2706,7 @@ ul {
 }
 
 .contact-icon {
-  color: var(--gold-accent); /* Orange contact icon */
+  color: #d4af37; /* Gold contact icon */
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -7633,7 +7631,7 @@ ul {
 /* WHY CHOOSE US SECTION */
 .why-choose-section {
   padding: 80px 5%;
-  background-color: var(--bg-champagne);
+  background-color: #fcf8f6;
   width: 100%;
 }
 
@@ -7696,7 +7694,7 @@ ul {
 /* ABOUT PREVIEW SECTION */
 .about-preview-section {
   padding: 100px 5%;
-  background-color: var(--bg-soft-green);
+  background-color: #ffffff;
   width: 100%;
 }
 

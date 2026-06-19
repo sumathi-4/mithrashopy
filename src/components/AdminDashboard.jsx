@@ -403,7 +403,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
 
   // Form states & Modals states
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [] });
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -875,6 +875,342 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   
   const totalOrdersCount = Object.values(orderBreakdown).reduce((a, b) => a + b, 0);
 
+  const renderCategorySpecificFields = (item, setItem) => {
+    const category = item.category || '';
+    const lower = category.toLowerCase();
+    const attrs = item.attributes || {};
+
+    const updateAttr = (key, val) => {
+      setItem({
+        ...item,
+        attributes: {
+          ...attrs,
+          [key]: val
+        }
+      });
+    };
+
+    if (lower.includes('clothing')) {
+      return (
+        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Clothing Custom Specifications</h4>
+          <div className="form-field-row">
+            <div className="form-field">
+              <label>Sizes (e.g. XS, S, M, L, XL)</label>
+              <input type="text" className="modal-input" value={attrs.size || ''} onChange={(e) => updateAttr('size', e.target.value)} placeholder="XS, S, M, L, XL" />
+            </div>
+            <div className="form-field">
+              <label>Fabric</label>
+              <input type="text" className="modal-input" value={attrs.fabric || ''} onChange={(e) => updateAttr('fabric', e.target.value)} placeholder="e.g. Cotton, Georgette" />
+            </div>
+          </div>
+          <div className="form-field-row" style={{ marginTop: '10px' }}>
+            <div className="form-field">
+              <label>Fit</label>
+              <input type="text" className="modal-input" value={attrs.fit || ''} onChange={(e) => updateAttr('fit', e.target.value)} placeholder="e.g. Regular Fit, Slim" />
+            </div>
+            <div className="form-field">
+              <label>Sleeve</label>
+              <input type="text" className="modal-input" value={attrs.sleeve || ''} onChange={(e) => updateAttr('sleeve', e.target.value)} placeholder="e.g. Sleeveless, Full Sleeve" />
+            </div>
+          </div>
+        </div>
+      );
+    } else if (lower.includes('stationery')) {
+      return (
+        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Stationery Custom Specifications</h4>
+          <div className="form-field-row">
+            <div className="form-field">
+              <label>Page Count</label>
+              <input type="text" className="modal-input" value={attrs.pages || ''} onChange={(e) => updateAttr('pages', e.target.value)} placeholder="e.g. 160 Pages" />
+            </div>
+            <div className="form-field">
+              <label>Material</label>
+              <input type="text" className="modal-input" value={attrs.material || ''} onChange={(e) => updateAttr('material', e.target.value)} placeholder="e.g. Acid-free Paper" />
+            </div>
+          </div>
+          <div className="form-field-row" style={{ marginTop: '10px' }}>
+            <div className="form-field">
+              <label>Binding</label>
+              <input type="text" className="modal-input" value={attrs.binding || ''} onChange={(e) => updateAttr('binding', e.target.value)} placeholder="e.g. Hardbound, Spiral" />
+            </div>
+            <div className="form-field">
+              <label>Paper Type</label>
+              <input type="text" className="modal-input" value={attrs.paperType || ''} onChange={(e) => updateAttr('paperType', e.target.value)} placeholder="e.g. Ruled, Dotted" />
+            </div>
+          </div>
+        </div>
+      );
+    } else if (lower.includes('gift')) {
+      return (
+        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Gifts Custom Specifications</h4>
+          <div className="form-field-row">
+            <div className="form-field">
+              <label>Occasion</label>
+              <input type="text" className="modal-input" value={attrs.occasion || ''} onChange={(e) => updateAttr('occasion', e.target.value)} placeholder="e.g. Birthday, Anniversary" />
+            </div>
+            <div className="form-field">
+              <label>Personalization Options</label>
+              <select className="modal-input" value={attrs.personalization || 'No'} onChange={(e) => updateAttr('personalization', e.target.value)}>
+                <option value="No">No Personalization</option>
+                <option value="Yes (Name Only)">Yes (Name Only)</option>
+                <option value="Yes (Custom Text/Message)">Yes (Custom Text/Message)</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-field-row" style={{ marginTop: '10px' }}>
+            <div className="form-field">
+              <label>Gift Wrap Available</label>
+              <select className="modal-input" value={attrs.giftWrap || 'Yes'} onChange={(e) => updateAttr('giftWrap', e.target.value)}>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      );
+    } else if (lower.includes('accessor')) {
+      return (
+        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Accessories Custom Specifications</h4>
+          <div className="form-field-row">
+            <div className="form-field">
+              <label>Material</label>
+              <input type="text" className="modal-input" value={attrs.material || ''} onChange={(e) => updateAttr('material', e.target.value)} placeholder="e.g. PU Leather, Stainless Steel" />
+            </div>
+            <div className="form-field">
+              <label>Warranty</label>
+              <input type="text" className="modal-input" value={attrs.warranty || ''} onChange={(e) => updateAttr('warranty', e.target.value)} placeholder="e.g. 6 Months, 1 Year" />
+            </div>
+          </div>
+          <div className="form-field-row" style={{ marginTop: '10px' }}>
+            <div className="form-field">
+              <label>Accessories Type</label>
+              <input type="text" className="modal-input" value={attrs.type || ''} onChange={(e) => updateAttr('type', e.target.value)} placeholder="e.g. Handbag, Wallet, Belt" />
+            </div>
+          </div>
+        </div>
+      );
+    } else if (lower.includes('fancy') || lower.includes('item')) {
+      return (
+        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Fancy Items Custom Specifications</h4>
+          <div className="form-field-row">
+            <div className="form-field">
+              <label>Theme</label>
+              <input type="text" className="modal-input" value={attrs.theme || ''} onChange={(e) => updateAttr('theme', e.target.value)} placeholder="e.g. Traditional, Quirky" />
+            </div>
+            <div className="form-field">
+              <label>Usage</label>
+              <input type="text" className="modal-input" value={attrs.usage || ''} onChange={(e) => updateAttr('usage', e.target.value)} placeholder="e.g. Party Wear, Gift" />
+            </div>
+          </div>
+          <div className="form-field-row" style={{ marginTop: '10px' }}>
+            <div className="form-field">
+              <label>Main Component</label>
+              <input type="text" className="modal-input" value={attrs.component || ''} onChange={(e) => updateAttr('component', e.target.value)} placeholder="e.g. Beads, Alloy, Stones" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderVariantManager = (item, setItem) => {
+    const variants = item.variants || [];
+
+    const addVariant = () => {
+      setItem({
+        ...item,
+        variants: [
+          ...variants,
+          { size: '', color: '', stock: 0, price: null, sku: '', image: '' }
+        ]
+      });
+    };
+
+    const updateVariantField = (index, field, value) => {
+      const variantsCopy = [...variants];
+      variantsCopy[index] = {
+        ...variantsCopy[index],
+        [field]: value
+      };
+      setItem({
+        ...item,
+        variants: variantsCopy
+      });
+    };
+
+    const removeVariant = (index) => {
+      setItem({
+        ...item,
+        variants: variants.filter((_, idx) => idx !== index)
+      });
+    };
+
+    return (
+      <div className="dynamic-attrs-section" style={{ border: '1px solid #FF8A00', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#FFFDF9' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h4 style={{ color: '#FF8A00', margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Product Variants / Color Variants</h4>
+          <button type="button" className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.78rem', backgroundColor: '#8CC63F', border: 'none' }} onClick={addVariant}>
+            + Add Variant
+          </button>
+        </div>
+        
+        {variants.length === 0 ? (
+          <p style={{ fontSize: '0.8rem', color: '#666', margin: '10px 0' }}>No variants added yet. Products will use base price, image, and stock unless variants are defined.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #ddd', textAlign: 'left' }}>
+                  <th style={{ padding: '6px' }}>Color</th>
+                  <th style={{ padding: '6px' }}>Size</th>
+                  <th style={{ padding: '6px' }}>Price (INR)</th>
+                  <th style={{ padding: '6px' }}>Stock</th>
+                  <th style={{ padding: '6px' }}>SKU</th>
+                  <th style={{ padding: '6px' }}>Variant Image</th>
+                  <th style={{ padding: '6px', textAlign: 'center' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variants.map((v, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Red" 
+                        value={v.color || ''} 
+                        onChange={(e) => updateVariantField(index, 'color', e.target.value)}
+                        style={{ width: '80px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. M" 
+                        value={v.size || ''} 
+                        onChange={(e) => updateVariantField(index, 'size', e.target.value)}
+                        style={{ width: '60px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="number" 
+                        placeholder="Base price fallback" 
+                        value={v.price === null || v.price === undefined ? '' : v.price} 
+                        onChange={(e) => updateVariantField(index, 'price', e.target.value === '' ? null : parseFloat(e.target.value))}
+                        style={{ width: '100px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="number" 
+                        placeholder="0" 
+                        value={v.stock || 0} 
+                        onChange={(e) => updateVariantField(index, 'stock', parseInt(e.target.value, 10) || 0)}
+                        style={{ width: '60px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="SKU" 
+                        value={v.sku || ''} 
+                        onChange={(e) => updateVariantField(index, 'sku', e.target.value)}
+                        style={{ width: '80px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        {v.image && (
+                          <img src={v.image} alt="variant" style={{ width: '24px', height: '24px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                        )}
+                        <label htmlFor={`var-file-upload-${index}`} style={{ cursor: 'pointer', padding: '2px 6px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>
+                          Upload
+                        </label>
+                        <input 
+                          type="file" 
+                          id={`var-file-upload-${index}`} 
+                          style={{ display: 'none' }} 
+                          accept="image/*" 
+                          onChange={(e) => handleVariantImageUpload(e, item, setItem, index)} 
+                        />
+                      </div>
+                    </td>
+                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                      <button type="button" className="btn-secondary" style={{ padding: '2px 6px', fontSize: '0.75rem', color: 'red', borderColor: 'red' }} onClick={() => removeVariant(index)}>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const handleLocalImageUpload = async (e, item, setItem) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const uploadedUrl = await apiService.uploadImage(file.name, reader.result);
+        if (uploadedUrl) {
+          const currentVal = Array.isArray(item.images) 
+            ? item.images.join(', ') 
+            : (item.images || item.image || '');
+          const currentImages = currentVal ? currentVal.split(',').map(img => img.trim()).filter(Boolean) : [];
+          setItem({
+            ...item,
+            images: [...currentImages, uploadedUrl].join(', ')
+          });
+          alert('Image uploaded successfully and added to product gallery!');
+        }
+      } catch (err) {
+        console.error('Image upload failed', err);
+        alert('Failed to upload image. Please try again.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVariantImageUpload = async (e, item, setItem, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const uploadedUrl = await apiService.uploadImage(file.name, reader.result);
+        if (uploadedUrl) {
+          const variantsCopy = [...(item.variants || [])];
+          variantsCopy[index] = {
+            ...variantsCopy[index],
+            image: uploadedUrl
+          };
+          setItem({
+            ...item,
+            variants: variantsCopy
+          });
+          alert('Variant image uploaded successfully!');
+        }
+      } catch (err) {
+        console.error('Variant image upload failed', err);
+        alert('Failed to upload variant image. Please try again.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handlers for Add/Edit/Delete Product Operations
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
@@ -894,7 +1230,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       status: newProduct.status,
       image: mainImg,
       images: imagesArray.length > 0 ? imagesArray : [mainImg],
-      description: newProduct.description
+      description: newProduct.description,
+      attributes: newProduct.attributes || {},
+      variants: newProduct.variants || []
     };
 
     try {
@@ -904,7 +1242,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setProducts([{ ...productToAdd, id: Date.now() }, ...products]);
     }
     setShowAddProductModal(false);
-    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '' });
+    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [] });
   };
 
   const handleEditProductSubmit = async (e) => {
@@ -920,7 +1258,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       price: parseFloat(editProductItem.price),
       stock: parseInt(editProductItem.stock, 10),
       image: imagesArray[0] || editProductItem.image,
-      images: imagesArray.length > 0 ? imagesArray : (editProductItem.image ? [editProductItem.image] : [])
+      images: imagesArray.length > 0 ? imagesArray : (editProductItem.image ? [editProductItem.image] : []),
+      variants: editProductItem.variants || []
     };
 
     try {
@@ -3992,15 +4331,33 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </div>
               </div>
 
+              {renderCategorySpecificFields(newProduct, setNewProduct)}
+
+              {renderVariantManager(newProduct, setNewProduct)}
+
               <div className="form-field">
                 <label>Images (Comma separated URLs)</label>
                 <input 
                   type="text" 
-                  value={newProduct.images}
+                  value={Array.isArray(newProduct.images) ? newProduct.images.join(', ') : (newProduct.images || '')}
                   onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
                   placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
                   className="modal-input"
+                  style={{ marginBottom: '8px' }}
                 />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    Upload Local File / Image
+                  </label>
+                  <input 
+                    type="file" 
+                    id="add-prod-file-upload" 
+                    style={{ display: 'none' }} 
+                    accept="image/*" 
+                    onChange={(e) => handleLocalImageUpload(e, newProduct, setNewProduct)} 
+                  />
+                  <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
+                </div>
               </div>
 
               <div className="form-field">
@@ -4122,6 +4479,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </div>
               </div>
 
+              {renderCategorySpecificFields(editProductItem, setEditProductItem)}
+
+              {renderVariantManager(editProductItem, setEditProductItem)}
+
               <div className="form-field">
                 <label>Images (Comma separated URLs)</label>
                 <input 
@@ -4130,7 +4491,21 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   onChange={(e) => setEditProductItem({ ...editProductItem, images: e.target.value })}
                   placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
                   className="modal-input"
+                  style={{ marginBottom: '8px' }}
                 />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    Upload Local File / Image
+                  </label>
+                  <input 
+                    type="file" 
+                    id="edit-prod-file-upload" 
+                    style={{ display: 'none' }} 
+                    accept="image/*" 
+                    onChange={(e) => handleLocalImageUpload(e, editProductItem, setEditProductItem)} 
+                  />
+                  <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
+                </div>
               </div>
 
               <div className="form-field">
@@ -4202,6 +4577,20 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   </div>
                 </div>
               </div>
+
+              {viewProductItem.attributes && Object.keys(viewProductItem.attributes).length > 0 && (
+                <div style={{ marginBottom: '16px', background: '#f6faf0', padding: '16px', borderRadius: '12px', border: '1px solid #dbe8cb' }}>
+                  <span className="spec-lbl" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#8CC63F' }}>Category Specifications:</span>
+                  <div className="view-spec-table" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    {Object.entries(viewProductItem.attributes).map(([key, val]) => (
+                      <div key={key} className="spec-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eae6df', paddingBottom: '6px' }}>
+                        <span className="spec-lbl" style={{ textTransform: 'capitalize' }}>{key}:</span>
+                        <span className="spec-val bold">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Multiple Images Gallery */}
               {Array.isArray(viewProductItem.images) && viewProductItem.images.length > 0 && (
@@ -4861,6 +5250,22 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {viewOrderItem.status}
                     </span>
                   </div>
+                  {viewOrderItem.items && Array.isArray(viewOrderItem.items) && (
+                    <div style={{ marginTop: '16px', background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df' }}>
+                      <span className="spec-lbl" style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#FF8A00' }}>Items / Selected Variants Details:</span>
+                      {viewOrderItem.items.map((item, idx) => (
+                        <div key={idx} style={{ borderBottom: idx < viewOrderItem.items.length - 1 ? '1px solid #eae6df' : 'none', paddingBottom: '8px', marginBottom: '8px', fontSize: '0.85rem' }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name} (Qty: {item.quantity})</div>
+                          <div style={{ color: '#666', marginTop: '3px' }}>Catalogue: <span style={{ color: '#000', fontWeight: 500 }}>{item.catalogue || 'Catalogue A'}</span></div>
+                          {item.variant && (item.variant.size || item.variant.color) && (
+                            <div style={{ color: '#8CC63F', fontWeight: 600, marginTop: '3px' }}>
+                              Selected Variant: {item.variant.size ? `Size: ${item.variant.size}` : ''} {item.variant.color ? `| Color: ${item.variant.color}` : ''} {item.variant.sku ? `| SKU: ${item.variant.sku}` : ''} {item.variant.variantId ? `| VarID: ${item.variant.variantId}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               

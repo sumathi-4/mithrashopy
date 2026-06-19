@@ -530,5 +530,15 @@ export const apiService = {
       if (isBackendReachable) throw err;
       return true;
     }
+  },
+
+  async uploadImage(filename, base64Data) {
+    try {
+      const res = await apiRequest('/api/upload', 'POST', { filename, base64Data });
+      return res.url;
+    } catch (err) {
+      console.error('File upload error, returning mock URL');
+      return `https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80`;
+    }
   }
 };

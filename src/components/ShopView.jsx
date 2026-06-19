@@ -350,9 +350,58 @@ const getCategoryThemeClass = (category) => {
 
 const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty) => {
   if (!prod) return null;
+  
+  if (prod.variants && prod.variants.length > 0) {
+    const varColors = getProductThemedColors(prod);
+    const uniqueSizes = [...new Set(prod.variants.map(v => v.size).filter(Boolean))];
+    
+    return (
+      <>
+        {varColors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Color: <span className="color-name">{modalColor || varColors[0]?.name || ""}</span></span>
+            <div className="modal-color-dots">
+              {varColors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  onClick={() => {
+                    setModalColor(c.name);
+                  }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {uniqueSizes.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Select Size</span>
+            <div className="modal-size-pills">
+              {uniqueSizes.map((sz) => (
+                <button 
+                  key={sz}
+                  className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                  onClick={() => setModalSize(sz)}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
   const category = String(prod.category).toUpperCase();
 
   if (category.includes('CLOTHING') || category.includes('DRESS')) {
+    const sizeOptions = prod.attributes?.size 
+      ? prod.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
+      : (prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']);
     return (
       <>
         {/* Colors selector */}
@@ -382,7 +431,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
         <div className="modal-section-block">
           <span className="modal-section-title">Select Size</span>
           <div className="modal-size-pills">
-            {(prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']).map((sz) => (
+            {sizeOptions.map((sz) => (
               <button 
                 key={sz}
                 className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
@@ -463,6 +512,19 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         </div>
 
+        {/* Personalization input */}
+        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Personalization Details:</span>
+            <input 
+              type="text" 
+              className="modal-input" 
+              placeholder="Enter name or message to print..." 
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #eae6df', marginTop: '6px', outline: 'none' }}
+            />
+          </div>
+        )}
+
         {/* Wrapping Paper Selector */}
         <div className="modal-section-block">
           <span className="modal-section-title">Gift Wrapping Theme</span>
@@ -525,6 +587,20 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
 
 const renderCategorySpecs = (prod) => {
   if (!prod) return null;
+
+  if (prod.attributes && Object.keys(prod.attributes).length > 0) {
+    return (
+      <div className="product-detail-specs-table">
+        {Object.entries(prod.attributes).map(([key, val]) => (
+          <div className="spec-row" key={key}>
+            <span className="spec-label" style={{ textTransform: 'capitalize' }}>{key}:</span>
+            <span className="spec-val">{Array.isArray(val) ? val.join(', ') : String(val)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const category = String(prod.category).toUpperCase();
 
   if (category.includes('CLOTHING') || category.includes('DRESS')) {
@@ -645,10 +721,61 @@ const getColorHex = (name) => {
     'Cream': '#fff9c4',
     'Aqua': '#80deea',
     'Navy': '#3949ab',
-    'Maroon': '#880e4f',
     'Olive': '#2e7d32'
   };
   return colors[name] || '#cccccc';
+};
+
+const getSelectedVariant = (prod, color, size) => {
+  if (!prod || !prod.variants || prod.variants.length === 0) return null;
+  // Try exact match for both color and size
+  let matched = prod.variants.find(v => 
+    (color && v.color && String(v.color).toLowerCase() === String(color).toLowerCase()) &&
+    (size && v.size && String(v.size).toLowerCase() === String(size).toLowerCase())
+  );
+  if (!matched && color) {
+    // Fallback to color match
+    matched = prod.variants.find(v => v.color && String(v.color).toLowerCase() === String(color).toLowerCase());
+  }
+  return matched;
+};
+
+const getSimilarProducts = (currentProd, allProds) => {
+  if (!currentProd) return [];
+  
+  // Mandatory filter: must match same category and not be the same product
+  const candidates = allProds.filter(p => p.category === currentProd.category && p.id !== currentProd.id);
+  
+  // Score candidates
+  const scored = candidates.map(p => {
+    let score = 0;
+    
+    // 1. Check colors
+    const currentColors = getProductThemedColors(currentProd).map(c => String(c.name).toLowerCase());
+    const candidateColors = getProductThemedColors(p).map(c => String(c.name).toLowerCase());
+    const commonColors = currentColors.filter(c => candidateColors.includes(c));
+    score += commonColors.length * 3; // 3 points per matching color
+    
+    // 2. Check sub-category
+    if (p.subCategory && currentProd.subCategory && String(p.subCategory).toLowerCase() === String(currentProd.subCategory).toLowerCase()) {
+      score += 5; // 5 points for matching subCategory
+    }
+    
+    // 3. Check attributes/specs (fabric, theme, material, pages, etc.)
+    const currAttrs = currentProd.attributes || {};
+    const candAttrs = p.attributes || {};
+    Object.keys(currAttrs).forEach(key => {
+      if (currAttrs[key] && candAttrs[key] && String(currAttrs[key]).toLowerCase() === String(candAttrs[key]).toLowerCase()) {
+        score += 4; // 4 points for matching custom specifications/styles
+      }
+    });
+    
+    return { product: p, score };
+  });
+  
+  // Sort by score descending
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map(s => s.product);
 };
 
 export default function ShopView({ authUser, setAuthUser }) {
@@ -665,11 +792,20 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [sortBy, setSortBy] = useState('DEFAULT');
   const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
   const [cart, setCart] = useState(() => authUser?.cart || []);
+  const [categoriesList, setCategoriesList] = useState([]);
 
   useEffect(() => {
     setWishlist(authUser?.wishlist || []);
     setCart(authUser?.cart || []);
   }, [authUser]);
+
+  useEffect(() => {
+    apiService.getCategories().then(data => {
+      if (data && data.length > 0) {
+        setCategoriesList(data);
+      }
+    }).catch(console.error);
+  }, []);
 
   const [catalogue, setCatalogue] = useState('A');
   const [priceRange, setPriceRange] = useState(5000);
@@ -707,6 +843,138 @@ export default function ShopView({ authUser, setAuthUser }) {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRating, selectedSize, selectedColor, filterNewArrivals, filterBestSellers, filterOffers]);
+
+  const renderDynamicCategoriesFilter = () => {
+    const rootCats = categoriesList.filter(cat => !cat.parentId && cat.name !== '—');
+    if (rootCats.length === 0) {
+      return (
+        <>
+          <div className="category-group clothing-group">
+            <h4 className={`category-group-title ${activeTab === 'CLOTHING' ? 'active' : ''}`} onClick={() => { setActiveTab('CLOTHING'); setActiveSubTab('ALL'); }}>
+              <span><Shirt size={14} /> CLOTHING</span>
+            </h4>
+            <ul className="category-sub-list">
+              {[
+                { key: 'WOMEN', label: 'Women' },
+                { key: 'MEN', label: 'Men' },
+                { key: 'KIDS', label: 'Kids' },
+                { key: 'BOYS', label: 'Boys' },
+                { key: 'GIRLS', label: 'Girls' }
+              ].map(sub => (
+                <li 
+                  key={sub.key} 
+                  className={activeTab === 'CLOTHING' && activeSubTab === sub.key ? 'active' : ''}
+                  onClick={() => { setActiveTab('CLOTHING'); setActiveSubTab(sub.key); }}
+                >
+                  <span className="subcategory-bullet"></span>
+                  <span className="sub-label">{sub.label}</span>
+                  <span className="sub-count">({getCategorySubCount('CLOTHING', sub.key)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="category-group stationery-group">
+            <h4 className={`category-group-title ${activeTab === 'STATIONERY' ? 'active' : ''}`} onClick={() => { setActiveTab('STATIONERY'); setActiveSubTab('ALL'); }}>
+              <span><BookOpen size={14} /> STATIONERY</span>
+            </h4>
+            <ul className="category-sub-list">
+              {[
+                { key: 'PENS', label: 'Pens' },
+                { key: 'JOURNALS', label: 'Journals' },
+                { key: 'NOTEBOOKS', label: 'Notebooks' },
+                { key: 'SCHOOL', label: 'School Items' }
+              ].map(sub => (
+                <li 
+                  key={sub.key} 
+                  className={activeTab === 'STATIONERY' && activeSubTab === sub.key ? 'active' : ''}
+                  onClick={() => { setActiveTab('STATIONERY'); setActiveSubTab(sub.key); }}
+                >
+                  <span className="subcategory-bullet"></span>
+                  <span className="sub-label">{sub.label}</span>
+                  <span className="sub-count">({getCategorySubCount('STATIONERY', sub.key)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="category-group gifts-group">
+            <h4 className={`category-group-title ${activeTab === 'GIFTS' ? 'active' : ''}`} onClick={() => { setActiveTab('GIFTS'); setActiveSubTab('ALL'); }}>
+              <span><Gift size={14} /> GIFTS</span>
+            </h4>
+            <ul className="category-sub-list">
+              {[
+                { key: 'BIRTHDAY', label: 'Birthday Gifts' },
+                { key: 'WEDDING', label: 'Wedding Gifts' },
+                { key: 'ANNIVERSARY', label: 'Anniversary Gifts' },
+                { key: 'RETURN', label: 'Return Gifts' }
+              ].map(sub => (
+                <li 
+                  key={sub.key} 
+                  className={activeTab === 'GIFTS' && activeSubTab === sub.key ? 'active' : ''}
+                  onClick={() => { setActiveTab('GIFTS'); setActiveSubTab(sub.key); }}
+                >
+                  <span className="subcategory-bullet"></span>
+                  <span className="sub-label">{sub.label}</span>
+                  <span className="sub-count">({getCategorySubCount('GIFTS', sub.key)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="category-group accessories-group">
+            <h4 className={`category-group-title ${activeTab === 'ACCESSORIES' ? 'active' : ''}`} onClick={() => { setActiveTab('ACCESSORIES'); setActiveSubTab('ALL'); }}>
+              <span><Crown size={14} /> ACCESSORIES</span>
+            </h4>
+            <ul className="category-sub-list">
+              {[
+                { key: 'JEWELLERY', label: 'Jewellery' },
+                { key: 'FANCY', label: 'Fancy Items' },
+                { key: 'HAIR', label: 'Hair Accessories' },
+                { key: 'FASHION', label: 'Fashion Accessories' }
+              ].map(sub => (
+                <li 
+                  key={sub.key} 
+                  className={activeTab === 'ACCESSORIES' && activeSubTab === sub.key ? 'active' : ''}
+                  onClick={() => { setActiveTab('ACCESSORIES'); setActiveSubTab(sub.key); }}
+                >
+                  <span className="subcategory-bullet"></span>
+                  <span className="sub-label">{sub.label}</span>
+                  <span className="sub-count">({getCategorySubCount('ACCESSORIES', sub.key)})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      );
+    }
+
+    return rootCats.map(parentCat => {
+      const parentKey = String(parentCat.name).toUpperCase();
+      const subs = categoriesList.filter(cat => String(cat.parentId) === String(parentCat._id));
+      return (
+        <div key={parentCat._id} className="category-group" style={{ marginBottom: '15px' }}>
+          <h4 className={`category-group-title ${activeTab === parentKey ? 'active' : ''}`} onClick={() => { setActiveTab(parentKey); setActiveSubTab('ALL'); }}>
+            <span><Shirt size={14} /> {parentCat.name.toUpperCase()}</span>
+          </h4>
+          <ul className="category-sub-list">
+            {subs.map(sub => {
+              const subKey = String(sub.name).toUpperCase().split(' > ').pop();
+              const displaySubLabel = sub.name.split(' > ').pop();
+              return (
+                <li 
+                  key={sub._id} 
+                  className={activeTab === parentKey && activeSubTab === subKey ? 'active' : ''}
+                  onClick={() => { setActiveTab(parentKey); setActiveSubTab(subKey); }}
+                >
+                  <span className="subcategory-bullet"></span>
+                  <span className="sub-label">{displaySubLabel}</span>
+                  <span className="sub-count">({allProducts.filter(p => String(p.category).toUpperCase().startsWith(parentKey) && String(p.subCategory).toUpperCase() === subKey).length})</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      );
+    });
+  };
 
   // Dynamic mapping helpers
   const getProductSubCategory = (p) => {
@@ -788,10 +1056,32 @@ export default function ShopView({ authUser, setAuthUser }) {
 
   // Reset active selectors when product selection changes
   useEffect(() => {
+    const activeProd = quickViewProduct || fullDetailProduct;
     setModalQty(1);
-    setModalSize('M');
-    setModalColor('Red');
     setActiveImageIndex(0);
+    if (activeProd) {
+      const colors = getProductThemedColors(activeProd);
+      if (colors && colors.length > 0) {
+        setModalColor(colors[0].name);
+      } else {
+        setModalColor('');
+      }
+      
+      const category = String(activeProd.category).toUpperCase();
+      if (category.includes('CLOTHING') || category.includes('DRESS')) {
+        const sizeOptions = activeProd.attributes?.size 
+          ? activeProd.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
+          : (activeProd.subCategory === 'KIDS' ? ['2y'] : ['M']);
+        setModalSize(sizeOptions[0] || 'M');
+      } else if (category.includes('STATIONERY')) {
+        setModalSize('Pack of 3');
+      } else {
+        setModalSize('Default');
+      }
+    } else {
+      setModalSize('M');
+      setModalColor('Red');
+    }
   }, [quickViewProduct, fullDetailProduct]);
 
   // Parse category filter from URL on load
@@ -847,8 +1137,9 @@ export default function ShopView({ authUser, setAuthUser }) {
     }
   };
 
-  const toggleCart = (id, title) => {
+  const toggleCart = (id, title, size = null, color = null) => {
     let updated;
+    let updatedItems = [];
     if (cart.includes(id)) {
       updated = cart.filter(item => item !== id);
       alert(`Removed ${title} from cart!`);
@@ -858,10 +1149,25 @@ export default function ShopView({ authUser, setAuthUser }) {
     }
     setCart(updated);
     if (authUser) {
-      apiService.syncCart(updated).then(res => {
+      const prevItems = authUser.cartItems || [];
+      if (cart.includes(id)) {
+        updatedItems = prevItems.filter(item => item.productId !== id);
+      } else {
+        const prod = allProducts.find(p => p.id === id);
+        const selectedVariant = getSelectedVariant(prod, color, size);
+        const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
+        const sku = selectedVariant ? selectedVariant.sku : null;
+
+        updatedItems = [...prevItems.filter(item => item.productId !== id), {
+          productId: id,
+          quantity: 1,
+          variant: { size, color, variantId, sku }
+        }];
+      }
+      apiService.syncCart(updated, updatedItems).then(res => {
         if (res && setAuthUser) {
           setAuthUser(prev => {
-            const newUser = { ...prev, cart: res.cart || res, cartItems: res.cartItems || prev.cartItems };
+            const newUser = { ...prev, cart: res.cart || updated, cartItems: res.cartItems || updatedItems };
             localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
             return newUser;
           });
@@ -1170,6 +1476,20 @@ export default function ShopView({ authUser, setAuthUser }) {
     const catTheme = getCategoryThemeClass(fullDetailProduct.category);
     const images = getAllProductImages(fullDetailProduct);
     const colors = getProductThemedColors(fullDetailProduct);
+
+    // Find selected variant matching active modalColor and modalSize
+    const selectedVariant = getSelectedVariant(fullDetailProduct, modalColor, modalSize);
+    const displayPrice = (selectedVariant && selectedVariant.price !== null && selectedVariant.price !== undefined) 
+      ? selectedVariant.price 
+      : fullDetailProduct.price;
+    
+    const displayStock = selectedVariant ? selectedVariant.stock : fullDetailProduct.stock;
+    const isOutOfStock = displayStock <= 0;
+    
+    const mainImageUrl = (selectedVariant && selectedVariant.image) 
+      ? selectedVariant.image 
+      : (images[activeImageIndex] || fullDetailProduct.image);
+
     return (
       <div className={`shop-view-page shop-product-detail-page-view ${catTheme}`}>
         <div className="shop-content-container">
@@ -1211,7 +1531,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                 {/* Main Display Image */}
                 <div className="product-detail-main-image-wrapper">
                   <img 
-                    src={images[activeImageIndex] || fullDetailProduct.image} 
+                    src={mainImageUrl} 
                     alt={fullDetailProduct.title} 
                     className="product-detail-main-img" 
                   />
@@ -1241,9 +1561,17 @@ export default function ShopView({ authUser, setAuthUser }) {
               {/* Price Row */}
               <div className="product-detail-price-row">
                 <span className="product-detail-price-label">Price:</span>
-                <span className="product-detail-price-value">₹{fullDetailProduct.price.toLocaleString()}</span>
-                <span className="product-detail-original-price">₹{(Math.round(fullDetailProduct.price * 1.5)).toLocaleString()}</span>
+                <span className="product-detail-price-value">₹{displayPrice.toLocaleString()}</span>
+                <span className="product-detail-original-price">₹{(Math.round(displayPrice * 1.5)).toLocaleString()}</span>
                 <span className="product-detail-discount-badge">33% OFF</span>
+              </div>
+
+              {/* Availability Info */}
+              <div style={{ margin: '12px 0 16px 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 600, color: '#555' }}>Availability:</span>
+                <span style={{ color: isOutOfStock ? '#ff3333' : '#8CC63F', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#f1f8e9', fontSize: '0.82rem' }}>
+                  {isOutOfStock ? "Out of Stock" : "In Stock"}
+                </span>
               </div>
 
               {/* Category-specific Selectors */}
@@ -1264,7 +1592,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                 <button 
                   className={`product-detail-cart-btn ${cart.includes(fullDetailProduct.id) ? 'active' : ''}`}
                   onClick={() => {
-                    toggleCart(fullDetailProduct.id, fullDetailProduct.title);
+                    toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
                   }}
                 >
                   {cart.includes(fullDetailProduct.id) ? "Remove from Cart" : "ADD TO CART"}
@@ -1273,7 +1601,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                   className="product-detail-buy-btn"
                   onClick={() => {
                     if (!cart.includes(fullDetailProduct.id)) {
-                      toggleCart(fullDetailProduct.id, fullDetailProduct.title);
+                      toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
                     }
                     alert("Proceeding to secure checkout!");
                   }}
@@ -1456,8 +1784,7 @@ export default function ShopView({ authUser, setAuthUser }) {
           <div className="product-detail-similar-section">
             <h3 className="similar-title">Similar Products</h3>
             <div className="similar-products-grid">
-              {allProducts
-                .filter(p => p.category === fullDetailProduct.category && p.id !== fullDetailProduct.id)
+              {getSimilarProducts(fullDetailProduct, allProducts)
                 .slice(0, 4)
                 .map((simProd) => {
                   const isClothing = simProd.category === 'CLOTHING';
@@ -1623,12 +1950,29 @@ export default function ShopView({ authUser, setAuthUser }) {
         
         {/* Top Circular Category Navigation Tabs */}
         <div className="shop-category-circles-wrapper">
-          {[
-            { key: 'CLOTHING', label: 'Clothing', img: imgClothing, count: `${clothingCount} items` },
-            { key: 'STATIONERY', label: 'Stationery', img: imgStationery, count: `${stationeryCount} items` },
-            { key: 'GIFTS', label: 'Gifts', img: imgGifts, count: `${giftsCount} items` },
-            { key: 'ACCESSORIES', label: 'Accessories', img: imgAccessories, count: `${accessoriesCount} items` }
-          ].map((item) => (
+          {(categoriesList.filter(cat => !cat.parentId && cat.name !== '—').length > 0
+            ? categoriesList.filter(cat => !cat.parentId && cat.name !== '—').map(cat => {
+                const key = String(cat.name).toUpperCase();
+                let img = imgClothing;
+                if (key.includes('STATIONERY')) img = imgStationery;
+                else if (key.includes('GIFT')) img = imgGifts;
+                else if (key.includes('ACCESSORIES') || key.includes('FANCY')) img = imgAccessories;
+                
+                const count = allProducts.filter(p => String(p.category).toUpperCase().startsWith(key)).length;
+                return {
+                  key,
+                  label: cat.name,
+                  img,
+                  count: `${count} items`
+                };
+              })
+            : [
+                { key: 'CLOTHING', label: 'Clothing', img: imgClothing, count: `${clothingCount} items` },
+                { key: 'STATIONERY', label: 'Stationery', img: imgStationery, count: `${stationeryCount} items` },
+                { key: 'GIFTS', label: 'Gifts', img: imgGifts, count: `${giftsCount} items` },
+                { key: 'ACCESSORIES', label: 'Accessories', img: imgAccessories, count: `${accessoriesCount} items` }
+              ]
+          ).map((item) => (
             <div 
               key={item.key} 
               data-category={item.key}
@@ -1709,106 +2053,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                 </div>
                 {isCategoriesOpen && (
                   <div className="section-content">
-                    {/* Clothing category */}
-                    <div className="category-group clothing-group">
-                      <h4 className={`category-group-title ${activeTab === 'CLOTHING' ? 'active' : ''}`} onClick={() => { setActiveTab('CLOTHING'); setActiveSubTab('ALL'); }}>
-                        <span><Shirt size={14} /> CLOTHING</span>
-                      </h4>
-                      <ul className="category-sub-list">
-                        {[
-                          { key: 'WOMEN', label: 'Women' },
-                          { key: 'MEN', label: 'Men' },
-                          { key: 'KIDS', label: 'Kids' },
-                          { key: 'BOYS', label: 'Boys' },
-                          { key: 'GIRLS', label: 'Girls' }
-                        ].map(sub => (
-                          <li 
-                            key={sub.key} 
-                            className={activeTab === 'CLOTHING' && activeSubTab === sub.key ? 'active' : ''}
-                            onClick={() => { setActiveTab('CLOTHING'); setActiveSubTab(sub.key); }}
-                          >
-                            <span className="subcategory-bullet"></span>
-                            <span className="sub-label">{sub.label}</span>
-                            <span className="sub-count">({getCategorySubCount('CLOTHING', sub.key)})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Stationery category */}
-                    <div className="category-group stationery-group">
-                      <h4 className={`category-group-title ${activeTab === 'STATIONERY' ? 'active' : ''}`} onClick={() => { setActiveTab('STATIONERY'); setActiveSubTab('ALL'); }}>
-                        <span><BookOpen size={14} /> STATIONERY</span>
-                      </h4>
-                      <ul className="category-sub-list">
-                        {[
-                          { key: 'PENS', label: 'Pens' },
-                          { key: 'JOURNALS', label: 'Journals' },
-                          { key: 'NOTEBOOKS', label: 'Notebooks' },
-                          { key: 'SCHOOL', label: 'School Items' }
-                        ].map(sub => (
-                          <li 
-                            key={sub.key} 
-                            className={activeTab === 'STATIONERY' && activeSubTab === sub.key ? 'active' : ''}
-                            onClick={() => { setActiveTab('STATIONERY'); setActiveSubTab(sub.key); }}
-                          >
-                            <span className="subcategory-bullet"></span>
-                            <span className="sub-label">{sub.label}</span>
-                            <span className="sub-count">({getCategorySubCount('STATIONERY', sub.key)})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Gifts category */}
-                    <div className="category-group gifts-group">
-                      <h4 className={`category-group-title ${activeTab === 'GIFTS' ? 'active' : ''}`} onClick={() => { setActiveTab('GIFTS'); setActiveSubTab('ALL'); }}>
-                        <span><Gift size={14} /> GIFTS</span>
-                      </h4>
-                      <ul className="category-sub-list">
-                        {[
-                          { key: 'BIRTHDAY', label: 'Birthday Gifts' },
-                          { key: 'WEDDING', label: 'Wedding Gifts' },
-                          { key: 'ANNIVERSARY', label: 'Anniversary Gifts' },
-                          { key: 'RETURN', label: 'Return Gifts' }
-                        ].map(sub => (
-                          <li 
-                            key={sub.key} 
-                            className={activeTab === 'GIFTS' && activeSubTab === sub.key ? 'active' : ''}
-                            onClick={() => { setActiveTab('GIFTS'); setActiveSubTab(sub.key); }}
-                          >
-                            <span className="subcategory-bullet"></span>
-                            <span className="sub-label">{sub.label}</span>
-                            <span className="sub-count">({getCategorySubCount('GIFTS', sub.key)})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Accessories category */}
-                    <div className="category-group accessories-group">
-                      <h4 className={`category-group-title ${activeTab === 'ACCESSORIES' ? 'active' : ''}`} onClick={() => { setActiveTab('ACCESSORIES'); setActiveSubTab('ALL'); }}>
-                        <span><Crown size={14} /> ACCESSORIES</span>
-                      </h4>
-                      <ul className="category-sub-list">
-                        {[
-                          { key: 'JEWELLERY', label: 'Jewellery' },
-                          { key: 'FANCY', label: 'Fancy Items' },
-                          { key: 'HAIR', label: 'Hair Accessories' },
-                          { key: 'FASHION', label: 'Fashion Accessories' }
-                        ].map(sub => (
-                          <li 
-                            key={sub.key} 
-                            className={activeTab === 'ACCESSORIES' && activeSubTab === sub.key ? 'active' : ''}
-                            onClick={() => { setActiveTab('ACCESSORIES'); setActiveSubTab(sub.key); }}
-                          >
-                            <span className="subcategory-bullet"></span>
-                            <span className="sub-label">{sub.label}</span>
-                            <span className="sub-count">({getCategorySubCount('ACCESSORIES', sub.key)})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {renderDynamicCategoriesFilter()}
                   </div>
                 )}
               </div>
@@ -2316,6 +2561,19 @@ export default function ShopView({ authUser, setAuthUser }) {
         const images = getAllProductImages(quickViewProduct);
         const colors = getProductThemedColors(quickViewProduct);
 
+        // Find selected variant matching active modalColor and modalSize
+        const selectedVariant = getSelectedVariant(quickViewProduct, modalColor, modalSize);
+        const displayPrice = (selectedVariant && selectedVariant.price !== null && selectedVariant.price !== undefined) 
+          ? selectedVariant.price 
+          : quickViewProduct.price;
+        
+        const displayStock = selectedVariant ? selectedVariant.stock : quickViewProduct.stock;
+        const isOutOfStock = displayStock <= 0;
+        
+        const mainImageUrl = (selectedVariant && selectedVariant.image) 
+          ? selectedVariant.image 
+          : (images[activeImageIndex] || quickViewProduct.image);
+
         const handlePrevThumbnail = () => {
           setActiveImageIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
         };
@@ -2364,7 +2622,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                   {/* Main Image display */}
                   <div className="quickview-main-image-wrapper">
                     <img 
-                      src={images[activeImageIndex] || quickViewProduct.image} 
+                      src={mainImageUrl} 
                       alt={quickViewProduct.title} 
                       className="quickview-split-img" 
                     />
@@ -2386,13 +2644,13 @@ export default function ShopView({ authUser, setAuthUser }) {
                   </div>
 
                   <div className="modal-price-row">
-                    <span className="modal-price">₹{quickViewProduct.price.toLocaleString()}</span>
-                    <span className="modal-original-price">₹{(Math.round(quickViewProduct.price * 1.5)).toLocaleString()}</span>
+                    <span className="modal-price">₹{displayPrice.toLocaleString()}</span>
+                    <span className="modal-original-price">₹{(Math.round(displayPrice * 1.5)).toLocaleString()}</span>
                   </div>
 
                   <div className="modal-availability-row">
                     <span className="availability-label">Availability:</span>
-                    <span className="availability-status">In Stock</span>
+                    <span className="availability-status" style={{ color: isOutOfStock ? '#ff3333' : '#43a047' }}>{isOutOfStock ? "Out of Stock" : "In Stock"}</span>
                   </div>
 
                   <p className="modal-desc">
@@ -2417,7 +2675,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                     <button 
                       className="modal-primary-action-btn"
                       onClick={() => {
-                        toggleCart(quickViewProduct.id, quickViewProduct.title);
+                        toggleCart(quickViewProduct.id, quickViewProduct.title, modalSize, modalColor);
                       }}
                     >
                       {cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart"}

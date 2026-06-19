@@ -160,7 +160,9 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         quantity: item.quantity,
         variant: {
           size: item.selectedVariant?.size || null,
-          color: item.selectedVariant?.color || null
+          color: item.selectedVariant?.color || null,
+          variantId: item.selectedVariant?.variantId || null,
+          sku: item.selectedVariant?.sku || null
         }
       }));
 
@@ -189,7 +191,9 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       name: item.name,
       variant: {
         size: item.selectedVariant?.size || null,
-        color: item.selectedVariant?.color || null
+        color: item.selectedVariant?.color || null,
+        variantId: item.selectedVariant?.variantId || null,
+        sku: item.selectedVariant?.sku || null
       },
       catalogue: item.catalogue || 'Catalogue A',
       quantity: item.quantity,
@@ -444,10 +448,28 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         resolved = userCartItems.map(item => {
           const prod = allProducts.find(p => p.id === item.productId);
           if (prod) {
+            const color = item.variant?.color;
+            const size = item.variant?.size;
+            let matchedVar = null;
+            if (prod.variants && prod.variants.length > 0) {
+              matchedVar = prod.variants.find(v => 
+                (color && v.color && String(v.color).toLowerCase() === String(color).toLowerCase()) &&
+                (size && v.size && String(v.size).toLowerCase() === String(size).toLowerCase())
+              );
+              if (!matchedVar && color) {
+                matchedVar = prod.variants.find(v => v.color && String(v.color).toLowerCase() === String(color).toLowerCase());
+              }
+            }
+            
+            const variantPrice = (matchedVar && matchedVar.price !== null && matchedVar.price !== undefined) 
+              ? matchedVar.price 
+              : prod.price;
+
             return {
               ...prod,
+              price: variantPrice,
               quantity: item.quantity || 1,
-              selectedVariant: item.variant || { size: null, color: null }
+              selectedVariant: item.variant || { size: null, color: null, variantId: null, sku: null }
             };
           }
           return null;
@@ -456,10 +478,20 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         resolved = userCartIds.map(id => {
           const prod = allProducts.find(p => p.id === Number(id) || p.id === id);
           if (prod) {
+            const firstVar = prod.variants?.[0];
+            const variantPrice = (firstVar && firstVar.price !== null && firstVar.price !== undefined) 
+              ? firstVar.price 
+              : prod.price;
             return {
               ...prod,
+              price: variantPrice,
               quantity: 1,
-              selectedVariant: { size: prod.variants?.[0]?.size || null, color: prod.variants?.[0]?.color || null }
+              selectedVariant: { 
+                size: firstVar?.size || null, 
+                color: firstVar?.color || null,
+                variantId: firstVar?._id || firstVar?.id || null,
+                sku: firstVar?.sku || null
+              }
             };
           }
           return null;

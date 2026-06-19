@@ -75,7 +75,19 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     }).catch(console.error);
   }, []);
 
-  const categories = ['Clothing', 'Stationery', 'Gifts', 'Accessories'];
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  
+  useEffect(() => {
+    apiService.getCategories().then(data => {
+      if (data && data.length > 0) {
+        // filter unique active categories parent names
+        const names = [...new Set(data.map(cat => cat.name.split(' > ')[0]))];
+        setDynamicCategories(names);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const categories = dynamicCategories.length > 0 ? dynamicCategories : ['Clothing', 'Stationery', 'Gifts', 'Accessories'];
 
   const handleLinkClick = (e, path) => {
     e.preventDefault();

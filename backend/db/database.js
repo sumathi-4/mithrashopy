@@ -47,7 +47,9 @@ const UserSchema = new mongoose.Schema({
     productId: { type: Number, required: true },
     variant: {
       size: { type: String, default: null },
-      color: { type: String, default: null }
+      color: { type: String, default: null },
+      variantId: { type: String, default: null },
+      sku: { type: String, default: null }
     },
     quantity: { type: Number, default: 1 }
   }],
@@ -67,7 +69,8 @@ const ProductVariantSchema = new mongoose.Schema({
   color: { type: String, default: null },
   stock: { type: Number, default: 0 },
   price: { type: Number, default: null }, // If null, fallback to product base price
-  sku: { type: String, default: null }
+  sku: { type: String, default: null },
+  image: { type: String, default: null }
 });
 
 const ProductSchema = new mongoose.Schema({
@@ -85,11 +88,18 @@ const ProductSchema = new mongoose.Schema({
   variants: { type: [ProductVariantSchema], default: [] }, // Size, color, stock variants
   lowStockThreshold: { type: Number, default: 5 },
   isLowStock: { type: Boolean, default: false },
-  description: { type: String, default: '' }
+  description: { type: String, default: '' },
+  attributes: {
+    type: [{
+      key: { type: String },
+      value: { type: String }
+    }],
+    default: []
+  }
 });
 
 // Auto-populate the images array with the main image if empty
-ProductSchema.pre('save', function (next) {
+ProductSchema.pre('save', function () {
   if (this.image && (!this.images || this.images.length === 0)) {
     this.images = [this.image];
   }
@@ -98,7 +108,6 @@ ProductSchema.pre('save', function (next) {
   } else {
     this.isLowStock = false;
   }
-  next();
 });
 
 const CategorySchema = new mongoose.Schema({
@@ -110,7 +119,7 @@ const CategorySchema = new mongoose.Schema({
 });
 
 // Middleware to keep the 'parent' string synchronized with the parent's name
-CategorySchema.pre('save', async function (next) {
+CategorySchema.pre('save', async function () {
   if (this.parentId) {
     try {
       const parentCategory = await mongoose.model('Category').findById(this.parentId);
@@ -123,7 +132,6 @@ CategorySchema.pre('save', async function (next) {
   } else if (this.parent === '—' || !this.parent) {
     this.parent = '—';
   }
-  next();
 });
 
 const CatalogueSchema = new mongoose.Schema({
@@ -141,7 +149,9 @@ const OrderItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   variant: {
     size: { type: String, default: null },
-    color: { type: String, default: null }
+    color: { type: String, default: null },
+    variantId: { type: String, default: null },
+    sku: { type: String, default: null }
   },
   catalogue: { type: String, default: null },
   quantity: { type: Number, default: 1 },

@@ -4,10 +4,38 @@ const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+const formatAttributesForFrontend = (attributesArray) => {
+  const obj = {};
+  if (Array.isArray(attributesArray)) {
+    attributesArray.forEach(attr => {
+      if (attr && attr.key) {
+        obj[attr.key] = attr.value;
+      }
+    });
+  }
+  return obj;
+};
+
+const formatAttributesForDatabase = (attributesObj) => {
+  const arr = [];
+  if (attributesObj && typeof attributesObj === 'object') {
+    Object.entries(attributesObj).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        arr.push({ key, value: String(value) });
+      }
+    });
+  }
+  return arr;
+};
+
 // GET /api/products - Get all products
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find().lean();
+    const rawProducts = await Product.find().lean();
+    const products = rawProducts.map(p => ({
+      ...p,
+      attributes: formatAttributesForFrontend(p.attributes)
+    }));
     res.json({ success: true, products });
   } catch (err) {
     console.error('Fetch products error:', err);
@@ -21,10 +49,14 @@ router.get('/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const product = await Product.findOne({ id }).lean();
-    if (!product) {
+    const rawProduct = await Product.findOne({ id }).lean();
+    if (!rawProduct) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
+    const product = {
+      ...rawProduct,
+      attributes: formatAttributesForFrontend(rawProduct.attributes)
+    };
     res.json({ success: true, product });
   } catch (err) {
     console.error('Fetch product error:', err);
@@ -35,7 +67,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/products - Create a new product
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants } = req.body;
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
@@ -56,10 +88,15 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       status: status || 'Active',
       image: image || 'Kids',
       images: images || (image ? [image] : []),
-      description: description || ''
+      description: description || '',
+      attributes: formatAttributesForDatabase(attributes),
+      variants: variants || []
     });
 
-    res.status(201).json({ success: true, message: 'Product added successfully!', product: newProduct });
+    const responseProduct = newProduct.toObject();
+    responseProduct.attributes = formatAttributesForFrontend(responseProduct.attributes);
+
+    res.status(201).json({ success: true, message: 'Product added successfully!', product: responseProduct });
   } catch (err) {
     console.error('Add product error:', err);
     res.status(500).json({ success: false, message: 'Failed to add product.' });
@@ -72,7 +109,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants } = req.body;
 
     const updateFields = {};
     if (name !== undefined) updateFields.name = name.trim();
@@ -85,6 +122,8 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     if (image !== undefined) updateFields.image = image;
     if (description !== undefined) updateFields.description = description;
     if (images !== undefined) updateFields.images = images;
+    if (attributes !== undefined) updateFields.attributes = formatAttributesForDatabase(attributes);
+    if (variants !== undefined) updateFields.variants = variants;
 
     const updated = await Product.findOneAndUpdate(
       { id },
@@ -96,7 +135,12 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    res.json({ success: true, message: 'Product updated successfully!', product: updated });
+    const responseProduct = {
+      ...updated,
+      attributes: formatAttributesForFrontend(updated.attributes)
+    };
+
+    res.json({ success: true, message: 'Product updated successfully!', product: responseProduct });
   } catch (err) {
     console.error('Update product error:', err);
     res.status(500).json({ success: false, message: 'Failed to update product.' });
