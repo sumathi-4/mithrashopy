@@ -1359,8 +1359,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* Gradient Defs */}
                       <defs>
                         <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#EA6D26" stopOpacity="0.45"/>
-                          <stop offset="100%" stopColor="#EA6D26" stopOpacity="0.00"/>
+                          <stop offset="0%" stopColor="#FF8A00" stopOpacity="0.45"/>
+                          <stop offset="100%" stopColor="#FF8A00" stopOpacity="0.00"/>
                         </linearGradient>
                       </defs>
 
@@ -1388,7 +1388,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             C 432.5 ${180 - (chartPoints[4].value / 250000) * 160}, 432.5 ${180 - (chartPoints[5].value / 250000) * 160}, 475 ${180 - (chartPoints[5].value / 250000) * 160} 
                             C 517.5 ${180 - (chartPoints[5].value / 250000) * 160}, 517.5 ${180 - (chartPoints[6].value / 250000) * 160}, 560 ${180 - (chartPoints[6].value / 250000) * 160}`}
                         fill="none" 
-                        stroke="#EA6D26" 
+                        stroke="#FF8A00" 
                         strokeWidth="3.5"
                       />
 
@@ -1398,7 +1398,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         const cy = 180 - (pt.value / 250000) * 160;
                         return (
                           <g key={pt.date} onMouseEnter={() => setHoveredPoint({ idx: i, cx, cy, label: pt.date, val: pt.value })} onMouseLeave={() => setHoveredPoint(null)}>
-                            <circle cx={cx} cy={cy} r="5" fill="#fff" stroke="#EA6D26" strokeWidth="3.5" className="chart-dot" />
+                            <circle cx={cx} cy={cy} r="5" fill="#fff" stroke="#FF8A00" strokeWidth="3.5" className="chart-dot" />
                             <circle cx={cx} cy={cy} r="15" fill="transparent" style={{ cursor: 'pointer' }} />
                           </g>
                         );
@@ -1417,7 +1417,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {hoveredPoint && (
                         <g>
                           <line x1={hoveredPoint.cx} y1="20" x2={hoveredPoint.cx} y2="180" stroke="#ccc" strokeDasharray="3,3" />
-                          <circle cx={hoveredPoint.cx} cy={hoveredPoint.cy} r="8" fill="#EA6D26" opacity="0.3" />
+                          <circle cx={hoveredPoint.cx} cy={hoveredPoint.cy} r="8" fill="#FF8A00" opacity="0.3" />
                           <rect 
                             x={hoveredPoint.cx > 450 ? hoveredPoint.cx - 130 : hoveredPoint.cx + 10} 
                             y={hoveredPoint.cy - 35} 
@@ -1425,7 +1425,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             height="50" 
                             rx="6" 
                             fill="#fff" 
-                            stroke="#EA6D26" 
+                            stroke="#FF8A00" 
                             strokeWidth="1"
                             className="chart-tooltip-bg"
                           />
@@ -2495,7 +2495,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="banners-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                           <ImageIcon size={22} />
                         </div>
                         <div>
@@ -2538,7 +2538,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   fontSize: '0.75rem',
                                   fontWeight: 700,
                                   backgroundColor: banner.status === 'Active' ? '#eef6e6' : '#fdebeb',
-                                  color: banner.status === 'Active' ? '#76BA24' : '#ea4335'
+                                  color: banner.status === 'Active' ? '#8CC63F' : '#ea4335'
                                 }}>
                                   {banner.status}
                                 </span>
@@ -2565,7 +2565,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {/* Pagination control */}
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#ea6d26', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&gt;</span>
@@ -2577,7 +2577,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="announcements-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                           <Megaphone size={22} />
                         </div>
                         <div>
@@ -2616,7 +2616,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   fontSize: '0.75rem',
                                   fontWeight: 700,
                                   backgroundColor: ann.status === 'Active' ? '#eef6e6' : ann.status === 'Expired' ? '#fdebeb' : '#f5f5f5',
-                                  color: ann.status === 'Active' ? '#76BA24' : ann.status === 'Expired' ? '#ea4335' : '#777'
+                                  color: ann.status === 'Active' ? '#8CC63F' : ann.status === 'Expired' ? '#ea4335' : '#777'
                                 }}>
                                   {ann.status}
                                 </span>
@@ -2643,7 +2643,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {/* Pagination control */}
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#ea6d26', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&gt;</span>
@@ -2655,7 +2655,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="contact-queries-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                           <MessageSquare size={22} />
                         </div>
                         <div>
@@ -2708,7 +2708,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     fontSize: '0.75rem',
                                     fontWeight: 700,
                                     backgroundColor: q.status === 'Resolved' ? '#eef6e6' : q.status === 'In Progress' ? '#fdf5e6' : '#eef2fd',
-                                    color: q.status === 'Resolved' ? '#76BA24' : q.status === 'In Progress' ? '#ea6d26' : '#2b87e3'
+                                    color: q.status === 'Resolved' ? '#8CC63F' : q.status === 'In Progress' ? '#FF8A00' : '#2b87e3'
                                   }}>
                                     {q.status}
                                   </span>
@@ -2732,7 +2732,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                        <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#ea6d26', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                        <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>4</span>
@@ -2800,8 +2800,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   <Star 
                                     key={i} 
                                     size={14} 
-                                    fill={i < rev.rating ? '#ea6d26' : 'none'} 
-                                    stroke={i < rev.rating ? '#ea6d26' : '#ccc'} 
+                                    fill={i < rev.rating ? '#FF8A00' : 'none'} 
+                                    stroke={i < rev.rating ? '#FF8A00' : '#ccc'} 
                                   />
                                 ))}
                               </div>
@@ -2990,7 +2990,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'shipping' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                         <Truck size={22} />
                       </div>
                       <div>
@@ -3057,7 +3057,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableCod ? '#76BA24' : '#ccc',
+                            backgroundColor: shippingSettings.enableCod ? '#8CC63F' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3079,7 +3079,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableExpress ? '#76BA24' : '#ccc',
+                            backgroundColor: shippingSettings.enableExpress ? '#8CC63F' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3101,7 +3101,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableInternational ? '#76BA24' : '#ccc',
+                            backgroundColor: shippingSettings.enableInternational ? '#8CC63F' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3123,7 +3123,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'payment' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                         <CreditCard size={22} />
                       </div>
                       <div>
@@ -3136,7 +3136,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* COD toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                             <Truck size={20} />
                           </div>
                           <div>
@@ -3154,7 +3154,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.cod ? '#76BA24' : '#ccc',
+                              backgroundColor: paymentSettings.cod ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3188,7 +3188,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.razorpay ? '#76BA24' : '#ccc',
+                              backgroundColor: paymentSettings.razorpay ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3222,7 +3222,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.upi ? '#76BA24' : '#ccc',
+                              backgroundColor: paymentSettings.upi ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3256,7 +3256,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.stripe ? '#76BA24' : '#ccc',
+                              backgroundColor: paymentSettings.stripe ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3272,7 +3272,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* Bank Transfer toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ea6d26' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF8A00' }}>
                             <Globe size={20} />
                           </div>
                           <div>
@@ -3290,7 +3290,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.bankTransfer ? '#76BA24' : '#ccc',
+                              backgroundColor: paymentSettings.bankTransfer ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3314,7 +3314,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'social' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                         <Share2 size={22} />
                       </div>
                       <div>
@@ -3400,7 +3400,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'email' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                         <Mail size={22} />
                       </div>
                       <div>
@@ -3479,7 +3479,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                         <button 
                           className="profile-save-btn" 
-                          style={{ backgroundColor: '#76BA24', color: '#fff', margin: 0 }}
+                          style={{ backgroundColor: '#8CC63F', color: '#fff', margin: 0 }}
                           onClick={() => alert('Test email sent to ' + emailSettings.senderEmail)}
                         >
                           Send Test Email
@@ -3497,7 +3497,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'website' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(118, 186, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                         <Globe size={22} />
                       </div>
                       <div>
@@ -3611,7 +3611,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'profile-info' && (
                     <div className="profile-form-content">
                       <div className="profile-left-col">
-                        <div className="profile-large-avatar" style={{ backgroundColor: 'var(--color-primary, #76BA24)' }}>
+                        <div className="profile-large-avatar" style={{ backgroundColor: 'var(--color-primary, #8CC63F)' }}>
                           {authUser?.name?.slice(0, 1).toUpperCase() || 'A'}
                         </div>
                         <button className="profile-change-photo-btn" onClick={() => alert('Change Photo triggered')}>
@@ -3656,7 +3656,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'change-password' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '800px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(118, 186, 36, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #76BA24)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
                           <Lock size={22} />
                         </div>
                         <div>
@@ -3716,7 +3716,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'security' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '800px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(118, 186, 36, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #76BA24)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
                           <Settings size={22} />
                         </div>
                         <div>
@@ -3729,7 +3729,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* 2FA Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ea6d26' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF8A00' }}>
                               <Lock size={20} />
                             </div>
                             <div>
@@ -3746,7 +3746,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: securitySettings.twoFactor ? '#76BA24' : '#ccc',
+                              backgroundColor: securitySettings.twoFactor ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3760,7 +3760,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* Login Alerts Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#76BA24' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                               <Bell size={20} />
                             </div>
                             <div>
@@ -3777,7 +3777,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: securitySettings.loginAlerts ? '#76BA24' : '#ccc',
+                              backgroundColor: securitySettings.loginAlerts ? '#8CC63F' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3791,7 +3791,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* Active Sessions Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff9e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f58220' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff9e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
                               <Settings size={20} />
                             </div>
                             <div>
@@ -3800,7 +3800,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             </div>
                           </div>
                           <button 
-                            style={{ padding: '8px 20px', backgroundColor: '#eef6e6', color: '#76BA24', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '8px 20px', backgroundColor: '#eef6e6', color: '#8CC63F', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                             onClick={() => alert('Active Sessions: Windows PC (Chrome) - Current active session.')}
                           >
                             View
@@ -3813,7 +3813,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'login-history' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '900px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(118, 186, 36, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #76BA24)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
                           <BookOpen size={22} />
                         </div>
                         <div>
@@ -3849,7 +3849,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     fontSize: '0.75rem',
                                     fontWeight: 700,
                                     backgroundColor: history.status === 'Success' ? '#eef6e6' : '#fdebeb',
-                                    color: history.status === 'Success' ? '#76BA24' : '#ea4335'
+                                    color: history.status === 'Success' ? '#8CC63F' : '#ea4335'
                                   }}>
                                     {history.status}
                                   </span>
@@ -4482,7 +4482,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#ea6d26' }}>{viewCategoryItem.name}</h4>
+                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewCategoryItem.name}</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Parent Category:</span>
@@ -4710,7 +4710,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#ea6d26' }}>{viewCatalogueItem.name}</h4>
+                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewCatalogueItem.name}</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Subtitle/Focus:</span>
@@ -4833,7 +4833,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#ea6d26' }}>{viewOrderItem.id} Details</h4>
+                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewOrderItem.id} Details</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Customer Name:</span>
@@ -5406,7 +5406,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               className="modal-body-form"
             >
               <div className="view-prod-details" style={{ paddingLeft: 0, marginBottom: '16px' }}>
-                <h4 className="view-title" style={{ color: '#ea6d26' }}>Inquiry Details</h4>
+                <h4 className="view-title" style={{ color: '#FF8A00' }}>Inquiry Details</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Sender Name:</span>
@@ -5472,7 +5472,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               className="modal-body-form"
             >
               <div className="view-prod-details" style={{ paddingLeft: 0, marginBottom: '16px' }}>
-                <h4 className="view-title" style={{ color: '#ea6d26' }}>Customer Review</h4>
+                <h4 className="view-title" style={{ color: '#FF8A00' }}>Customer Review</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Product:</span>
