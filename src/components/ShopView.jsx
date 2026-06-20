@@ -790,13 +790,41 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [modalQty, setModalQty] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('DEFAULT');
-  const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
-  const [cart, setCart] = useState(() => authUser?.cart || []);
+  const [wishlist, setWishlist] = useState(() => {
+    if (authUser) return authUser.wishlist || [];
+    try {
+      const local = localStorage.getItem('mithira_guest_wishlist');
+      return local ? JSON.parse(local) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [cart, setCart] = useState(() => {
+    if (authUser) return authUser.cart || [];
+    try {
+      const local = localStorage.getItem('mithira_guest_cart');
+      return local ? JSON.parse(local) : [];
+    } catch {
+      return [];
+    }
+  });
   const [categoriesList, setCategoriesList] = useState([]);
 
   useEffect(() => {
-    setWishlist(authUser?.wishlist || []);
-    setCart(authUser?.cart || []);
+    if (authUser) {
+      setWishlist(authUser.wishlist || []);
+      setCart(authUser.cart || []);
+    } else {
+      try {
+        const localWish = localStorage.getItem('mithira_guest_wishlist');
+        const localCart = localStorage.getItem('mithira_guest_cart');
+        setWishlist(localWish ? JSON.parse(localWish) : []);
+        setCart(localCart ? JSON.parse(localCart) : []);
+      } catch {
+        setWishlist([]);
+        setCart([]);
+      }
+    }
   }, [authUser]);
 
   useEffect(() => {
@@ -1115,7 +1143,6 @@ export default function ShopView({ authUser, setAuthUser }) {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-
   const toggleWishlist = (id) => {
     let updated;
     if (wishlist.includes(id)) {
@@ -1134,6 +1161,10 @@ export default function ShopView({ authUser, setAuthUser }) {
           });
         }
       });
+    } else {
+      localStorage.setItem('mithira_guest_wishlist', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('mithira_cart_update'));
     }
   };
 
@@ -1148,22 +1179,26 @@ export default function ShopView({ authUser, setAuthUser }) {
       alert(`Added ${title} to cart!`);
     }
     setCart(updated);
-    if (authUser) {
-      const prevItems = authUser.cartItems || [];
-      if (cart.includes(id)) {
-        updatedItems = prevItems.filter(item => item.productId !== id);
-      } else {
-        const prod = allProducts.find(p => p.id === id);
-        const selectedVariant = getSelectedVariant(prod, color, size);
-        const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
-        const sku = selectedVariant ? selectedVariant.sku : null;
 
-        updatedItems = [...prevItems.filter(item => item.productId !== id), {
-          productId: id,
-          quantity: 1,
-          variant: { size, color, variantId, sku }
-        }];
-      }
+    const prevItems = authUser ? (authUser.cartItems || []) : (JSON.parse(localStorage.getItem('mithira_guest_cart_items') || '[]'));
+    const isRemoving = !updated.includes(id);
+
+    if (isRemoving) {
+      updatedItems = prevItems.filter(item => item.productId !== id);
+    } else {
+      const prod = allProducts.find(p => p.id === id || p._id === id || String(p.id) === String(id) || String(p._id) === String(id));
+      const selectedVariant = getSelectedVariant(prod, color, size);
+      const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
+      const sku = selectedVariant ? selectedVariant.sku : null;
+
+      updatedItems = [...prevItems.filter(item => item.productId !== id), {
+        productId: id,
+        quantity: 1,
+        variant: { size, color, variantId, sku }
+      }];
+    }
+
+    if (authUser) {
       apiService.syncCart(updated, updatedItems).then(res => {
         if (res && setAuthUser) {
           setAuthUser(prev => {
@@ -1173,8 +1208,14 @@ export default function ShopView({ authUser, setAuthUser }) {
           });
         }
       });
+    } else {
+      localStorage.setItem('mithira_guest_cart', JSON.stringify(updated));
+      localStorage.setItem('mithira_guest_cart_items', JSON.stringify(updatedItems));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('mithira_cart_update'));
     }
   };
+
 
   const handleBackToHome = () => {
     window.history.pushState({}, '', '/#home');

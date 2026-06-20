@@ -153,28 +153,33 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   };
 
   const syncCartToBackend = (detailedItems) => {
-    if (authUser) {
-      const cartIds = detailedItems.map(item => String(item.id));
-      const cartItemsPayload = detailedItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        variant: {
-          size: item.selectedVariant?.size || null,
-          color: item.selectedVariant?.color || null,
-          variantId: item.selectedVariant?.variantId || null,
-          sku: item.selectedVariant?.sku || null
-        }
-      }));
+    const cartIds = detailedItems.map(item => String(item.id));
+    const cartItemsPayload = detailedItems.map(item => ({
+      productId: item.id,
+      quantity: item.quantity,
+      variant: {
+        size: item.selectedVariant?.size || null,
+        color: item.selectedVariant?.color || null,
+        variantId: item.selectedVariant?.variantId || null,
+        sku: item.selectedVariant?.sku || null
+      }
+    }));
 
+    if (authUser) {
       apiService.syncCart(cartIds, cartItemsPayload).then(res => {
         if (res && setAuthUser) {
           setAuthUser(prev => {
-            const newUser = { ...prev, cart: res.cart, cartItems: res.cartItems };
+            const newUser = { ...prev, cart: res.cart || cartIds, cartItems: res.cartItems || cartItemsPayload };
             localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
             return newUser;
           });
         }
       });
+    } else {
+      localStorage.setItem('mithira_guest_cart', JSON.stringify(cartIds));
+      localStorage.setItem('mithira_guest_cart_items', JSON.stringify(cartItemsPayload));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('mithira_cart_update'));
     }
   };
 
@@ -328,6 +333,16 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           });
         }
       });
+    } else {
+      try {
+        const local = JSON.parse(localStorage.getItem('mithira_guest_wishlist') || '[]');
+        const updated = local.filter(id => id !== itemId && String(id) !== String(itemId));
+        localStorage.setItem('mithira_guest_wishlist', JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('mithira_cart_update'));
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -440,13 +455,26 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   }, [addresses]);
 
   useEffect(() => {
-    if (authUser && allProducts.length > 0) {
-      const userCartItems = authUser.cartItems || [];
-      const userCartIds = authUser.cart || [];
+    if (allProducts.length > 0) {
+      let userCartItems = [];
+      let userCartIds = [];
+      try {
+        userCartItems = authUser ? (authUser.cartItems || []) : (JSON.parse(localStorage.getItem('mithira_guest_cart_items') || '[]'));
+        userCartIds = authUser ? (authUser.cart || []) : (JSON.parse(localStorage.getItem('mithira_guest_cart') || '[]'));
+      } catch {
+        userCartItems = [];
+        userCartIds = [];
+      }
+      
       let resolved = [];
       if (userCartItems.length > 0) {
         resolved = userCartItems.map(item => {
-          const prod = allProducts.find(p => p.id === item.productId);
+          const prod = allProducts.find(p => 
+            p.id === item.productId || 
+            p._id === item.productId || 
+            String(p.id) === String(item.productId) || 
+            String(p._id) === String(item.productId)
+          );
           if (prod) {
             const color = item.variant?.color;
             const size = item.variant?.size;
@@ -467,6 +495,8 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
             return {
               ...prod,
+              id: prod.id || prod._id,
+              title: prod.title || prod.name,
               price: variantPrice,
               quantity: item.quantity || 1,
               selectedVariant: item.variant || { size: null, color: null, variantId: null, sku: null }
@@ -476,7 +506,13 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         }).filter(Boolean);
       } else {
         resolved = userCartIds.map(id => {
-          const prod = allProducts.find(p => p.id === Number(id) || p.id === id);
+          const prod = allProducts.find(p => 
+            p.id === Number(id) || 
+            p.id === id || 
+            p._id === id || 
+            String(p.id) === String(id) || 
+            String(p._id) === String(id)
+          );
           if (prod) {
             const firstVar = prod.variants?.[0];
             const variantPrice = (firstVar && firstVar.price !== null && firstVar.price !== undefined) 
@@ -484,6 +520,8 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
               : prod.price;
             return {
               ...prod,
+              id: prod.id || prod._id,
+              title: prod.title || prod.name,
               price: variantPrice,
               quantity: 1,
               selectedVariant: { 
@@ -517,14 +555,24 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   }, [authUser]);
 
   useEffect(() => {
-    if (authUser && allProducts.length > 0) {
-      const ids = authUser.wishlist || [];
-      const resolved = allProducts.filter(p => ids.includes(p.id));
+    if (allProducts.length > 0) {
+      let ids = [];
+      try {
+        ids = authUser ? (authUser.wishlist || []) : (JSON.parse(localStorage.getItem('mithira_guest_wishlist') || '[]'));
+      } catch {
+        ids = [];
+      }
+      const resolved = allProducts.filter(p => 
+        ids.includes(p.id) || 
+        ids.includes(p._id) || 
+        ids.includes(String(p.id)) || 
+        ids.includes(String(p._id))
+      );
       setWishlistItems(resolved.map(p => ({
-        id: p.id,
-        title: p.title,
-        price: '₹' + p.price,
-        image: p.image
+        id: p.id || p._id,
+        title: p.title || p.name,
+        price: typeof p.price === 'number' ? `₹${p.price.toLocaleString('en-IN')}` : p.price,
+        image: p.image || (p.images && p.images[0])
       })));
     }
   }, [authUser, allProducts]);

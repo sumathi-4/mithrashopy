@@ -19,20 +19,6 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     window.dispatchEvent(new Event('popstate'));
   };
 
-  const [dbProducts, setDbProducts] = useState([]);
-
-  useEffect(() => {
-    let active = true;
-    apiService.getProducts().then(products => {
-      if (active && products && products.length > 0) {
-        setDbProducts(products);
-      }
-    }).catch(err => {
-      console.warn("Failed to fetch products for ProductsSection, using mock data", err);
-    });
-    return () => { active = false; };
-  }, []);
-
   useEffect(() => {
     setWishlist(authUser?.wishlist || []);
   }, [authUser]);
@@ -60,160 +46,137 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     }
   };
 
-  const trendingProducts = dbProducts.length > 0
-    ? dbProducts.map(p => ({
-        id: p._id || p.id,
-        title: p.name,
-        category: (p.category || 'CLOTHING').toUpperCase(),
-        price: typeof p.price === 'number' ? `₹${p.price.toLocaleString('en-IN')}` : p.price,
-        rating: p.rating || 5,
-        reviews: p.reviews || 96,
-        image: p.image || (p.images && p.images[0]) || clothingUser1,
-        badge: p.badge || "BEST SELLER"
-      }))
-    : [
-        {
-          id: 't1',
-          title: "Girls Anarkali Dress",
-          category: "CLOTHING",
-          price: "₹1,699",
-          rating: 5,
-          reviews: 128,
-          image: clothingUser1,
-          badge: "BEST SELLER"
-        },
-        {
-          id: 't2',
-          title: "Premium Handbag",
-          category: "ACCESSORIES",
-          price: "₹2,499",
-          rating: 5,
-          reviews: 96,
-          image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80",
-          badge: "BEST SELLER"
-        },
-        {
-          id: 't3',
-          title: "Premium Stationery Set",
-          category: "STATIONERY",
-          price: "₹699",
-          rating: 5,
-          reviews: 210,
-          image: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
-          badge: "BEST SELLER"
-        },
-        {
-          id: 't4',
-          title: "Luxury Gift Hamper",
-          category: "GIFTS",
-          price: "₹1,299",
-          rating: 5,
-          reviews: 176,
-          image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
-          badge: "BEST SELLER"
-        },
-        {
-          id: 't5',
-          title: "Gold Plated Necklace",
-          category: "ACCESSORIES",
-          price: "₹2,199",
-          rating: 5,
-          reviews: 134,
-          image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-          badge: "BEST SELLER"
-        },
-        {
-          id: 't6',
-          title: "Ladies Wrist Watch",
-          category: "ACCESSORIES",
-          price: "₹1,599",
-          rating: 5,
-          reviews: 88,
-          image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=600&q=80",
-          badge: "BEST SELLER"
-        }
-      ];
+  const trendingProducts = [
+    {
+      id: 't1',
+      title: "Girls Anarkali Dress",
+      category: "CLOTHING",
+      price: "₹1,699",
+      rating: 5,
+      reviews: 128,
+      image: clothingUser1,
+      badge: "BEST SELLER"
+    },
+    {
+      id: 't2',
+      title: "Premium Handbag",
+      category: "ACCESSORIES",
+      price: "₹2,499",
+      rating: 5,
+      reviews: 96,
+      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80",
+      badge: "BEST SELLER"
+    },
+    {
+      id: 't3',
+      title: "Premium Stationery Set",
+      category: "STATIONERY",
+      price: "₹699",
+      rating: 5,
+      reviews: 210,
+      image: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
+      badge: "BEST SELLER"
+    },
+    {
+      id: 't4',
+      title: "Luxury Gift Hamper",
+      category: "GIFTS",
+      price: "₹1,299",
+      rating: 5,
+      reviews: 176,
+      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
+      badge: "BEST SELLER"
+    },
+    {
+      id: 't5',
+      title: "Gold Plated Necklace",
+      category: "ACCESSORIES",
+      price: "₹2,199",
+      rating: 5,
+      reviews: 134,
+      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+      badge: "BEST SELLER"
+    },
+    {
+      id: 't6',
+      title: "Ladies Wrist Watch",
+      category: "ACCESSORIES",
+      price: "₹1,599",
+      rating: 5,
+      reviews: 88,
+      image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=600&q=80",
+      badge: "BEST SELLER"
+    }
+  ];
 
-  const newArrivalsProducts = dbProducts.length > 0
-    ? [...dbProducts].reverse().slice(0, 6).map(p => ({
-        id: p._id || p.id,
-        title: p.name,
-        category: (p.category || 'CLOTHING').toUpperCase(),
-        price: typeof p.price === 'number' ? `₹${p.price.toLocaleString('en-IN')}` : p.price,
-        rating: p.rating || 5,
-        reviews: p.reviews || 42,
-        image: p.image || (p.images && p.images[0]) || clothingUser1,
-        badge: p.badge || "NEW",
-        desc: p.description || p.desc || ""
-      }))
-    : [
-        {
-          id: 'n1',
-          title: "Floral Frock Dress",
-          category: "CLOTHING",
-          price: "₹1,499",
-          rating: 5,
-          reviews: 42,
-          image: clothingUser1,
-          badge: "NEW",
-          desc: "Vibrant traditional children's frock crafted in premium south cotton, featuring bright ethnic accents and details."
-        },
-        {
-          id: 'n2',
-          title: "Blue School Kit",
-          category: "STATIONERY",
-          price: "₹899",
-          rating: 4,
-          reviews: 18,
-          image: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?auto=format&fit=crop&w=1000&q=80",
-          badge: "NEW",
-          desc: "An all-in-one premium study organizer set featuring pastel blue binders, designer pencils, and note kits."
-        },
-        {
-          id: 'n3',
-          title: "Birthday Gift Box",
-          category: "GIFTS",
-          price: "₹1,099",
-          rating: 5,
-          reviews: 35,
-          image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
-          badge: "NEW",
-          desc: "Thoughtfully curated celebration bundle containing custom premium boxes, ribbons, and hampers."
-        },
-        {
-          id: 'n4',
-          title: "Traditional Jhumka",
-          category: "ACCESSORIES",
-          price: "₹1,799",
-          rating: 5,
-          reviews: 58,
-          image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=1000&q=80",
-          badge: "NEW",
-          desc: "Exquisite gold-plated jhumka earrings featuring premium micro-filigree beads and traditional temple design."
-        },
-        {
-          id: 'n5',
-          title: "Premium Notebook",
-          category: "STATIONERY",
-          price: "₹399",
-          rating: 4,
-          reviews: 14,
-          image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=1000&q=80",
-          badge: "NEW",
-          desc: "Soft-bound luxury journal containing acid-free pages, ideal for sketching, calligraphy, and planning."
-        },
-        {
-          id: 'n6',
-          title: "Cotton Kurta Set",
-          category: "CLOTHING",
-          price: "₹1,299",
-          rating: 5,
-          reviews: 64,
-          image: clothingUser2,
-          badge: "NEW",
-          desc: "Premium organic cotton kurta paired with a matching dupatta, reflecting heritage ethnic motifs."
-        }
-      ];
+  const newArrivalsProducts = [
+    {
+      id: 'n1',
+      title: "Floral Frock Dress",
+      category: "CLOTHING",
+      price: "₹1,499",
+      rating: 5,
+      reviews: 42,
+      image: clothingUser1,
+      badge: "NEW",
+      desc: "Vibrant traditional children's frock crafted in premium south cotton, featuring bright ethnic accents and details."
+    },
+    {
+      id: 'n2',
+      title: "Blue School Kit",
+      category: "STATIONERY",
+      price: "₹899",
+      rating: 4,
+      reviews: 18,
+      image: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?auto=format&fit=crop&w=1000&q=80",
+      badge: "NEW",
+      desc: "An all-in-one premium study organizer set featuring pastel blue binders, designer pencils, and note kits."
+    },
+    {
+      id: 'n3',
+      title: "Birthday Gift Box",
+      category: "GIFTS",
+      price: "₹1,099",
+      rating: 5,
+      reviews: 35,
+      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
+      badge: "NEW",
+      desc: "Thoughtfully curated celebration bundle containing custom premium boxes, ribbons, and hampers."
+    },
+    {
+      id: 'n4',
+      title: "Traditional Jhumka",
+      category: "ACCESSORIES",
+      price: "₹1,799",
+      rating: 5,
+      reviews: 58,
+      image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=1000&q=80",
+      badge: "NEW",
+      desc: "Exquisite gold-plated jhumka earrings featuring premium micro-filigree beads and traditional temple design."
+    },
+    {
+      id: 'n5',
+      title: "Premium Notebook",
+      category: "STATIONERY",
+      price: "₹399",
+      rating: 4,
+      reviews: 14,
+      image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=1000&q=80",
+      badge: "NEW",
+      desc: "Soft-bound luxury journal containing acid-free pages, ideal for sketching, calligraphy, and planning."
+    },
+    {
+      id: 'n6',
+      title: "Cotton Kurta Set",
+      category: "CLOTHING",
+      price: "₹1,299",
+      rating: 5,
+      reviews: 64,
+      image: clothingUser2,
+      badge: "NEW",
+      desc: "Premium organic cotton kurta paired with a matching dupatta, reflecting heritage ethnic motifs."
+    }
+  ];
 
   // Auto slider setup for New Arrivals
   useEffect(() => {

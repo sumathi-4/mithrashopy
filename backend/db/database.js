@@ -10,6 +10,8 @@ mongoose.connect(MONGODB_URI)
     try {
       await mongoose.connection.db.dropDatabase();
       console.log('🗑️ Database dropped/cleared successfully');
+      // Brief delay to let MongoDB finalize dropped collections and indices
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await seedAdmin();
       await seedStoreData();
     } catch (dbErr) {

@@ -89,6 +89,30 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
   const categories = dynamicCategories.length > 0 ? dynamicCategories : ['Clothing', 'Stationery', 'Gifts', 'Accessories'];
 
+  const [guestCartCount, setGuestCartCount] = useState(0);
+  const [guestWishlistCount, setGuestWishlistCount] = useState(0);
+
+  const updateGuestCounts = () => {
+    try {
+      const localCart = localStorage.getItem('mithira_guest_cart');
+      const localWish = localStorage.getItem('mithira_guest_wishlist');
+      setGuestCartCount(localCart ? JSON.parse(localCart).length : 0);
+      setGuestWishlistCount(localWish ? JSON.parse(localWish).length : 0);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    updateGuestCounts();
+    window.addEventListener('storage', updateGuestCounts);
+    window.addEventListener('mithira_cart_update', updateGuestCounts);
+    return () => {
+      window.removeEventListener('storage', updateGuestCounts);
+      window.removeEventListener('mithira_cart_update', updateGuestCounts);
+    };
+  }, []);
+
   const handleLinkClick = (e, path) => {
     e.preventDefault();
     window.history.pushState({}, '', path);
@@ -276,15 +300,15 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             <button className="icon-btn search-btn" aria-label="Search" onClick={(e) => handleLinkClick(e, '/Shop')}>
               <Search size={20} />
             </button>
-            <button className="icon-btn wishlist-btn" aria-label="Wishlist" onClick={(e) => handleLinkClick(e, '/account')}>
+             <button className="icon-btn wishlist-btn" aria-label="Wishlist" onClick={(e) => handleLinkClick(e, '/account?tab=wishlist')}>
               <Heart size={20} />
-              {authUser?.wishlist?.length > 0 && (
-                <span className="icon-badge">{authUser.wishlist.length}</span>
+              {(authUser ? (authUser.wishlist?.length || 0) : guestWishlistCount) > 0 && (
+                <span className="icon-badge">{authUser ? authUser.wishlist.length : guestWishlistCount}</span>
               )}
             </button>
-            <button className="icon-btn cart-btn" aria-label="Cart" onClick={(e) => handleLinkClick(e, '/account')}>
+            <button className="icon-btn cart-btn" aria-label="Cart" onClick={(e) => handleLinkClick(e, '/account?tab=cart')}>
               <ShoppingBag size={20} />
-              <span className="icon-badge">{authUser?.cart?.length || 0}</span>
+              <span className="icon-badge">{authUser ? (authUser.cart?.length || 0) : guestCartCount}</span>
             </button>
 
             {/* Profile Dropdown */}
