@@ -38,6 +38,7 @@ import {
   Globe
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import { resolveProductImage, isRealImg } from '../utils/imageHelper';
 import kidsDressImg from '../assets/kids_tq_110.jpg';
 import handbagImg from '../assets/hero_accessories.jpg';
 import heroKidsImg from '../assets/hero_kids.jpg';
@@ -49,6 +50,21 @@ import celebKidImg from '../assets/celeb_kid.jpg';
 import celebKeerthyImg from '../assets/celeb_keerthy.jpg';
 import celebDulquerImg from '../assets/celeb_dulquer.jpg';
 import celebCoupleImg from '../assets/celeb_couple.jpg';
+
+const generateSKUForCategory = (categoryName) => {
+  if (!categoryName) return '';
+  const parts = categoryName.split('>').map(x => x.trim());
+  const root = parts[0].toLowerCase();
+  let prefix = 'ORG';
+  if (root.includes('clothing')) prefix = 'CLO';
+  else if (root.includes('stationery')) prefix = 'STA';
+  else if (root.includes('gift')) prefix = 'GIF';
+  else if (root.includes('accessories') || root.includes('fancy')) prefix = 'ACC';
+  else prefix = root.replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'ORG';
+  
+  const randNum = Math.floor(1000 + Math.random() * 9000).toString();
+  return `MITH-${prefix}-${randNum}`;
+};
 
 export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -142,6 +158,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [showAddCouponModal, setShowAddCouponModal] = useState(false);
   const [viewProductItem, setViewProductItem] = useState(null);
   const [editProductItem, setEditProductItem] = useState(null);
+  const [addProductActiveTab, setAddProductActiveTab] = useState('basic');
+  const [editProductActiveTab, setEditProductActiveTab] = useState('basic');
 
   // Products filtering & pagination states
   const [prodSearchQuery, setProdSearchQuery] = useState('');
@@ -222,6 +240,26 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       status: o.status || 'Active'
     }));
   });
+
+  const getDynamicStats = () => {
+    let totalRevenue = 0;
+    orders.forEach(order => {
+      if (order.status !== 'Cancelled') {
+        let amtStr = String(order.amount || '0');
+        amtStr = amtStr.replace(/[₹,]/g, '').trim();
+        const amt = parseFloat(amtStr);
+        if (!isNaN(amt)) {
+          totalRevenue += amt;
+        }
+      }
+    });
+    return {
+      revenue: `₹${totalRevenue.toLocaleString('en-IN')}`,
+      ordersCount: orders.length
+    };
+  };
+
+  const stats = getDynamicStats();
 
   const [coupons, setCoupons] = useState(() => {
     const local = localStorage.getItem('mithra_admin_coupons');
@@ -403,7 +441,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
 
   // Form states & Modals states
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [] });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '' });
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -527,7 +565,21 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         if (prodData && prodData.length > 0) setProducts(prodData);
         
         const catData = await apiService.getCategories();
-        if (catData && catData.length > 0) setCategories(catData);
+        if (catData && catData.length > 0) {
+          setCategories(catData);
+        } else {
+          setCategories([
+            { name: 'Clothing', parent: '—', count: 58, status: 'Active' },
+            { name: 'Women', parent: 'Clothing', count: 18, status: 'Active' },
+            { name: 'Kurti', parent: 'Women', count: 8, status: 'Active' },
+            { name: 'Saree', parent: 'Women', count: 6, status: 'Active' },
+            { name: 'Men', parent: 'Clothing', count: 15, status: 'Active' },
+            { name: 'Kids', parent: 'Clothing', count: 12, status: 'Active' },
+            { name: 'Stationery', parent: '—', count: 25, status: 'Active' },
+            { name: 'Gifts', parent: '—', count: 20, status: 'Active' },
+            { name: 'Accessories', parent: '—', count: 15, status: 'Active' }
+          ]);
+        }
         
         const catalogueData = await apiService.getCatalogues();
         if (catalogueData && catalogueData.length > 0) setCatalogues(catalogueData);
@@ -890,6 +942,76 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       });
     };
 
+    const removeAttr = (key) => {
+      const copy = { ...attrs };
+      delete copy[key];
+      setItem({ ...item, attributes: copy });
+    };
+
+    const renderCustomAttrs = () => {
+      const standardKeys = [
+        'size', 'fabric', 'fit', 'sleeve', 
+        'pages', 'material', 'binding', 'paperType', 
+        'occasion', 'personalization', 'giftWrap', 
+        'warranty', 'type', 'theme', 'usage', 'component'
+      ];
+      const customKeys = Object.keys(attrs).filter(k => !standardKeys.includes(k));
+
+      return (
+        <div style={{ marginTop: '15px', borderTop: '1px dashed #ccc', paddingTop: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Additional Custom Specifications</span>
+            <button 
+              type="button" 
+              className="btn-primary" 
+              style={{ padding: '2px 8px', fontSize: '0.75rem', backgroundColor: '#e2ebd5', color: '#8CC63F', border: '1px solid #8CC63F' }} 
+              onClick={() => {
+                const key = prompt('Enter custom specification label (e.g. Weight, Material, Model):');
+                if (key) {
+                  const cleaned = key.trim();
+                  if (cleaned) {
+                    updateAttr(cleaned, '');
+                  }
+                }
+              }}
+            >
+              + Add Custom Field
+            </button>
+          </div>
+          {customKeys.map(k => (
+            <div className="form-field-row" key={k} style={{ marginBottom: '8px', alignItems: 'center', gap: '10px' }}>
+              <div className="form-field" style={{ flex: 1 }}>
+                <label style={{ textTransform: 'capitalize' }}>{k}</label>
+                <input 
+                  type="text" 
+                  className="modal-input" 
+                  value={attrs[k] || ''} 
+                  onChange={(e) => updateAttr(k, e.target.value)} 
+                  placeholder={`Enter value for ${k}`} 
+                />
+              </div>
+              <button 
+                type="button" 
+                onClick={() => removeAttr(k)} 
+                style={{ 
+                  marginTop: '20px',
+                  backgroundColor: '#ff4d4d', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '4px', 
+                  padding: '4px 8px', 
+                  cursor: 'pointer',
+                  fontSize: '0.75rem'
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
     if (lower.includes('clothing')) {
       return (
         <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
@@ -914,6 +1036,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.sleeve || ''} onChange={(e) => updateAttr('sleeve', e.target.value)} placeholder="e.g. Sleeveless, Full Sleeve" />
             </div>
           </div>
+          {renderCustomAttrs()}
         </div>
       );
     } else if (lower.includes('stationery')) {
@@ -940,6 +1063,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.paperType || ''} onChange={(e) => updateAttr('paperType', e.target.value)} placeholder="e.g. Ruled, Dotted" />
             </div>
           </div>
+          {renderCustomAttrs()}
         </div>
       );
     } else if (lower.includes('gift')) {
@@ -969,6 +1093,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               </select>
             </div>
           </div>
+          {renderCustomAttrs()}
         </div>
       );
     } else if (lower.includes('accessor')) {
@@ -991,6 +1116,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.type || ''} onChange={(e) => updateAttr('type', e.target.value)} placeholder="e.g. Handbag, Wallet, Belt" />
             </div>
           </div>
+          {renderCustomAttrs()}
         </div>
       );
     } else if (lower.includes('fancy') || lower.includes('item')) {
@@ -1013,21 +1139,29 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.component || ''} onChange={(e) => updateAttr('component', e.target.value)} placeholder="e.g. Beads, Alloy, Stones" />
             </div>
           </div>
+          {renderCustomAttrs()}
         </div>
       );
     }
-    return null;
+
+    return (
+      <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
+        <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>General Custom Specifications</h4>
+        {renderCustomAttrs()}
+      </div>
+    );
   };
 
   const renderVariantManager = (item, setItem) => {
     const variants = item.variants || [];
 
     const addVariant = () => {
+      const generatedSku = generateSKUForCategory(item.category);
       setItem({
         ...item,
         variants: [
           ...variants,
-          { size: '', color: '', stock: 0, price: null, sku: '', image: '' }
+          { size: '', color: '', stock: 0, price: null, sku: generatedSku, image: '' }
         ]
       });
     };
@@ -1167,8 +1301,16 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         if (uploadedUrl) {
           const currentVal = Array.isArray(item.images) 
             ? item.images.join(', ') 
-            : (item.images || item.image || '');
-          const currentImages = currentVal ? currentVal.split(',').map(img => img.trim()).filter(Boolean) : [];
+            : (item.images || '');
+          let currentImages = (currentVal ? currentVal.split(',') : [])
+            .map(img => img.trim())
+            .filter(img => img && isRealImg(img));
+          
+          // Fallback to item.image if it's a real image URL and we have no gallery images yet
+          if (currentImages.length === 0 && item.image && isRealImg(item.image)) {
+            currentImages = [item.image];
+          }
+
           setItem({
             ...item,
             images: [...currentImages, uploadedUrl].join(', ')
@@ -1232,7 +1374,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       images: imagesArray.length > 0 ? imagesArray : [mainImg],
       description: newProduct.description,
       attributes: newProduct.attributes || {},
-      variants: newProduct.variants || []
+      variants: newProduct.variants || [],
+      brand: newProduct.brand || '',
+      rating: newProduct.rating ? parseFloat(newProduct.rating) : 4.8,
+      reviews: newProduct.reviews ? parseInt(newProduct.reviews, 10) : 120,
+      discount: newProduct.discount ? parseInt(newProduct.discount, 10) : 0,
+      originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : null
     };
 
     try {
@@ -1242,7 +1389,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setProducts([{ ...productToAdd, id: Date.now() }, ...products]);
     }
     setShowAddProductModal(false);
-    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [] });
+    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '' });
   };
 
   const handleEditProductSubmit = async (e) => {
@@ -1259,7 +1406,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       stock: parseInt(editProductItem.stock, 10),
       image: imagesArray[0] || editProductItem.image,
       images: imagesArray.length > 0 ? imagesArray : (editProductItem.image ? [editProductItem.image] : []),
-      variants: editProductItem.variants || []
+      variants: editProductItem.variants || [],
+      brand: editProductItem.brand || '',
+      rating: editProductItem.rating ? parseFloat(editProductItem.rating) : 4.8,
+      reviews: editProductItem.reviews ? parseInt(editProductItem.reviews, 10) : 120,
+      discount: editProductItem.discount ? parseInt(editProductItem.discount, 10) : 0,
+      originalPrice: editProductItem.originalPrice ? parseFloat(editProductItem.originalPrice) : null
     };
 
     try {
@@ -1627,7 +1779,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <div className="re-stat-card">
                   <div className="stat-card-left">
                     <span className="stat-lbl">Total Revenue</span>
-                    <h3 className="stat-val">₹2,45,000</h3>
+                    <h3 className="stat-val">{stats.revenue}</h3>
                     <span className="stat-trend positive">▲ 12.5% vs last month</span>
                   </div>
                   <div className="stat-card-right red-badge">
@@ -1638,7 +1790,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <div className="re-stat-card">
                   <div className="stat-card-left">
                     <span className="stat-lbl">Total Orders</span>
-                    <h3 className="stat-val">542</h3>
+                    <h3 className="stat-val">{stats.ordersCount}</h3>
                     <span className="stat-trend positive">▲ 8.3% vs last month</span>
                   </div>
                   <div className="stat-card-right green-badge">
@@ -1890,7 +2042,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <div className="bottom-widget-card number-metric-card">
                   <h4 className="widget-title">Revenue This Month</h4>
                   <div className="metric-body">
-                    <span className="metric-val">₹2,45,000</span>
+                    <span className="metric-val">{stats.revenue}</span>
                     <span className="metric-trend positive">▲ 12.5%</span>
                   </div>
                 </div>
@@ -2039,7 +2191,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         paginatedProducts.map((product) => (
                           <tr key={product.id}>
                             <td className="prod-img-cell">
-                              <img src={product.image} alt={product.name} className="table-prod-img" />
+                              <img src={resolveProductImage(product)} alt={product.name} className="table-prod-img" />
                             </td>
                             <td className="bold text-black">{product.name}</td>
                             <td className="text-gray">{product.catalogue}</td>
@@ -4233,146 +4385,288 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       {/* --- ADD PRODUCT MODAL DIALOG --- */}
       {showAddProductModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAddProductModal(false)}>
-          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal-box wide" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
               <h3>Add New Product</h3>
               <button className="close-btn" onClick={() => setShowAddProductModal(false)}><X size={18} /></button>
             </div>
             
-            <form onSubmit={handleAddProductSubmit} className="modal-body-form">
-              <div className="form-field">
-                <label>Product Name <span className="req">*</span></label>
-                <input 
-                  type="text" 
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  placeholder="e.g. Kids Party Dress" 
-                  required 
-                  className="modal-input"
-                />
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Category</label>
-                  <select 
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                    className="modal-input"
+            <form onSubmit={handleAddProductSubmit} className="modal-body-form" style={{ padding: 0 }}>
+              <div className="admin-modal-split-layout">
+                {/* Left Navigation Sidebar */}
+                <div className="admin-modal-sidebar">
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'basic' ? 'active' : ''}`}
+                    onClick={() => setAddProductActiveTab('basic')}
                   >
-                    {getCategoryPathsList().map(path => (
-                      <option key={path} value={path}>{path}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-field">
-                  <label>SubCategory</label>
-                  <input 
-                    type="text" 
-                    value={newProduct.subCategory}
-                    onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value })}
-                    placeholder="e.g. Party Wear" 
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Catalogue</label>
-                  <select 
-                    value={newProduct.catalogue}
-                    onChange={(e) => setNewProduct({ ...newProduct, catalogue: e.target.value })}
-                    className="modal-input"
+                    <span className="admin-modal-sidebar-btn-label">Basic Info</span>
+                    <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'specs' ? 'active' : ''}`}
+                    onClick={() => setAddProductActiveTab('specs')}
                   >
-                    {catalogues.map(cat => (
-                      <option key={cat.name} value={cat.name}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label>Status</label>
-                  <select 
-                    value={newProduct.status}
-                    onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
-                    className="modal-input"
+                    <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
+                    <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'media' ? 'active' : ''}`}
+                    onClick={() => setAddProductActiveTab('media')}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Low Stock">Low Stock</option>
-                  </select>
+                    <span className="admin-modal-sidebar-btn-label">Media & Description</span>
+                    <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                  </button>
+                </div>
+
+                {/* Right Scrollable Content Pane */}
+                <div className="admin-modal-content-pane">
+                  {addProductActiveTab === 'basic' && (
+                    <>
+                      {/* Section 1: Identification */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
+                          Product Identification
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Product Name <span className="req">*</span></label>
+                            <input 
+                              type="text" 
+                              value={newProduct.name}
+                              onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                              placeholder="e.g. Kids Party Dress" 
+                              required 
+                              className="modal-input"
+                            />
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Category</label>
+                              <select 
+                                value={newProduct.category}
+                                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                                className="modal-input"
+                              >
+                                {getCategoryPathsList().map(path => (
+                                  <option key={path} value={path}>{path}</option>
+                                ))}
+                              </select>
+                            </div>
+                            
+                            <div className="form-field">
+                              <label>SubCategory</label>
+                              <input 
+                                type="text" 
+                                value={newProduct.subCategory}
+                                onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value })}
+                                placeholder="e.g. Party Wear" 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Catalogue</label>
+                              <select 
+                                value={newProduct.catalogue}
+                                onChange={(e) => setNewProduct({ ...newProduct, catalogue: e.target.value })}
+                                className="modal-input"
+                              >
+                                {catalogues.map(cat => (
+                                  <option key={cat.name} value={cat.name}>{cat.name}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="form-field">
+                              <label>Status</label>
+                              <select 
+                                value={newProduct.status}
+                                onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
+                                className="modal-input"
+                              >
+                                <option value="Active">Active</option>
+                                <option value="Low Stock">Low Stock</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Pricing & Stock */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
+                          Pricing & Inventory
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Price (₹) <span className="req">*</span></label>
+                              <input 
+                                type="number" 
+                                value={newProduct.price}
+                                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                                placeholder="1299" 
+                                required 
+                                className="modal-input"
+                              />
+                            </div>
+                            
+                            <div className="form-field">
+                              <label>Opening Stock Qty <span className="req">*</span></label>
+                              <input 
+                                type="number" 
+                                value={newProduct.stock}
+                                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                                placeholder="25" 
+                                required 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Original/Crossed-out Price (₹)</label>
+                              <input 
+                                type="number" 
+                                value={newProduct.originalPrice || ''}
+                                onChange={(e) => setNewProduct({ ...newProduct, originalPrice: e.target.value })}
+                                placeholder="450 (Optional)" 
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Discount Percentage (%)</label>
+                              <input 
+                                type="number" 
+                                value={newProduct.discount || '0'}
+                                onChange={(e) => setNewProduct({ ...newProduct, discount: e.target.value })}
+                                placeholder="33 (Optional)" 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 3: Brand Info */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#78716C' }}>
+                          Brand & Popularity Details
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Brand Name</label>
+                              <input 
+                                type="text" 
+                                value={newProduct.brand || ''}
+                                onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
+                                placeholder="Mithira Collection" 
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Rating (1.0 to 5.0)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                min="1"
+                                max="5"
+                                value={newProduct.rating || '4.8'}
+                                onChange={(e) => setNewProduct({ ...newProduct, rating: e.target.value })}
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Reviews Count</label>
+                              <input 
+                                type="number" 
+                                value={newProduct.reviews || '120'}
+                                onChange={(e) => setNewProduct({ ...newProduct, reviews: e.target.value })}
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {addProductActiveTab === 'specs' && (
+                    <>
+                      {renderCategorySpecificFields(newProduct, setNewProduct)}
+                      {renderVariantManager(newProduct, setNewProduct)}
+                    </>
+                  )}
+
+                  {addProductActiveTab === 'media' && (
+                    <>
+                      {/* Section 1: Product Images */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
+                          Product Media Gallery
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Images (Comma separated URLs)</label>
+                            <input 
+                              type="text" 
+                              value={Array.isArray(newProduct.images) ? newProduct.images.join(', ') : (newProduct.images || '')}
+                              onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
+                              placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
+                              className="modal-input"
+                              style={{ marginBottom: '8px' }}
+                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                                Upload Local File / Image
+                              </label>
+                              <input 
+                                type="file" 
+                                id="add-prod-file-upload" 
+                                style={{ display: 'none' }} 
+                                accept="image/*" 
+                                onChange={(e) => handleLocalImageUpload(e, newProduct, setNewProduct)} 
+                              />
+                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Description */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
+                          Product Description
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Detailed Description</label>
+                            <textarea 
+                              value={newProduct.description}
+                              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                              placeholder="Enter detailed product description..." 
+                              className="modal-input"
+                              rows="4"
+                              style={{ resize: 'vertical', width: '100%' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Price (₹) <span className="req">*</span></label>
-                  <input 
-                    type="number" 
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                    placeholder="1299" 
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-                
-                <div className="form-field">
-                  <label>Opening Stock Qty <span className="req">*</span></label>
-                  <input 
-                    type="number" 
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                    placeholder="25" 
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              {renderCategorySpecificFields(newProduct, setNewProduct)}
-
-              {renderVariantManager(newProduct, setNewProduct)}
-
-              <div className="form-field">
-                <label>Images (Comma separated URLs)</label>
-                <input 
-                  type="text" 
-                  value={Array.isArray(newProduct.images) ? newProduct.images.join(', ') : (newProduct.images || '')}
-                  onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
-                  placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
-                  className="modal-input"
-                  style={{ marginBottom: '8px' }}
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    Upload Local File / Image
-                  </label>
-                  <input 
-                    type="file" 
-                    id="add-prod-file-upload" 
-                    style={{ display: 'none' }} 
-                    accept="image/*" 
-                    onChange={(e) => handleLocalImageUpload(e, newProduct, setNewProduct)} 
-                  />
-                  <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label>Description</label>
-                <textarea 
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                  placeholder="Enter detailed product description..." 
-                  className="modal-input"
-                  rows="3"
-                  style={{ resize: 'vertical', width: '100%' }}
-                />
-              </div>
-
-              <div className="modal-actions-row">
+              {/* Form Actions Footer Bar */}
+              <div className="modal-actions-row" style={{ borderTop: '1px solid #eae6df', margin: 0, padding: '16px 24px', background: '#fbfbfb' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddProductModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary">Add to Catalog</button>
               </div>
@@ -4384,143 +4678,285 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       {/* --- EDIT PRODUCT MODAL DIALOG --- */}
       {editProductItem && (
         <div className="admin-modal-overlay" onClick={() => setEditProductItem(null)}>
-          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal-box wide" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
               <h3>Edit Product Details</h3>
               <button className="close-btn" onClick={() => setEditProductItem(null)}><X size={18} /></button>
             </div>
             
-            <form onSubmit={handleEditProductSubmit} className="modal-body-form">
-              <div className="form-field">
-                <label>Product Name <span className="req">*</span></label>
-                <input 
-                  type="text" 
-                  value={editProductItem.name}
-                  onChange={(e) => setEditProductItem({ ...editProductItem, name: e.target.value })}
-                  required 
-                  className="modal-input"
-                />
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Category</label>
-                  <select 
-                    value={editProductItem.category}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, category: e.target.value })}
-                    className="modal-input"
+            <form onSubmit={handleEditProductSubmit} className="modal-body-form" style={{ padding: 0 }}>
+              <div className="admin-modal-split-layout">
+                {/* Left Navigation Sidebar */}
+                <div className="admin-modal-sidebar">
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'basic' ? 'active' : ''}`}
+                    onClick={() => setEditProductActiveTab('basic')}
                   >
-                    {getCategoryPathsList().map(path => (
-                      <option key={path} value={path}>{path}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-field">
-                  <label>SubCategory</label>
-                  <input 
-                    type="text" 
-                    value={editProductItem.subCategory || ''}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, subCategory: e.target.value })}
-                    placeholder="e.g. Party Wear" 
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Catalogue</label>
-                  <select 
-                    value={editProductItem.catalogue}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, catalogue: e.target.value })}
-                    className="modal-input"
+                    <span className="admin-modal-sidebar-btn-label">Basic Info</span>
+                    <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'specs' ? 'active' : ''}`}
+                    onClick={() => setEditProductActiveTab('specs')}
                   >
-                    {catalogues.map(cat => (
-                      <option key={cat.name} value={cat.name}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label>Status</label>
-                  <select 
-                    value={editProductItem.status}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, status: e.target.value })}
-                    className="modal-input"
+                    <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
+                    <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'media' ? 'active' : ''}`}
+                    onClick={() => setEditProductActiveTab('media')}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Low Stock">Low Stock</option>
-                  </select>
+                    <span className="admin-modal-sidebar-btn-label">Media & Description</span>
+                    <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                  </button>
+                </div>
+
+                {/* Right Scrollable Content Pane */}
+                <div className="admin-modal-content-pane">
+                  {editProductActiveTab === 'basic' && (
+                    <>
+                      {/* Section 1: Identification */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
+                          Product Identification
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Product Name <span className="req">*</span></label>
+                            <input 
+                              type="text" 
+                              value={editProductItem.name}
+                              onChange={(e) => setEditProductItem({ ...editProductItem, name: e.target.value })}
+                              required 
+                              className="modal-input"
+                            />
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Category</label>
+                              <select 
+                                value={editProductItem.category}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, category: e.target.value })}
+                                className="modal-input"
+                              >
+                                {getCategoryPathsList().map(path => (
+                                  <option key={path} value={path}>{path}</option>
+                                ))}
+                              </select>
+                            </div>
+                            
+                            <div className="form-field">
+                              <label>SubCategory</label>
+                              <input 
+                                type="text" 
+                                value={editProductItem.subCategory || ''}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, subCategory: e.target.value })}
+                                placeholder="e.g. Party Wear" 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Catalogue</label>
+                              <select 
+                                value={editProductItem.catalogue}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, catalogue: e.target.value })}
+                                className="modal-input"
+                              >
+                                {catalogues.map(cat => (
+                                  <option key={cat.name} value={cat.name}>{cat.name}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="form-field">
+                              <label>Status</label>
+                              <select 
+                                value={editProductItem.status}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, status: e.target.value })}
+                                className="modal-input"
+                              >
+                                <option value="Active">Active</option>
+                                <option value="Low Stock">Low Stock</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Pricing & Stock */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
+                          Pricing & Inventory
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Price (₹) <span className="req">*</span></label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.price}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, price: e.target.value })}
+                                required 
+                                className="modal-input"
+                              />
+                            </div>
+                            
+                            <div className="form-field">
+                              <label>Stock Qty <span className="req">*</span></label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.stock}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, stock: e.target.value })}
+                                required 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Original/Crossed-out Price (₹)</label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.originalPrice || ''}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, originalPrice: e.target.value })}
+                                placeholder="450 (Optional)" 
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Discount Percentage (%)</label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.discount || '0'}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, discount: e.target.value })}
+                                placeholder="33 (Optional)" 
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 3: Brand Info */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#78716C' }}>
+                          Brand & Popularity Details
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row">
+                            <div className="form-field">
+                              <label>Brand Name</label>
+                              <input 
+                                type="text" 
+                                value={editProductItem.brand || ''}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, brand: e.target.value })}
+                                placeholder="Mithira Collection" 
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Rating (1.0 to 5.0)</label>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                min="1"
+                                max="5"
+                                value={editProductItem.rating || '4.8'}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, rating: e.target.value })}
+                                className="modal-input"
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label>Reviews Count</label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.reviews || '120'}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, reviews: e.target.value })}
+                                className="modal-input"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {editProductActiveTab === 'specs' && (
+                    <>
+                      {renderCategorySpecificFields(editProductItem, setEditProductItem)}
+                      {renderVariantManager(editProductItem, setEditProductItem)}
+                    </>
+                  )}
+
+                  {editProductActiveTab === 'media' && (
+                    <>
+                      {/* Section 1: Product Images */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
+                          Product Media Gallery
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Images (Comma separated URLs)</label>
+                            <input 
+                              type="text" 
+                              value={Array.isArray(editProductItem.images) ? editProductItem.images.join(', ') : (editProductItem.images || editProductItem.image || '')}
+                              onChange={(e) => setEditProductItem({ ...editProductItem, images: e.target.value })}
+                              placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
+                              className="modal-input"
+                              style={{ marginBottom: '8px' }}
+                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                                Upload Local File / Image
+                              </label>
+                              <input 
+                                type="file" 
+                                id="edit-prod-file-upload" 
+                                style={{ display: 'none' }} 
+                                accept="image/*" 
+                                onChange={(e) => handleLocalImageUpload(e, editProductItem, setEditProductItem)} 
+                              />
+                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Description */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
+                          Product Description
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Detailed Description</label>
+                            <textarea 
+                              value={editProductItem.description || ''}
+                              onChange={(e) => setEditProductItem({ ...editProductItem, description: e.target.value })}
+                              placeholder="Enter detailed product description..." 
+                              className="modal-input"
+                              rows="4"
+                              style={{ resize: 'vertical', width: '100%' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Price (₹) <span className="req">*</span></label>
-                  <input 
-                    type="number" 
-                    value={editProductItem.price}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, price: e.target.value })}
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-                
-                <div className="form-field">
-                  <label>Stock Qty <span className="req">*</span></label>
-                  <input 
-                    type="number" 
-                    value={editProductItem.stock}
-                    onChange={(e) => setEditProductItem({ ...editProductItem, stock: e.target.value })}
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              {renderCategorySpecificFields(editProductItem, setEditProductItem)}
-
-              {renderVariantManager(editProductItem, setEditProductItem)}
-
-              <div className="form-field">
-                <label>Images (Comma separated URLs)</label>
-                <input 
-                  type="text" 
-                  value={Array.isArray(editProductItem.images) ? editProductItem.images.join(', ') : (editProductItem.images || editProductItem.image || '')}
-                  onChange={(e) => setEditProductItem({ ...editProductItem, images: e.target.value })}
-                  placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
-                  className="modal-input"
-                  style={{ marginBottom: '8px' }}
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    Upload Local File / Image
-                  </label>
-                  <input 
-                    type="file" 
-                    id="edit-prod-file-upload" 
-                    style={{ display: 'none' }} 
-                    accept="image/*" 
-                    onChange={(e) => handleLocalImageUpload(e, editProductItem, setEditProductItem)} 
-                  />
-                  <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label>Description</label>
-                <textarea 
-                  value={editProductItem.description || ''}
-                  onChange={(e) => setEditProductItem({ ...editProductItem, description: e.target.value })}
-                  placeholder="Enter detailed product description..." 
-                  className="modal-input"
-                  rows="3"
-                  style={{ resize: 'vertical', width: '100%' }}
-                />
-              </div>
-
-              <div className="modal-actions-row">
+              {/* Form Actions Footer Bar */}
+              <div className="modal-actions-row" style={{ borderTop: '1px solid #eae6df', margin: 0, padding: '16px 24px', background: '#fbfbfb' }}>
                 <button type="button" className="btn-secondary" onClick={() => setEditProductItem(null)}>Cancel</button>
                 <button type="submit" className="btn-primary">Save Changes</button>
               </div>
@@ -4541,7 +4977,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             <div className="modal-body-view" style={{ flexDirection: 'column' }}>
               <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
                 <div className="view-prod-img-wrap" style={{ flexShrink: 0 }}>
-                  <img src={viewProductItem.image} alt={viewProductItem.name} className="view-img" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '10px' }} />
+                  <img src={resolveProductImage(viewProductItem)} alt={viewProductItem.name} className="view-img" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '10px' }} />
                 </div>
                 <div className="view-prod-details" style={{ flexGrow: 1, paddingLeft: 0 }}>
                   <h4 className="view-title" style={{ fontSize: '1.25rem', marginBottom: '12px' }}>{viewProductItem.name}</h4>

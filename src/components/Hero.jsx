@@ -62,26 +62,61 @@ export default function Hero() {
         const active = data.filter(b => b.status === 'Active');
         if (active.length > 0) {
           const mapped = active.map(b => {
-            let img = imgClothing;
-            let theme = "Elegant Red";
             const imgVal = String(b.image || '').toLowerCase();
-            
-            if (imgVal.includes('stationery')) {
-              img = imgStationery;
-              theme = "Sky Blue";
-            } else if (imgVal.includes('gift')) {
-              img = imgGifts;
-              theme = "Soft Pink";
-            } else if (imgVal.includes('accessories') || imgVal.includes('fancy')) {
-              img = imgAccessories;
-              theme = "Brown + Gold";
+
+            // Determine whether b.image is a real URL / file path or a keyword slug.
+            // A "real" image reference starts with http(s) or '/', or contains a
+            // known image file extension anywhere in the string.
+            const isRealImage =
+              imgVal.startsWith('http') ||
+              imgVal.startsWith('/') ||
+              /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?|$)/.test(imgVal);
+
+            let img;
+            let theme;
+
+            if (isRealImage) {
+              // Use the real URL/path directly – no override with static imports.
+              img = b.image;
+
+              // Derive a theme from the slot or image path so the text card
+              // still gets a sensible colour, falling back to the default.
+              const slotVal = String(b.slot || '').toLowerCase();
+              if (slotVal.includes('stationery') || imgVal.includes('stationery')) {
+                theme = "Sky Blue";
+              } else if (slotVal.includes('gift') || imgVal.includes('gift')) {
+                theme = "Soft Pink";
+              } else if (
+                slotVal.includes('accessories') || slotVal.includes('fancy') ||
+                imgVal.includes('accessories') || imgVal.includes('fancy')
+              ) {
+                theme = "Brown + Gold";
+              } else {
+                theme = "Elegant Red";
+              }
+            } else {
+              // Keyword / slug fallback – map to static category images.
+              if (imgVal.includes('stationery')) {
+                img = imgStationery;
+                theme = "Sky Blue";
+              } else if (imgVal.includes('gift')) {
+                img = imgGifts;
+                theme = "Soft Pink";
+              } else if (imgVal.includes('accessories') || imgVal.includes('fancy')) {
+                img = imgAccessories;
+                theme = "Brown + Gold";
+              } else {
+                // Default: clothing / anything else
+                img = imgClothing;
+                theme = "Elegant Red";
+              }
             }
-            
+
             return {
               id: b.id,
               category: b.slot || "Promotion",
               title: b.title,
-              subtitle: "Exclusive curated collection live on MithiraShoppy",
+              subtitle: "Exclusive curated collection live on MithraShoppy",
               cta: "Shop Collection",
               image: img,
               themeColor: theme,

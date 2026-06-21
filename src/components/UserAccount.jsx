@@ -12,6 +12,7 @@ import {
   Sparkles,
   Camera
 } from 'lucide-react';
+import { resolveProductImage } from '../utils/imageHelper';
 
 export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const [activeTab, setActiveTab] = useState(() => {
@@ -493,11 +494,16 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
               ? matchedVar.price 
               : prod.price;
 
+            const variantImage = (matchedVar && matchedVar.image) 
+              ? resolveProductImage({ ...prod, image: matchedVar.image }) 
+              : resolveProductImage(prod);
+
             return {
               ...prod,
               id: prod.id || prod._id,
               title: prod.title || prod.name,
               price: variantPrice,
+              image: variantImage,
               quantity: item.quantity || 1,
               selectedVariant: item.variant || { size: null, color: null, variantId: null, sku: null }
             };
@@ -518,11 +524,15 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             const variantPrice = (firstVar && firstVar.price !== null && firstVar.price !== undefined) 
               ? firstVar.price 
               : prod.price;
+            const variantImage = (firstVar && firstVar.image) 
+              ? resolveProductImage({ ...prod, image: firstVar.image }) 
+              : resolveProductImage(prod);
             return {
               ...prod,
               id: prod.id || prod._id,
               title: prod.title || prod.name,
               price: variantPrice,
+              image: variantImage,
               quantity: 1,
               selectedVariant: { 
                 size: firstVar?.size || null, 

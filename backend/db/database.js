@@ -8,8 +8,9 @@ mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('✅ Connected to MongoDB successfully');
     try {
-      await mongoose.connection.db.dropDatabase();
-      console.log('🗑️ Database dropped/cleared successfully');
+      // Skip dropping the database to persist products and categories across restarts
+      // await mongoose.connection.db.dropDatabase();
+      // console.log('🗑️ Database dropped/cleared successfully');
       // Brief delay to let MongoDB finalize dropped collections and indices
       await new Promise(resolve => setTimeout(resolve, 1000));
       await seedAdmin();
@@ -91,6 +92,11 @@ const ProductSchema = new mongoose.Schema({
   lowStockThreshold: { type: Number, default: 5 },
   isLowStock: { type: Boolean, default: false },
   description: { type: String, default: '' },
+  brand: { type: String, default: '' },
+  rating: { type: Number, default: 4.8 },
+  reviews: { type: Number, default: 120 },
+  discount: { type: Number, default: 0 },
+  originalPrice: { type: Number, default: null },
   attributes: {
     type: [{
       key: { type: String },
@@ -292,6 +298,62 @@ async function seedStoreData() {
         description: 'Relaxed fit women kurti.'
       });
       console.log('✅ Women Kurti seeded successfully');
+    }
+
+    const defaultCategories = [
+      { name: 'Clothing', parent: '—' },
+      { name: 'Stationery', parent: '—' },
+      { name: 'Gifts', parent: '—' },
+      { name: 'Accessories', parent: '—' },
+      
+      { name: 'Women', parent: 'Clothing' },
+      { name: 'Men', parent: 'Clothing' },
+      { name: 'Kids', parent: 'Clothing' },
+      { name: 'Boys', parent: 'Clothing' },
+      { name: 'Girls', parent: 'Clothing' },
+      
+      { name: 'Kurti', parent: 'Women' },
+      { name: 'Saree', parent: 'Women' },
+      { name: 'duppata', parent: 'Women' },
+      { name: 'shirts', parent: 'Men' },
+      { name: 'floral kurti', parent: 'Kurti' },
+      
+      { name: 'Pens', parent: 'Stationery' },
+      { name: 'Journals', parent: 'Stationery' },
+      { name: 'Notebooks', parent: 'Stationery' },
+      { name: 'School Items', parent: 'Stationery' },
+      { name: 'note', parent: 'School Items' },
+      
+      { name: 'Birthday Gifts', parent: 'Gifts' },
+      { name: 'Wedding Gifts', parent: 'Gifts' },
+      { name: 'Anniversary Gifts', parent: 'Gifts' },
+      { name: 'Return Gifts', parent: 'Gifts' },
+      
+      { name: 'Jewellery', parent: 'Accessories' },
+      { name: 'Fancy Items', parent: 'Accessories' },
+      { name: 'Hair Accessories', parent: 'Accessories' },
+      { name: 'Fashion Accessories', parent: 'Accessories' }
+    ];
+
+    for (const cat of defaultCategories) {
+      let doc = await Category.findOne({ name: cat.name });
+      if (!doc) {
+        let parentId = null;
+        if (cat.parent !== '—') {
+          const parentDoc = await Category.findOne({ name: cat.parent });
+          if (parentDoc) {
+            parentId = parentDoc._id;
+          }
+        }
+        doc = await Category.create({
+          name: cat.name,
+          parent: cat.parent,
+          parentId,
+          status: 'Active',
+          count: 0
+        });
+        console.log(`✅ Category '${cat.name}' seeded successfully`);
+      }
     }
   } catch (err) {
     console.error('Error seeding store products:', err);

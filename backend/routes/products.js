@@ -67,7 +67,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/products - Create a new product
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice } = req.body;
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
@@ -89,6 +89,11 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       image: image || 'Kids',
       images: images || (image ? [image] : []),
       description: description || '',
+      brand: brand || '',
+      rating: rating !== undefined ? parseFloat(rating) : 4.8,
+      reviews: reviews !== undefined ? parseInt(reviews, 10) : 120,
+      discount: discount !== undefined ? parseInt(discount, 10) : 0,
+      originalPrice: originalPrice !== undefined ? (parseFloat(originalPrice) || null) : null,
       attributes: formatAttributesForDatabase(attributes),
       variants: variants || []
     });
@@ -109,7 +114,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice } = req.body;
 
     const updateFields = {};
     if (name !== undefined) updateFields.name = name.trim();
@@ -122,6 +127,11 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     if (image !== undefined) updateFields.image = image;
     if (description !== undefined) updateFields.description = description;
     if (images !== undefined) updateFields.images = images;
+    if (brand !== undefined) updateFields.brand = brand;
+    if (rating !== undefined) updateFields.rating = parseFloat(rating);
+    if (reviews !== undefined) updateFields.reviews = parseInt(reviews, 10);
+    if (discount !== undefined) updateFields.discount = parseInt(discount, 10);
+    if (originalPrice !== undefined) updateFields.originalPrice = originalPrice !== null ? (parseFloat(originalPrice) || null) : null;
     if (attributes !== undefined) updateFields.attributes = formatAttributesForDatabase(attributes);
     if (variants !== undefined) updateFields.variants = variants;
 

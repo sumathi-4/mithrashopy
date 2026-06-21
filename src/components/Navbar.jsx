@@ -6,7 +6,7 @@ import { apiService } from '../services/apiService';
 
 export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [authModal, setAuthModal] = useState(null); // null | 'user' | 'admin'
@@ -34,6 +34,13 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   const [adminError, setAdminError] = useState('');
 
   const [announcements, setAnnouncements] = useState([]);
+
+  // ── Search state ──────────────────────────────────────────────────
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [allProducts, setAllProductsSearch] = useState([]);
+  const searchRef = useRef(null);
 
   const profileRef = useRef(null);
 
@@ -75,19 +82,85 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     }).catch(console.error);
   }, []);
 
-  const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
   
+  // Load categories from backend
   useEffect(() => {
     apiService.getCategories().then(data => {
-      if (data && data.length > 0) {
-        // filter unique active categories parent names
-        const names = [...new Set(data.map(cat => cat.name.split(' > ')[0]))];
-        setDynamicCategories(names);
-      }
+      if (data && data.length > 0) setCategoriesList(data);
     }).catch(console.error);
   }, []);
 
-  const categories = dynamicCategories.length > 0 ? dynamicCategories : ['Clothing', 'Stationery', 'Gifts', 'Accessories'];
+  // Load all products for search
+  useEffect(() => {
+    apiService.getProducts().then(data => {
+      if (data && data.length > 0) setAllProductsSearch(data);
+    }).catch(console.error);
+  }, []);
+
+  // Close search on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const getUnifiedCategories = () => {
+    const defaultGroups = [
+      { name: 'Clothing', key: 'CLOTHING' },
+      { name: 'Stationery', key: 'STATIONERY' },
+      { name: 'Gifts', key: 'GIFTS' },
+      { name: 'Accessories', key: 'ACCESSORIES' }
+    ];
+
+    const buildTree = (parentName, parentKey) => {
+      if (!categoriesList || categoriesList.length === 0) return [];
+      const dbChildren = categoriesList.filter(cat => cat.parent && cat.parent.toLowerCase() === parentName.toLowerCase());
+      return dbChildren.map(cat => {
+        const uniqueKey = `${parentKey}_${cat.name.toUpperCase().replace(/\s+/g, '_')}`;
+        return {
+          key: uniqueKey,
+          dbName: cat.name,
+          label: cat.name,
+          children: buildTree(cat.name, uniqueKey)
+        };
+      });
+    };
+
+    const structure = [];
+
+    const dbRoots = categoriesList.filter(cat => (!cat.parent || cat.parent === '—') && cat.name !== '—');
+
+    defaultGroups.forEach(def => {
+      const dbRoot = dbRoots.find(r => r.name.toLowerCase() === def.name.toLowerCase());
+      const subcategories = dbRoot ? buildTree(dbRoot.name, def.key) : [];
+      structure.push({
+        name: def.name,
+        key: def.key,
+        subcategories
+      });
+    });
+
+    dbRoots.forEach(dbRoot => {
+      const alreadyAdded = structure.some(s => s.name.toLowerCase() === dbRoot.name.toLowerCase());
+      if (!alreadyAdded) {
+        const key = dbRoot.name.toUpperCase().replace(/\s+/g, '_');
+        structure.push({
+          name: dbRoot.name,
+          key,
+          subcategories: buildTree(dbRoot.name, key)
+        });
+      }
+    });
+
+    return structure;
+  };
 
   const [guestCartCount, setGuestCartCount] = useState(0);
   const [guestWishlistCount, setGuestWishlistCount] = useState(0);
@@ -112,6 +185,44 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
       window.removeEventListener('mithira_cart_update', updateGuestCounts);
     };
   }, []);
+
+  // Live search handler
+  const handleSearchInput = (e) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (q.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const lower = q.toLowerCase();
+    const filtered = allProducts
+      .filter(p => {
+        const name = (p.name || p.title || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        return name.includes(lower) || cat.includes(lower);
+      })
+      .slice(0, 8);
+    setSearchResults(filtered);
+  };
+
+  const handleSearchSelect = (prod) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    const cat = (prod.category || '').split('>')[0].trim().toUpperCase();
+    window.history.pushState({}, '', `/Shop?category=${cat.toLowerCase()}&search=${encodeURIComponent(prod.name || prod.title || '')}`);
+    window.dispatchEvent(new Event('popstate'));
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      setSearchOpen(false);
+      window.history.pushState({}, '', `/Shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      window.dispatchEvent(new Event('popstate'));
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  };
 
   const handleLinkClick = (e, path) => {
     e.preventDefault();
@@ -256,31 +367,52 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             <li className="nav-item">
               <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
             </li>
-            <li className="nav-item">
-              <a href="/Shop" onClick={(e) => handleLinkClick(e, '/Shop')}>Shop</a>
-            </li>
-            <li
-              className="nav-item has-dropdown"
-              onMouseEnter={() => setCategoriesDropdownOpen(true)}
-              onMouseLeave={() => setCategoriesDropdownOpen(false)}
-            >
-              <div className="dropdown-toggle" onClick={(e) => handleLinkClick(e, '/#categories')}>
-                Categories <ChevronDown className="dropdown-icon" />
-              </div>
-              <ul className={`dropdown-menu ${categoriesDropdownOpen ? 'show' : ''}`}>
-                {categories.map((category) => (
-                  <li key={category}>
+            {getUnifiedCategories().map(group => {
+              const renderNavbarSubmenu = (node) => {
+                const hasChildren = node.children && node.children.length > 0;
+                return (
+                  <li key={node.key} className={hasChildren ? "dropdown-submenu" : ""}>
                     <a
-                      href={`/Shop?category=${category.toLowerCase()}`}
+                      href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${node.dbName.toLowerCase()}`}
                       className="dropdown-item"
-                      onClick={(e) => handleLinkClick(e, `/Shop?category=${category.toLowerCase()}`)}
+                      onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${node.dbName.toLowerCase()}`)}
                     >
-                      {category}
+                      {node.label} {hasChildren && <span className="submenu-arrow">▶</span>}
                     </a>
+                    {hasChildren && (
+                      <ul className="dropdown-submenu-menu">
+                        {node.children.map(child => renderNavbarSubmenu(child))}
+                      </ul>
+                    )}
                   </li>
-                ))}
-              </ul>
-            </li>
+                );
+              };
+
+              return (
+                <li
+                  key={group.key}
+                  className="nav-item has-dropdown"
+                  onMouseEnter={() => setActiveDropdown(group.key)}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  <div className="dropdown-toggle" onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}>
+                    {group.name} <ChevronDown className="dropdown-icon" />
+                  </div>
+                  <ul className={`dropdown-menu ${activeDropdown === group.key ? 'show' : ''}`}>
+                    <li key="ALL">
+                      <a
+                        href={`/Shop?category=${group.key.toLowerCase()}`}
+                        className="dropdown-item"
+                        onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}
+                      >
+                        All {group.name}
+                      </a>
+                    </li>
+                    {group.subcategories.map(sub => renderNavbarSubmenu(sub))}
+                  </ul>
+                </li>
+              );
+            })}
             <li className="nav-item">
               <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
             </li>
@@ -297,9 +429,52 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
           {/* Action Icons */}
           <div className="nav-icons">
-            <button className="icon-btn search-btn" aria-label="Search" onClick={(e) => handleLinkClick(e, '/Shop')}>
-              <Search size={20} />
-            </button>
+            {/* ── Search ── */}
+            <div className={`nav-search-wrapper ${searchOpen ? 'open' : ''}`} ref={searchRef}>
+              {searchOpen ? (
+                <div className="nav-search-bar">
+                  <Search size={16} className="nav-search-icon-inside" />
+                  <input
+                    type="text"
+                    className="nav-search-input"
+                    placeholder="Search products…"
+                    value={searchQuery}
+                    onChange={handleSearchInput}
+                    onKeyDown={handleSearchSubmit}
+                    autoFocus
+                  />
+                  <button className="nav-search-close" onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}>
+                    <X size={16} />
+                  </button>
+                  {searchResults.length > 0 && (
+                    <div className="nav-search-dropdown">
+                      {searchResults.map((prod, i) => (
+                        <div
+                          key={prod._id || prod.id || i}
+                          className="nav-search-result-item"
+                          onClick={() => handleSearchSelect(prod)}
+                        >
+                          <Search size={13} className="result-icon" />
+                          <div className="result-text">
+                            <span className="result-name">{prod.name || prod.title}</span>
+                            <span className="result-cat">{prod.category}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                    <div className="nav-search-dropdown">
+                      <div className="nav-search-no-result">No products found for "{searchQuery}"</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button className="icon-btn search-btn" aria-label="Search" onClick={() => setSearchOpen(true)}>
+                  <Search size={20} />
+                </button>
+              )}
+            </div>
              <button className="icon-btn wishlist-btn" aria-label="Wishlist" onClick={(e) => handleLinkClick(e, '/account?tab=wishlist')}>
               <Heart size={20} />
               {(authUser ? (authUser.wishlist?.length || 0) : guestWishlistCount) > 0 && (

@@ -9,7 +9,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Security Middleware ───────────────────────────────────────────────────────
-app.use(helmet()); // Sets security headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+})); // Sets security headers allowing cross-origin image requests
 app.use(express.json({ limit: '50mb' })); // Body size limit
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -19,6 +21,8 @@ const allowedOrigins = [
   'http://localhost:4173',  // Vite preview
   'http://localhost:3000',
   'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
   process.env.FRONTEND_ORIGIN
 ].filter(Boolean);
 
@@ -26,7 +30,8 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g., mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    // Allow matching origins in allowedOrigins list or any localhost/127.0.0.1 ports
+    if (allowedOrigins.includes(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));

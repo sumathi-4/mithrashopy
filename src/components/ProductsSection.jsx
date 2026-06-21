@@ -5,8 +5,10 @@ import { apiService } from '../services/apiService';
 import clothingUser1 from '../assets/clothing_user_1.jpg';
 import clothingUser2 from '../assets/clothing_user_2.jpg';
 import clothingUser3 from '../assets/clothing_user_3.jpg';
+import { useToast } from './ToastProvider';
 
 export default function ProductsSection({ authUser, setAuthUser }) {
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('ALL');
   const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
   
@@ -27,10 +29,10 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     let updated;
     if (wishlist.includes(id)) {
       updated = wishlist.filter(item => item !== id);
-      alert('Removed from wishlist!');
+      addToast({ message: 'Removed from wishlist', type: 'wishlist' });
     } else {
       updated = [...wishlist, id];
-      alert('Added to wishlist successfully!');
+      addToast({ message: '❤️ Added to wishlist!', type: 'wishlist' });
     }
     setWishlist(updated);
     if (authUser) {
