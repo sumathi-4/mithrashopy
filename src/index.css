@@ -15347,7 +15347,8 @@ ul {
 }
 
 .admin-modal-box.wide {
-  max-width: 750px;
+  width: 950px;
+  max-width: 95vw;
 }
 
 .admin-modal-box.small {
@@ -17156,6 +17157,375 @@ ul {
 
   .whatsapp-float-btn { width: 48px; height: 48px; bottom: 80px; right: 16px; }
   .back-to-top-btn { width: 40px; height: 40px; bottom: 16px; right: 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD TABBED SPLIT MODAL LAYOUT & STOREFRONT DETAILS TABS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Admin Split Layout Modal */
+.admin-modal-split-layout {
+  display: flex;
+  min-height: 520px;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-modal-sidebar {
+  width: 220px;
+  background-color: #f7faf6;
+  border-right: 1px solid #e5ebe2;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-modal-sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.admin-modal-sidebar-btn:hover {
+  background-color: rgba(140, 198, 63, 0.08);
+  color: var(--primary-rose-dark);
+}
+
+.admin-modal-sidebar-btn.active {
+  background-color: var(--primary-rose);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(140, 198, 63, 0.25);
+}
+
+.admin-modal-content-pane {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Card layout inside content pane */
+.admin-modal-section-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+}
+
+.admin-modal-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-modal-section-header h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-family: var(--font-sans);
+  margin: 0;
+}
+
+.admin-modal-section-header svg {
+  color: var(--primary-rose);
+}
+
+/* Form inputs styling */
+.admin-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.admin-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .admin-modal-split-layout {
+    flex-direction: column;
+  }
+  .admin-modal-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid #e5ebe2;
+  }
+  .admin-modal-sidebar-btn {
+    white-space: nowrap;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+  .admin-modal-content-pane {
+    max-height: 55vh;
+    padding: 20px;
+  }
+  .admin-grid-2, .admin-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Storefront Details Tabs */
+.detail-tabs-container {
+  width: 100%;
+  margin-top: 30px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 24px;
+}
+
+.detail-tabs-header {
+  display: flex;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar for clean look */
+}
+
+.detail-tabs-header::-webkit-scrollbar {
+  display: none;
+}
+
+.detail-tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.detail-tab-btn:hover {
+  color: var(--text-dark);
+}
+
+.detail-tab-btn.active {
+  color: var(--primary-rose-dark);
+  font-weight: 700;
+}
+
+.detail-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--primary-rose);
+  border-radius: 3px 3px 0 0;
+}
+
+.detail-tab-panel {
+  min-height: 150px;
+  line-height: 1.6;
+  color: #444444;
+  font-size: 0.95rem;
+}
+
+.detail-tab-content {
+  animation: fadeInTab 0.35s ease;
+}
+
+@keyframes fadeInTab {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhance specifications list inside specs tab panel */
+.specs-table-mini {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  max-width: 600px;
+}
+
+.specs-row-mini {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  padding: 8px 12px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+  align-items: center;
+}
+
+.specs-row-mini:last-child {
+  border-bottom: none;
+}
+
+.specs-key {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.specs-val {
+  color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .specs-row-mini {
+    grid-template-columns: 120px 1fr;
+    font-size: 0.85rem;
+  }
+  .detail-tab-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Premium Admin Sidebar & Variant Table Styling */
+
+.admin-modal-sidebar {
+  width: 240px; /* Increase width for better breathing room */
+}
+
+.sidebar-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.25;
+}
+
+.admin-modal-sidebar-btn-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+
+.admin-modal-sidebar-btn-desc {
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.8;
+  font-family: var(--font-sans);
+}
+
+.admin-modal-sidebar-btn svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.admin-modal-sidebar-btn.active svg {
+  opacity: 1;
+}
+
+/* Premium Admin Variant Table */
+.admin-variant-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.admin-variant-table th {
+  padding: 12px;
+  background-color: #f7faf6;
+  color: var(--text-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e5ebe2;
+  text-align: left;
+}
+
+.admin-variant-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5ebe2;
+  vertical-align: middle;
+}
+
+.admin-variant-table tr:hover {
+  background-color: rgba(140, 198, 63, 0.02);
+}
+
+.admin-table-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+}
+
+.admin-table-input:focus {
+  outline: none;
+  border-color: var(--primary-rose);
+  box-shadow: 0 0 0 3px rgba(140, 198, 63, 0.15);
+}
+
+.admin-variant-image-upload-btn {
+  cursor: pointer;
+  padding: 5px 12px;
+  background-color: rgba(140, 198, 63, 0.08);
+  border: 1px solid var(--primary-rose);
+  color: var(--primary-rose-dark);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.admin-variant-image-upload-btn:hover {
+  background-color: var(--primary-rose);
+  color: #ffffff;
+}
+
+.admin-variant-remove-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.admin-variant-remove-btn:hover {
+  background-color: rgba(220, 38, 38, 0.08);
 }
 
 

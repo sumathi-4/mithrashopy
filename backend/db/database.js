@@ -241,7 +241,23 @@ const SettingsSchema = new mongoose.Schema({
   storeName: { type: String, default: 'MithiraShoppy Official' },
   supportEmail: { type: String, default: 'support@mithirashoppy.com' },
   taxPercentage: { type: Number, default: 18 },
-  defaultCurrency: { type: String, default: 'INR' }
+  defaultCurrency: { type: String, default: 'INR' },
+  shippingInfoLines: {
+    type: [String],
+    default: [
+      "Free shipping on all orders above ₹999.",
+      "Standard delivery takes 3–5 business days depending on location.",
+      "Cash on Delivery (COD) is available on all eligible postal addresses.",
+      "We offer easy 7-day hassle-free returns and exchanges."
+    ]
+  },
+  freeShippingAbove: { type: Number, default: 999 },
+  standardCharge: { type: Number, default: 0 },
+  expressCharge: { type: Number, default: 150 },
+  codCharges: { type: Number, default: 50 },
+  enableCod: { type: Boolean, default: true },
+  enableExpress: { type: Boolean, default: true },
+  enableInternational: { type: Boolean, default: false }
 });
 
 // ─── Future-Ready Schemas ───────────────────────────────────────────────────
@@ -283,6 +299,12 @@ const Settings = mongoose.model('Settings', SettingsSchema);
 // ─── Seed Data ───────────────────────────────────────────────────────────────
 async function seedStoreData() {
   try {
+    const settingsDoc = await Settings.findOne();
+    if (!settingsDoc) {
+      await Settings.create({});
+      console.log('✅ Default settings seeded successfully');
+    }
+
     const existing = await Product.findOne({ id: 2 });
     if (!existing) {
       await Product.create({

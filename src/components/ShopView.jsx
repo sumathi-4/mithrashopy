@@ -817,6 +817,14 @@ export default function ShopView({ authUser, setAuthUser }) {
     }
   });
   const [categoriesList, setCategoriesList] = useState([]);
+  const [storeSettings, setStoreSettings] = useState({
+    shippingInfoLines: [
+      "Free shipping on all orders above ₹999.",
+      "Standard delivery takes 3-5 business days depending on location.",
+      "Cash on Delivery (COD) is available on all eligible postal addresses.",
+      "We offer easy 7-day hassle-free returns and exchanges."
+    ]
+  });
   const [expandedSubcategories, setExpandedSubcategories] = useState({});
   const toggleSubcategoryExpand = (subKey) => {
     setExpandedSubcategories(prev => ({
@@ -846,6 +854,12 @@ export default function ShopView({ authUser, setAuthUser }) {
     apiService.getCategories().then(data => {
       if (data && data.length > 0) {
         setCategoriesList(data);
+      }
+    }).catch(console.error);
+
+    apiService.getSettings().then(data => {
+      if (data) {
+        setStoreSettings(data);
       }
     }).catch(console.error);
   }, []);
@@ -986,7 +1000,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [isOffersOpen, setIsOffersOpen] = useState(false);
 
   const [showMoreColors, setShowMoreColors] = useState(false);
-  const [activeDetailAccordion, setActiveDetailAccordion] = useState(null);
+  const [activeDetailTab, setActiveDetailTab] = useState('description');
   const [reviewsList, setReviewsList] = useState([]);
 
   // Reset page when filters change
@@ -1878,38 +1892,46 @@ export default function ShopView({ authUser, setAuthUser }) {
                 </a>
               )}
 
-              {/* Collapsible Tabs / Accordions */}
-              <div className="product-details-accordion-wrap" style={{ marginTop: '20px' }}>
-                
-                {/* 1. Description Accordion */}
-                <div className="detail-accordion-item">
-                  <button 
-                    className="detail-accordion-header"
-                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'description' ? null : 'description')}
+              {/* Horizontal Tabs for Product Details */}
+              <div className="detail-tabs-container">
+                <div className="detail-tabs-header">
+                  <button
+                    className={`detail-tab-btn ${activeDetailTab === 'description' ? 'active' : ''}`}
+                    onClick={() => setActiveDetailTab('description')}
                   >
-                    <span>Description</span>
-                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'description' ? 'rotated' : ''}`} />
+                    Description
                   </button>
-                  {activeDetailAccordion === 'description' && (
-                    <div className="detail-accordion-content">
+                  <button
+                    className={`detail-tab-btn ${activeDetailTab === 'specs' ? 'active' : ''}`}
+                    onClick={() => setActiveDetailTab('specs')}
+                  >
+                    Specifications
+                  </button>
+                  <button
+                    className={`detail-tab-btn ${activeDetailTab === 'reviews' ? 'active' : ''}`}
+                    onClick={() => setActiveDetailTab('reviews')}
+                  >
+                    Reviews ({reviewsList.filter(rev => rev.productName === fullDetailProduct.title || rev.productName === fullDetailProduct.name).length})
+                  </button>
+                  <button
+                    className={`detail-tab-btn ${activeDetailTab === 'shipping' ? 'active' : ''}`}
+                    onClick={() => setActiveDetailTab('shipping')}
+                  >
+                    Shipping Info
+                  </button>
+                </div>
+
+                <div className="detail-tab-panel">
+                  {activeDetailTab === 'description' && (
+                    <div className="detail-tab-content description-panel">
                       <p style={{ margin: 0 }}>
                         {fullDetailProduct.description || "Indulge in our handpicked selections crafted to match your cultural roots and premium choices. Made with pure fabric, exquisite design details, and comfortable fit. Designed for both casual elegance and luxury wear."}
                       </p>
                     </div>
                   )}
-                </div>
 
-                {/* 2. Specifications Accordion */}
-                <div className="detail-accordion-item">
-                  <button 
-                    className="detail-accordion-header"
-                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'specs' ? null : 'specs')}
-                  >
-                    <span>Specifications</span>
-                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'specs' ? 'rotated' : ''}`} />
-                  </button>
-                  {activeDetailAccordion === 'specs' && (
-                    <div className="detail-accordion-content">
+                  {activeDetailTab === 'specs' && (
+                    <div className="detail-tab-content specs-panel">
                       <div className="specs-table-mini">
                         {fullDetailProduct.modelNo && (
                           <div className="specs-row-mini">
@@ -1964,19 +1986,9 @@ export default function ShopView({ authUser, setAuthUser }) {
                       </div>
                     </div>
                   )}
-                </div>
 
-                {/* 3. Reviews Accordion */}
-                <div className="detail-accordion-item">
-                  <button 
-                    className="detail-accordion-header"
-                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'reviews' ? null : 'reviews')}
-                  >
-                    <span>Reviews ({reviewsList.filter(rev => rev.productName === fullDetailProduct.title || rev.productName === fullDetailProduct.name).length})</span>
-                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'reviews' ? 'rotated' : ''}`} />
-                  </button>
-                  {activeDetailAccordion === 'reviews' && (
-                    <div className="detail-accordion-content">
+                  {activeDetailTab === 'reviews' && (
+                    <div className="detail-tab-content reviews-panel">
                       {(() => {
                         const productReviews = reviewsList.filter(rev => 
                           rev.productName === fullDetailProduct.title || 
@@ -2017,29 +2029,25 @@ export default function ShopView({ authUser, setAuthUser }) {
                       })()}
                     </div>
                   )}
-                </div>
 
-                {/* 4. Shipping Info Accordion */}
-                <div className="detail-accordion-item">
-                  <button 
-                    className="detail-accordion-header"
-                    onClick={() => setActiveDetailAccordion(activeDetailAccordion === 'shipping' ? null : 'shipping')}
-                  >
-                    <span>Shipping Information</span>
-                    <ChevronDown size={16} className={`accordion-chevron ${activeDetailAccordion === 'shipping' ? 'rotated' : ''}`} />
-                  </button>
-                  {activeDetailAccordion === 'shipping' && (
-                    <div className="detail-accordion-content">
+                  {activeDetailTab === 'shipping' && (
+                    <div className="detail-tab-content shipping-panel">
                       <ul className="shipping-info-list" style={{ paddingLeft: '20px', listStyleType: 'disc', margin: 0 }}>
-                        <li style={{ marginBottom: '6px' }}>Free shipping on all orders above ₹999.</li>
-                        <li style={{ marginBottom: '6px' }}>Standard delivery takes 3-5 business days depending on location.</li>
-                        <li style={{ marginBottom: '6px' }}>Cash on Delivery (COD) is available on all eligible postal addresses.</li>
-                        <li style={{ marginBottom: '6px' }}>We offer easy 7-day hassle-free returns and exchanges.</li>
+                        {(storeSettings.shippingInfoLines && storeSettings.shippingInfoLines.length > 0
+                          ? storeSettings.shippingInfoLines
+                          : [
+                              "Free shipping on all orders above ₹999.",
+                              "Standard delivery takes 3-5 business days depending on location.",
+                              "Cash on Delivery (COD) is available on all eligible postal addresses.",
+                              "We offer easy 7-day hassle-free returns and exchanges."
+                            ]
+                        ).map((line, idx) => (
+                          <li key={idx} style={{ marginBottom: '6px' }}>{line}</li>
+                        ))}
                       </ul>
                     </div>
                   )}
                 </div>
-
               </div>
 
             </div>

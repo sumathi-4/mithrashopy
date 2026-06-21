@@ -111,6 +111,18 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
   // Settings Sub-tab States
   const [settingsSubTab, setSettingsSubTab] = useState('store');
+  const [generalSettings, setGeneralSettings] = useState({
+    storeName: 'MithiraShoppy Official',
+    supportEmail: 'support@mithirashoppy.com',
+    taxPercentage: '18',
+    defaultCurrency: 'INR',
+  });
+  const [shippingInfoLines, setShippingInfoLines] = useState([
+    "Free shipping on all orders above ₹999.",
+    "Standard delivery takes 3–5 business days depending on location.",
+    "Cash on Delivery (COD) is available on all eligible postal addresses.",
+    "We offer easy 7-day hassle-free returns and exchanges."
+  ]);
   const [shippingSettings, setShippingSettings] = useState({
     freeShippingAbove: '999',
     standardCharge: '80',
@@ -601,6 +613,32 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         
         const queriesData = await apiService.getContactQueries();
         if (queriesData && queriesData.length > 0) setContactQueries(queriesData);
+
+        try {
+          const settingsData = await apiService.getSettings();
+          if (settingsData) {
+            setGeneralSettings({
+              storeName: settingsData.storeName || 'MithiraShoppy Official',
+              supportEmail: settingsData.supportEmail || 'support@mithirashoppy.com',
+              taxPercentage: settingsData.taxPercentage !== undefined ? String(settingsData.taxPercentage) : '18',
+              defaultCurrency: settingsData.defaultCurrency || 'INR',
+            });
+            if (settingsData.shippingInfoLines && settingsData.shippingInfoLines.length > 0) {
+              setShippingInfoLines(settingsData.shippingInfoLines);
+            }
+            setShippingSettings({
+              freeShippingAbove: settingsData.freeShippingAbove !== undefined ? String(settingsData.freeShippingAbove) : '999',
+              standardCharge: settingsData.standardCharge !== undefined ? String(settingsData.standardCharge) : '80',
+              expressCharge: settingsData.expressCharge !== undefined ? String(settingsData.expressCharge) : '150',
+              codCharges: settingsData.codCharges !== undefined ? String(settingsData.codCharges) : '50',
+              enableCod: settingsData.enableCod !== undefined ? settingsData.enableCod : true,
+              enableExpress: settingsData.enableExpress !== undefined ? settingsData.enableExpress : true,
+              enableInternational: settingsData.enableInternational !== undefined ? settingsData.enableInternational : false,
+            });
+          }
+        } catch (settingsErr) {
+          console.error('Error fetching settings:', settingsErr);
+        }
       } catch (e) {
         console.error('Error syncing backend data:', e);
       }
@@ -613,6 +651,40 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     setProdCurrentPage(1);
   }, [prodSearchQuery, prodCatalogueFilter, prodCategoryFilter, prodStatusFilter]);
 
+  const handleSaveSettings = async (updatedFields) => {
+    try {
+      const response = await apiService.updateSettings(updatedFields);
+      if (response) {
+        alert('Settings saved successfully!');
+        if (response.storeName) {
+          setGeneralSettings({
+            storeName: response.storeName,
+            supportEmail: response.supportEmail,
+            taxPercentage: String(response.taxPercentage),
+            defaultCurrency: response.defaultCurrency,
+          });
+        }
+        if (response.shippingInfoLines) {
+          setShippingInfoLines(response.shippingInfoLines);
+        }
+        if (response.freeShippingAbove !== undefined) {
+          setShippingSettings({
+            freeShippingAbove: String(response.freeShippingAbove),
+            standardCharge: String(response.standardCharge),
+            expressCharge: String(response.expressCharge),
+            codCharges: String(response.codCharges),
+            enableCod: response.enableCod,
+            enableExpress: response.enableExpress,
+            enableInternational: response.enableInternational,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      alert('Failed to save settings: ' + err.message);
+    }
+  };
+
   const handleLogout = () => {
     setAuthUser(null);
     onNavigate('/');
@@ -624,6 +696,17 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     if (!cat) return catName;
     if (!cat.parent || cat.parent === '—') return cat.name;
     return `${getCategoryPath(cat.parent)} > ${cat.name}`;
+  };
+
+  const getProductSKU = (product) => {
+    if (product.variants && product.variants.length > 0) {
+      const firstWithSku = product.variants.find(v => v.sku);
+      if (firstWithSku && firstWithSku.sku) {
+        return firstWithSku.sku;
+      }
+    }
+    const prefix = product.category ? product.category.split('>')[0].trim().substring(0, 3).toUpperCase() : 'GEN';
+    return `MITH-${prefix}-${product.id}`;
   };
 
   const getHierarchicalCategories = () => {
@@ -958,13 +1041,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       const customKeys = Object.keys(attrs).filter(k => !standardKeys.includes(k));
 
       return (
-        <div style={{ marginTop: '15px', borderTop: '1px dashed #ccc', paddingTop: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Additional Custom Specifications</span>
+        <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(0, 0, 0, 0.08)', paddingTop: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: '700', color: '#555' }}>Additional Custom Specifications</span>
             <button 
               type="button" 
               className="btn-primary" 
-              style={{ padding: '2px 8px', fontSize: '0.75rem', backgroundColor: '#e2ebd5', color: '#8CC63F', border: '1px solid #8CC63F' }} 
+              style={{ padding: '6px 12px', fontSize: '0.75rem', backgroundColor: '#e2ebd5', color: '#8CC63F', border: '1px solid #8CC63F', borderRadius: '6px', fontWeight: 600 }} 
               onClick={() => {
                 const key = prompt('Enter custom specification label (e.g. Weight, Material, Model):');
                 if (key) {
@@ -979,9 +1062,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             </button>
           </div>
           {customKeys.map(k => (
-            <div className="form-field-row" key={k} style={{ marginBottom: '8px', alignItems: 'center', gap: '10px' }}>
+            <div className="form-field-row" key={k} style={{ marginBottom: '12px', alignItems: 'center', gap: '12px' }}>
               <div className="form-field" style={{ flex: 1 }}>
-                <label style={{ textTransform: 'capitalize' }}>{k}</label>
+                <label style={{ textTransform: 'capitalize', fontWeight: 600 }}>{k}</label>
                 <input 
                   type="text" 
                   className="modal-input" 
@@ -993,18 +1076,23 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <button 
                 type="button" 
                 onClick={() => removeAttr(k)} 
+                className="admin-variant-remove-btn"
+                title="Remove Custom Field"
                 style={{ 
-                  marginTop: '20px',
-                  backgroundColor: '#ff4d4d', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '4px', 
-                  padding: '4px 8px', 
+                  marginTop: '22px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#dc2626',
                   cursor: 'pointer',
-                  fontSize: '0.75rem'
+                  padding: '8px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
                 }}
               >
-                Remove
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
@@ -1012,10 +1100,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       );
     };
 
+    let specTitle = "General Specifications";
+    let specFields = null;
+
     if (lower.includes('clothing')) {
-      return (
-        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Clothing Custom Specifications</h4>
+      specTitle = "Clothing Custom Specifications";
+      specFields = (
+        <>
           <div className="form-field-row">
             <div className="form-field">
               <label>Sizes (e.g. XS, S, M, L, XL)</label>
@@ -1036,13 +1127,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.sleeve || ''} onChange={(e) => updateAttr('sleeve', e.target.value)} placeholder="e.g. Sleeveless, Full Sleeve" />
             </div>
           </div>
-          {renderCustomAttrs()}
-        </div>
+        </>
       );
     } else if (lower.includes('stationery')) {
-      return (
-        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Stationery Custom Specifications</h4>
+      specTitle = "Stationery Custom Specifications";
+      specFields = (
+        <>
           <div className="form-field-row">
             <div className="form-field">
               <label>Page Count</label>
@@ -1063,13 +1153,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.paperType || ''} onChange={(e) => updateAttr('paperType', e.target.value)} placeholder="e.g. Ruled, Dotted" />
             </div>
           </div>
-          {renderCustomAttrs()}
-        </div>
+        </>
       );
     } else if (lower.includes('gift')) {
-      return (
-        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Gifts Custom Specifications</h4>
+      specTitle = "Gifts Custom Specifications";
+      specFields = (
+        <>
           <div className="form-field-row">
             <div className="form-field">
               <label>Occasion</label>
@@ -1093,13 +1182,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               </select>
             </div>
           </div>
-          {renderCustomAttrs()}
-        </div>
+        </>
       );
     } else if (lower.includes('accessor')) {
-      return (
-        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Accessories Custom Specifications</h4>
+      specTitle = "Accessories Custom Specifications";
+      specFields = (
+        <>
           <div className="form-field-row">
             <div className="form-field">
               <label>Material</label>
@@ -1116,13 +1204,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.type || ''} onChange={(e) => updateAttr('type', e.target.value)} placeholder="e.g. Handbag, Wallet, Belt" />
             </div>
           </div>
-          {renderCustomAttrs()}
-        </div>
+        </>
       );
     } else if (lower.includes('fancy') || lower.includes('item')) {
-      return (
-        <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-          <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>Fancy Items Custom Specifications</h4>
+      specTitle = "Fancy Items Custom Specifications";
+      specFields = (
+        <>
           <div className="form-field-row">
             <div className="form-field">
               <label>Theme</label>
@@ -1139,15 +1226,20 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <input type="text" className="modal-input" value={attrs.component || ''} onChange={(e) => updateAttr('component', e.target.value)} placeholder="e.g. Beads, Alloy, Stones" />
             </div>
           </div>
-          {renderCustomAttrs()}
-        </div>
+        </>
       );
     }
 
     return (
-      <div className="dynamic-attrs-section" style={{ border: '1px solid #e2ebd5', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#fcfdfa' }}>
-        <h4 style={{ color: '#8CC63F', marginBottom: '12px', fontSize: '0.95rem' }}>General Custom Specifications</h4>
-        {renderCustomAttrs()}
+      <div className="admin-modal-section-card">
+        <div className="admin-modal-section-header">
+          <Layers size={16} />
+          <h4>{specTitle}</h4>
+        </div>
+        <div className="admin-modal-section-body" style={{ marginTop: '16px' }}>
+          {specFields}
+          {renderCustomAttrs()}
+        </div>
       </div>
     );
   };
@@ -1186,106 +1278,131 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     };
 
     return (
-      <div className="dynamic-attrs-section" style={{ border: '1px solid #FF8A00', padding: '15px', borderRadius: '8px', marginBottom: '15px', backgroundColor: '#FFFDF9' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h4 style={{ color: '#FF8A00', margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Product Variants / Color Variants</h4>
-          <button type="button" className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.78rem', backgroundColor: '#8CC63F', border: 'none' }} onClick={addVariant}>
-            + Add Variant
+      <div className="admin-modal-section-card">
+        <div className="admin-modal-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Layers size={16} />
+            <h4 style={{ margin: 0 }}>Product & Color Variants</h4>
+          </div>
+          <button 
+            type="button" 
+            className="btn-primary" 
+            style={{ 
+              padding: '6px 12px', 
+              fontSize: '0.8rem', 
+              backgroundColor: 'var(--primary-rose)', 
+              color: '#ffffff', 
+              border: 'none',
+              fontWeight: 600,
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }} 
+            onClick={addVariant}
+          >
+            + Add Variant Row
           </button>
         </div>
         
-        {variants.length === 0 ? (
-          <p style={{ fontSize: '0.8rem', color: '#666', margin: '10px 0' }}>No variants added yet. Products will use base price, image, and stock unless variants are defined.</p>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #ddd', textAlign: 'left' }}>
-                  <th style={{ padding: '6px' }}>Color</th>
-                  <th style={{ padding: '6px' }}>Size</th>
-                  <th style={{ padding: '6px' }}>Price (INR)</th>
-                  <th style={{ padding: '6px' }}>Stock</th>
-                  <th style={{ padding: '6px' }}>SKU</th>
-                  <th style={{ padding: '6px' }}>Variant Image</th>
-                  <th style={{ padding: '6px', textAlign: 'center' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {variants.map((v, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Red" 
-                        value={v.color || ''} 
-                        onChange={(e) => updateVariantField(index, 'color', e.target.value)}
-                        style={{ width: '80px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. M" 
-                        value={v.size || ''} 
-                        onChange={(e) => updateVariantField(index, 'size', e.target.value)}
-                        style={{ width: '60px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="number" 
-                        placeholder="Base price fallback" 
-                        value={v.price === null || v.price === undefined ? '' : v.price} 
-                        onChange={(e) => updateVariantField(index, 'price', e.target.value === '' ? null : parseFloat(e.target.value))}
-                        style={{ width: '100px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="number" 
-                        placeholder="0" 
-                        value={v.stock || 0} 
-                        onChange={(e) => updateVariantField(index, 'stock', parseInt(e.target.value, 10) || 0)}
-                        style={{ width: '60px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="SKU" 
-                        value={v.sku || ''} 
-                        onChange={(e) => updateVariantField(index, 'sku', e.target.value)}
-                        style={{ width: '80px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        {v.image && (
-                          <img src={v.image} alt="variant" style={{ width: '24px', height: '24px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
-                        )}
-                        <label htmlFor={`var-file-upload-${index}`} style={{ cursor: 'pointer', padding: '2px 6px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>
-                          Upload
-                        </label>
-                        <input 
-                          type="file" 
-                          id={`var-file-upload-${index}`} 
-                          style={{ display: 'none' }} 
-                          accept="image/*" 
-                          onChange={(e) => handleVariantImageUpload(e, item, setItem, index)} 
-                        />
-                      </div>
-                    </td>
-                    <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button type="button" className="btn-secondary" style={{ padding: '2px 6px', fontSize: '0.75rem', color: 'red', borderColor: 'red' }} onClick={() => removeVariant(index)}>
-                        Remove
-                      </button>
-                    </td>
+        <div className="admin-modal-section-body" style={{ marginTop: '16px' }}>
+          {variants.length === 0 ? (
+            <p style={{ fontSize: '0.85rem', color: '#666', margin: '10px 0' }}>No variants added yet. Products will use base price, image, and stock unless variants are defined.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="admin-variant-table">
+                <thead>
+                  <tr>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Price (INR)</th>
+                    <th>Stock</th>
+                    <th>SKU</th>
+                    <th>Variant Image</th>
+                    <th style={{ textAlign: 'center' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {variants.map((v, index) => (
+                    <tr key={index}>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Red" 
+                          value={v.color || ''} 
+                          onChange={(e) => updateVariantField(index, 'color', e.target.value)}
+                          className="admin-table-input"
+                          style={{ minWidth: '95px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. M" 
+                          value={v.size || ''} 
+                          onChange={(e) => updateVariantField(index, 'size', e.target.value)}
+                          className="admin-table-input"
+                          style={{ minWidth: '70px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          placeholder="Base price" 
+                          value={v.price === null || v.price === undefined ? '' : v.price} 
+                          onChange={(e) => updateVariantField(index, 'price', e.target.value === '' ? null : parseFloat(e.target.value))}
+                          className="admin-table-input"
+                          style={{ minWidth: '100px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          placeholder="0" 
+                          value={v.stock || 0} 
+                          onChange={(e) => updateVariantField(index, 'stock', parseInt(e.target.value, 10) || 0)}
+                          className="admin-table-input"
+                          style={{ minWidth: '70px' }}
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="SKU" 
+                          value={v.sku || ''} 
+                          onChange={(e) => updateVariantField(index, 'sku', e.target.value)}
+                          className="admin-table-input"
+                          style={{ minWidth: '110px' }}
+                        />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {v.image && (
+                            <img src={v.image} alt="variant" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                          )}
+                          <label htmlFor={`var-file-upload-${index}`} className="admin-variant-image-upload-btn">
+                            Upload
+                          </label>
+                          <input 
+                            type="file" 
+                            id={`var-file-upload-${index}`} 
+                            style={{ display: 'none' }} 
+                            accept="image/*" 
+                            onChange={(e) => handleVariantImageUpload(e, item, setItem, index)} 
+                          />
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button type="button" className="admin-variant-remove-btn" onClick={() => removeVariant(index)} title="Remove Variant">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -2178,6 +2295,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       <tr>
                         <th>Image</th>
                         <th>Product Name</th>
+                        <th>SKU</th>
                         <th>Catalogue</th>
                         <th>Category</th>
                         <th>Price</th>
@@ -2194,6 +2312,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               <img src={resolveProductImage(product)} alt={product.name} className="table-prod-img" />
                             </td>
                             <td className="bold text-black">{product.name}</td>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 600, color: '#555', fontSize: '0.85rem' }}>{getProductSKU(product)}</td>
                             <td className="text-gray">{product.catalogue}</td>
                             <td className="text-gray">{product.category}</td>
                             <td className="bold text-black">₹{product.price.toLocaleString()}</td>
@@ -2220,7 +2339,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="8" className="empty-table-cell">No products found matching filters.</td>
+                          <td colSpan="9" className="empty-table-cell">No products found matching filters.</td>
                         </tr>
                       )}
                     </tbody>
@@ -3441,37 +3560,49 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <div className="settings-grid-fields">
                       <div className="settings-field-box">
                         <label>Store Name</label>
-                        <input type="text" defaultValue="Mithra Shopy" className="form-input-re" />
+                        <input 
+                          type="text" 
+                          value={generalSettings.storeName} 
+                          onChange={(e) => setGeneralSettings(prev => ({ ...prev, storeName: e.target.value }))}
+                          className="form-input-re" 
+                        />
                       </div>
                       <div className="settings-field-box">
-                        <label>Store Email</label>
-                        <input type="email" defaultValue="info@mithrashopy.com" className="form-input-re" />
+                        <label>Support Email</label>
+                        <input 
+                          type="email" 
+                          value={generalSettings.supportEmail} 
+                          onChange={(e) => setGeneralSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
+                          className="form-input-re" 
+                        />
                       </div>
                       <div className="settings-field-box">
-                        <label>Store Phone</label>
-                        <input type="text" defaultValue="+91 98765 43210" className="form-input-re" />
+                        <label>Tax Percentage (%)</label>
+                        <input 
+                          type="number" 
+                          value={generalSettings.taxPercentage} 
+                          onChange={(e) => setGeneralSettings(prev => ({ ...prev, taxPercentage: e.target.value }))}
+                          className="form-input-re" 
+                        />
                       </div>
-                    </div>
-
-                    <div className="settings-field-box full-width" style={{ marginTop: '20px' }}>
-                      <label>Store Address</label>
-                      <input type="text" defaultValue="123, Shop Street, Coimbatore, Tamil Nadu - 641001" className="form-input-re" />
-                    </div>
-
-                    <div className="settings-logo-upload-section" style={{ marginTop: '25px' }}>
-                      <label className="logo-section-label">Store Logo</label>
-                      <div className="logo-upload-row">
-                        <div className="logo-preview-box">
-                          <img src={logoImg} alt="Store Logo" className="logo-preview-img" style={{ maxHeight: '40px', objectFit: 'contain' }} />
-                        </div>
-                        <button className="change-logo-btn" onClick={() => alert('Change Logo triggered')}>
-                          Change Logo
-                        </button>
+                      <div className="settings-field-box">
+                        <label>Default Currency</label>
+                        <input 
+                          type="text" 
+                          value={generalSettings.defaultCurrency} 
+                          onChange={(e) => setGeneralSettings(prev => ({ ...prev, defaultCurrency: e.target.value }))}
+                          className="form-input-re" 
+                        />
                       </div>
                     </div>
 
                     <div className="settings-action-row" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px' }}>
-                      <button className="settings-save-btn" onClick={() => alert('Settings Saved successfully!')}>
+                      <button className="settings-save-btn" onClick={() => handleSaveSettings({
+                        storeName: generalSettings.storeName,
+                        supportEmail: generalSettings.supportEmail,
+                        taxPercentage: parseInt(generalSettings.taxPercentage, 10) || 0,
+                        defaultCurrency: generalSettings.defaultCurrency
+                      })}>
                         Save Changes
                       </button>
                     </div>
@@ -3603,9 +3734,111 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         </label>
                       </div>
 
+                      <hr style={{ border: 'none', borderTop: '1px solid #eae6df', margin: '15px 0' }} />
+
+                      <div>
+                        <label style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1a1a1a', display: 'block', marginBottom: '8px' }}>Storefront Shipping Policy Info</label>
+                        <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '12px' }}>
+                          Add, edit, or remove the bullet points displayed in the Shipping Info tab on the product details page.
+                        </p>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                          {shippingInfoLines.map((line, index) => (
+                            <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#666', minWidth: '16px' }}>•</span>
+                              <input 
+                                type="text"
+                                value={line}
+                                onChange={(e) => {
+                                  const updated = [...shippingInfoLines];
+                                  updated[index] = e.target.value;
+                                  setShippingInfoLines(updated);
+                                }}
+                                className="form-input-re"
+                                style={{ flex: 1, backgroundColor: '#fff', border: '1px solid #e2ded5', borderRadius: '8px', padding: '6px 12px' }}
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  const updated = shippingInfoLines.filter((_, idx) => idx !== index);
+                                  setShippingInfoLines(updated);
+                                }}
+                                style={{ border: 'none', background: 'transparent', color: '#e74c3c', cursor: 'pointer', padding: '4px' }}
+                                title="Remove Line"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input 
+                            type="text"
+                            placeholder="Add a new shipping info policy line..."
+                            id="new-shipping-policy-input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.target.value.trim();
+                                if (val) {
+                                  setShippingInfoLines([...shippingInfoLines, val]);
+                                  e.target.value = '';
+                                }
+                              }
+                            }}
+                            className="form-input-re"
+                            style={{ flex: 1, backgroundColor: '#fff', border: '1px solid #e2ded5', borderRadius: '8px', padding: '8px 12px' }}
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const input = document.getElementById('new-shipping-policy-input');
+                              if (input && input.value.trim()) {
+                                setShippingInfoLines([...shippingInfoLines, input.value.trim()]);
+                                input.value = '';
+                              }
+                            }}
+                            className="settings-save-btn"
+                            style={{ margin: 0, padding: '8px 16px', fontSize: '0.85rem' }}
+                          >
+                            Add Line
+                          </button>
+                        </div>
+                      </div>
+
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                        <button className="profile-change-photo-btn" onClick={() => alert('Cancel trigger')}>Cancel</button>
-                        <button className="settings-save-btn" style={{ margin: 0 }} onClick={() => alert('Shipping Settings Saved successfully!')}>Save Changes</button>
+                        <button className="profile-change-photo-btn" onClick={async () => {
+                          const settingsData = await apiService.getSettings();
+                          if (settingsData) {
+                            setShippingSettings({
+                              freeShippingAbove: String(settingsData.freeShippingAbove || '999'),
+                              standardCharge: String(settingsData.standardCharge || '0'),
+                              expressCharge: String(settingsData.expressCharge || '150'),
+                              codCharges: String(settingsData.codCharges || '50'),
+                              enableCod: settingsData.enableCod !== false,
+                              enableExpress: settingsData.enableExpress !== false,
+                              enableInternational: !!settingsData.enableInternational,
+                            });
+                            if (settingsData.shippingInfoLines) {
+                              setShippingInfoLines(settingsData.shippingInfoLines);
+                            }
+                          }
+                        }}>Cancel</button>
+                        <button 
+                          className="settings-save-btn" 
+                          style={{ margin: 0 }} 
+                          onClick={() => handleSaveSettings({
+                            freeShippingAbove: parseFloat(shippingSettings.freeShippingAbove) || 0,
+                            standardCharge: parseFloat(shippingSettings.standardCharge) || 0,
+                            expressCharge: parseFloat(shippingSettings.expressCharge) || 0,
+                            codCharges: parseFloat(shippingSettings.codCharges) || 0,
+                            enableCod: !!shippingSettings.enableCod,
+                            enableExpress: !!shippingSettings.enableExpress,
+                            enableInternational: !!shippingSettings.enableInternational,
+                            shippingInfoLines: shippingInfoLines
+                          })}
+                        >Save Changes</button>
                       </div>
                     </div>
                   </div>
@@ -4400,24 +4633,33 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     className={`admin-modal-sidebar-btn ${addProductActiveTab === 'basic' ? 'active' : ''}`}
                     onClick={() => setAddProductActiveTab('basic')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Basic Info</span>
-                    <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                    <Package size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Basic Info</span>
+                      <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className={`admin-modal-sidebar-btn ${addProductActiveTab === 'specs' ? 'active' : ''}`}
                     onClick={() => setAddProductActiveTab('specs')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
-                    <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                    <Layers size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
+                      <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className={`admin-modal-sidebar-btn ${addProductActiveTab === 'media' ? 'active' : ''}`}
                     onClick={() => setAddProductActiveTab('media')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Media & Description</span>
-                    <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                    <ImageIcon size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Media & Description</span>
+                      <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                    </div>
                   </button>
                 </div>
 
@@ -4427,8 +4669,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <>
                       {/* Section 1: Identification */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
-                          Product Identification
+                        <div className="admin-modal-section-header">
+                          <Package size={16} />
+                          <h4>Product Identification</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">
@@ -4500,8 +4743,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 2: Pricing & Stock */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
-                          Pricing & Inventory
+                        <div className="admin-modal-section-header">
+                          <CreditCard size={16} />
+                          <h4>Pricing & Inventory</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field-row">
@@ -4557,8 +4801,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 3: Brand Info */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#78716C' }}>
-                          Brand & Popularity Details
+                        <div className="admin-modal-section-header">
+                          <Star size={16} />
+                          <h4>Brand & Popularity Details</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field-row">
@@ -4610,8 +4855,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <>
                       {/* Section 1: Product Images */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
-                          Product Media Gallery
+                        <div className="admin-modal-section-header">
+                          <ImageIcon size={16} />
+                          <h4>Product Media Gallery</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">
@@ -4643,8 +4889,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 2: Description */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
-                          Product Description
+                        <div className="admin-modal-section-header">
+                          <BookOpen size={16} />
+                          <h4>Product Description</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">
@@ -4693,24 +4940,33 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     className={`admin-modal-sidebar-btn ${editProductActiveTab === 'basic' ? 'active' : ''}`}
                     onClick={() => setEditProductActiveTab('basic')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Basic Info</span>
-                    <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                    <Package size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Basic Info</span>
+                      <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className={`admin-modal-sidebar-btn ${editProductActiveTab === 'specs' ? 'active' : ''}`}
                     onClick={() => setEditProductActiveTab('specs')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
-                    <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                    <Layers size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
+                      <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
+                    </div>
                   </button>
                   <button 
                     type="button" 
                     className={`admin-modal-sidebar-btn ${editProductActiveTab === 'media' ? 'active' : ''}`}
                     onClick={() => setEditProductActiveTab('media')}
                   >
-                    <span className="admin-modal-sidebar-btn-label">Media & Description</span>
-                    <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                    <ImageIcon size={18} />
+                    <div className="sidebar-btn-text">
+                      <span className="admin-modal-sidebar-btn-label">Media & Description</span>
+                      <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
+                    </div>
                   </button>
                 </div>
 
@@ -4720,8 +4976,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <>
                       {/* Section 1: Identification */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
-                          Product Identification
+                        <div className="admin-modal-section-header">
+                          <Package size={16} />
+                          <h4>Product Identification</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">
@@ -4792,8 +5049,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 2: Pricing & Stock */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
-                          Pricing & Inventory
+                        <div className="admin-modal-section-header">
+                          <CreditCard size={16} />
+                          <h4>Pricing & Inventory</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field-row">
@@ -4847,8 +5105,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 3: Brand Info */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#78716C' }}>
-                          Brand & Popularity Details
+                        <div className="admin-modal-section-header">
+                          <Star size={16} />
+                          <h4>Brand & Popularity Details</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field-row">
@@ -4900,8 +5159,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <>
                       {/* Section 1: Product Images */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#8CC63F' }}>
-                          Product Media Gallery
+                        <div className="admin-modal-section-header">
+                          <ImageIcon size={16} />
+                          <h4>Product Media Gallery</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">
@@ -4933,8 +5193,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Section 2: Description */}
                       <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header" style={{ background: '#FF8A00' }}>
-                          Product Description
+                        <div className="admin-modal-section-header">
+                          <BookOpen size={16} />
+                          <h4>Product Description</h4>
                         </div>
                         <div className="admin-modal-section-body">
                           <div className="form-field">

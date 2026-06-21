@@ -18,14 +18,39 @@ router.get('/', async (req, res) => {
 // PUT /api/settings - Update general store settings (admin only)
 router.put('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { storeName, supportEmail, taxPercentage, defaultCurrency } = req.body;
+    const {
+      storeName,
+      supportEmail,
+      taxPercentage,
+      defaultCurrency,
+      shippingInfoLines,
+      freeShippingAbove,
+      standardCharge,
+      expressCharge,
+      codCharges,
+      enableCod,
+      enableExpress,
+      enableInternational
+    } = req.body;
 
-    const current = await Settings.findOne();
     const updateFields = {};
     if (storeName !== undefined) updateFields.storeName = storeName.trim();
     if (supportEmail !== undefined) updateFields.supportEmail = supportEmail.trim();
     if (taxPercentage !== undefined) updateFields.taxPercentage = parseInt(taxPercentage, 10);
     if (defaultCurrency !== undefined) updateFields.defaultCurrency = defaultCurrency;
+
+    if (shippingInfoLines !== undefined) {
+      if (Array.isArray(shippingInfoLines)) {
+        updateFields.shippingInfoLines = shippingInfoLines.map(line => line.trim()).filter(line => line.length > 0);
+      }
+    }
+    if (freeShippingAbove !== undefined) updateFields.freeShippingAbove = parseFloat(freeShippingAbove);
+    if (standardCharge !== undefined) updateFields.standardCharge = parseFloat(standardCharge);
+    if (expressCharge !== undefined) updateFields.expressCharge = parseFloat(expressCharge);
+    if (codCharges !== undefined) updateFields.codCharges = parseFloat(codCharges);
+    if (enableCod !== undefined) updateFields.enableCod = !!enableCod;
+    if (enableExpress !== undefined) updateFields.enableExpress = !!enableExpress;
+    if (enableInternational !== undefined) updateFields.enableInternational = !!enableInternational;
 
     const saved = await Settings.findOneAndUpdate(
       {},
