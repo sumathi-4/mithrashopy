@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { useToast } from './ToastProvider';
-import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift } from 'lucide-react';
+import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles } from 'lucide-react';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
 import logoImg from '../assets/logo.png';
 import pHairUpdated from '../assets/p_hair_updated.jpg';
@@ -865,9 +865,9 @@ export default function ShopView({ authUser, setAuthUser }) {
   }, []);
 
   const getGroupColor = (groupKey) => {
-    if (!groupKey) return '#8CC63F';
+    if (!groupKey) return '#D4AF37';
     switch (groupKey.toUpperCase()) {
-      case 'CLOTHING': return '#8CC63F';
+      case 'CLOTHING': return '#D4AF37';
       case 'STATIONERY': return '#4A90E2';
       case 'GIFTS': return '#8A2BE2';
       case 'ACCESSORIES': return '#D4AF37';
@@ -892,7 +892,16 @@ export default function ShopView({ authUser, setAuthUser }) {
 
     const buildTree = (parentName, parentKey) => {
       if (!categoriesList || categoriesList.length === 0) return [];
-      const dbChildren = categoriesList.filter(cat => cat.parent && cat.parent.toLowerCase() === parentName.toLowerCase());
+      const dbChildren = categoriesList.filter(cat => {
+        if (!cat.parent) return false;
+        const pName = cat.parent.toLowerCase().trim();
+        const searchName = parentName.toLowerCase().trim();
+        if (pName === searchName) return true;
+        if (searchName === 'accessories') {
+          return pName === 'accessories' || pName === 'fancy' || pName === 'accessories & fancy' || pName === 'accessories and fancy';
+        }
+        return false;
+      });
       return dbChildren.map(cat => {
         const uniqueKey = `${parentKey}_${cat.name.toUpperCase().replace(/\s+/g, '_')}`;
         return {
@@ -909,7 +918,15 @@ export default function ShopView({ authUser, setAuthUser }) {
     const dbRoots = categoriesList.filter(cat => (!cat.parent || cat.parent === '—') && cat.name !== '—');
 
     defaultGroups.forEach(def => {
-      const dbRoot = dbRoots.find(r => r.name.toLowerCase() === def.name.toLowerCase());
+      const dbRoot = dbRoots.find(r => {
+        const rName = r.name.toLowerCase().trim();
+        const defName = def.name.toLowerCase().trim();
+        if (rName === defName) return true;
+        if (def.key === 'ACCESSORIES') {
+          return rName === 'accessories' || rName === 'fancy' || rName === 'accessories & fancy' || rName === 'accessories and fancy';
+        }
+        return false;
+      });
       const subcategories = dbRoot ? buildTree(dbRoot.name, def.key) : [];
       structure.push({
         name: def.name,
@@ -1694,9 +1711,9 @@ export default function ShopView({ authUser, setAuthUser }) {
       };
     } else if (activeTab === 'ACCESSORIES') {
       return {
-        tagline: "Luxury Accents",
-        title: "Fashion Accessories",
-        subtitle: "Authentic jasmine gajras, rings, and handcrafted details to elevate your style"
+        tagline: "MITHRASHOPY EXCLUSIVES",
+        title: "Adorn Yourself in Royal Elegance",
+        subtitle: "Exquisite jewellery, premium hair accents, and fancy details that elevate your look"
       };
     }
     
@@ -1837,7 +1854,7 @@ export default function ShopView({ authUser, setAuthUser }) {
               {/* Availability Info */}
               <div style={{ margin: '12px 0 16px 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontWeight: 600, color: '#555' }}>Availability:</span>
-                <span style={{ color: isOutOfStock ? '#ff3333' : '#8CC63F', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#f1f8e9', fontSize: '0.82rem' }}>
+                <span style={{ color: isOutOfStock ? '#ff3333' : '#D4AF37', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#FDFBF7', fontSize: '0.82rem' }}>
                   {isOutOfStock ? "Out of Stock" : "In Stock"}
                 </span>
               </div>
@@ -2260,13 +2277,140 @@ export default function ShopView({ authUser, setAuthUser }) {
     );
   }
 
+  const getCategoryCirclesData = () => {
+    if (activeTab === 'ACCESSORIES') {
+      const unified = getUnifiedCategories();
+      const accGroup = unified.find(g => g.key === 'ACCESSORIES');
+      if (accGroup && accGroup.subcategories && accGroup.subcategories.length > 0) {
+        const subItems = accGroup.subcategories.map(sub => {
+          const dbCat = categoriesList.find(c => c.name.toLowerCase() === sub.dbName.toLowerCase());
+          const customImg = dbCat?.image;
+          const subKeys = getAllSubcategoryKeysUnder(sub.dbName).map(k => k.toUpperCase());
+          const count = allProducts.filter(p => {
+            const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+            if (rootCat !== 'ACCESSORIES') return false;
+            if (getProductCatalogue(p) !== catalogue) return false;
+            const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+            return productSubs.some(subName => subKeys.includes(subName));
+          }).length;
+
+          return {
+            key: sub.dbName.toUpperCase(),
+            label: sub.label,
+            img: customImg || imgAccessories,
+            count: `${count} items`,
+            isSub: true,
+            dbName: sub.dbName
+          };
+        });
+
+        const totalAccCount = allProducts.filter(p => {
+          const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+          return rootCat === 'ACCESSORIES' && getProductCatalogue(p) === catalogue;
+        }).length;
+
+        const allCircle = {
+          key: 'ALL',
+          label: 'All Accessories',
+          img: imgAccessories,
+          count: `${totalAccCount} items`,
+          isSub: true,
+          dbName: 'ALL'
+        };
+
+        const rootDbCat = categoriesList.find(c => c.name.toLowerCase() === 'accessories');
+        if (rootDbCat?.image) {
+          allCircle.img = rootDbCat.image;
+        }
+
+        return [allCircle, ...subItems];
+      }
+    }
+
+    if (activeTab === 'GIFTS') {
+      const unified = getUnifiedCategories();
+      const giftsGroup = unified.find(g => g.key === 'GIFTS');
+      if (giftsGroup && giftsGroup.subcategories && giftsGroup.subcategories.length > 0) {
+        const subItems = giftsGroup.subcategories.map(sub => {
+          const dbCat = categoriesList.find(c => c.name.toLowerCase() === sub.dbName.toLowerCase());
+          const customImg = dbCat?.image;
+          const subKeys = getAllSubcategoryKeysUnder(sub.dbName).map(k => k.toUpperCase());
+          const count = allProducts.filter(p => {
+            const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+            if (rootCat !== 'GIFTS') return false;
+            if (getProductCatalogue(p) !== catalogue) return false;
+            const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+            return productSubs.some(subName => subKeys.includes(subName));
+          }).length;
+
+          return {
+            key: sub.dbName.toUpperCase(),
+            label: sub.label,
+            img: customImg || imgGifts,
+            count: `${count} items`,
+            isSub: true,
+            dbName: sub.dbName
+          };
+        });
+
+        const totalGiftsCount = allProducts.filter(p => {
+          const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+          return rootCat === 'GIFTS' && getProductCatalogue(p) === catalogue;
+        }).length;
+
+        const allCircle = {
+          key: 'ALL',
+          label: 'All Gifts',
+          img: imgGifts,
+          count: `${totalGiftsCount} items`,
+          isSub: true,
+          dbName: 'ALL'
+        };
+
+        const rootDbCat = categoriesList.find(c => c.name.toLowerCase() === 'gifts');
+        if (rootDbCat?.image) {
+          allCircle.img = rootDbCat.image;
+        }
+
+        return [allCircle, ...subItems];
+      }
+    }
+
+    return getUnifiedCategories().map(group => {
+      const key = group.key;
+      let img = imgClothing;
+      if (key.includes('STATIONERY')) img = imgStationery;
+      else if (key.includes('GIFT')) img = imgGifts;
+      else if (key.includes('ACCESSORIES') || key.includes('FANCY')) img = imgAccessories;
+
+      const dbCat = categoriesList.find(c => c.name.toLowerCase() === group.name.toLowerCase());
+      if (dbCat?.image) {
+        img = dbCat.image;
+      }
+
+      const count = allProducts.filter(p => {
+        const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+        return rootCat === key && getProductCatalogue(p) === catalogue;
+      }).length;
+
+      return {
+        key,
+        label: group.name,
+        img,
+        count: `${count} items`,
+        isSub: false,
+        dbName: group.name
+      };
+    });
+  };
+
   return (
-    <div className="shop-view-page">
+    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : ''}`}>
       
       {/* Premium Shop Header Banner */}
       <div className="shop-banner">
         {/* Background image on the right */}
-        <img src={shopBannerRaw} className="shop-banner-bg-image" alt="Exclusive Collection" />
+        <img src={activeTab === 'ACCESSORIES' ? imgAccessories : activeTab === 'GIFTS' ? imgGifts : shopBannerRaw} className="shop-banner-bg-image" alt="Exclusive Collection" />
         
         {/* Left-to-right gradient overlay to blend image and provide solid text area */}
         <div className="shop-banner-overlay-gradient"></div>
@@ -2274,46 +2418,88 @@ export default function ShopView({ authUser, setAuthUser }) {
         {/* Content positioned on the left */}
         <div className="shop-banner-content">
           <span className="shop-banner-tagline">{bannerContent.tagline}</span>
-          <h1 className={`shop-banner-title ${bannerContent.title === 'Exclusive Collection' ? 'shop-banner-title-exclusive' : ''}`}>{bannerContent.title}</h1>
+          <h1 className={`shop-banner-title ${bannerContent.title === 'Exclusive Collection' ? 'shop-banner-title-exclusive' : ''}`}>
+            {bannerContent.title === 'Adorn Yourself in Royal Elegance' ? (
+              <>Adorn Yourself in <br /> Royal Elegance</>
+            ) : bannerContent.title}
+          </h1>
           <p className="shop-banner-subtitle">{bannerContent.subtitle}</p>
           <div className="shop-banner-divider">
             <span className="shop-banner-divider-line"></span>
             <span className="shop-banner-divider-motif" style={{ display: 'inline-flex', alignItems: 'center' }}>
-              ✧ <img src={logoImg} alt="Logo" style={{ width: '12px', height: '12px', objectFit: 'contain', margin: '0 4px' }} /> ✧
+              ✧ <img src={`${logoImg}?v=2`} alt="Logo" style={{ width: '12px', height: '12px', objectFit: 'contain', margin: '0 4px' }} /> ✧
             </span>
             <span className="shop-banner-divider-line"></span>
           </div>
+          {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS') && (
+            <button className="shop-banner-explore-btn" onClick={() => {
+              const el = document.querySelector('.shop-content-container');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}>
+              EXPLORE NOW
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Accessories Luxury Trust Bar / Gifts Trust Bar */}
+      {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS') && (
+        <div className="accessories-trust-bar">
+          <div className="accessories-trust-item">
+            <span className="accessories-trust-icon"><Award size={20} /></span>
+            <div className="accessories-trust-text">
+              <span className="accessories-trust-title">Premium Quality</span>
+              <span className="accessories-trust-sub">Finest products</span>
+            </div>
+          </div>
+          <div className="accessories-trust-item">
+            <span className="accessories-trust-icon"><Shield size={20} /></span>
+            <div className="accessories-trust-text">
+              <span className="accessories-trust-title">Secure & Safe</span>
+              <span className="accessories-trust-sub">Protected payments</span>
+            </div>
+          </div>
+          <div className="accessories-trust-item">
+            <span className="accessories-trust-icon"><Globe size={20} /></span>
+            <div className="accessories-trust-text">
+              <span className="accessories-trust-title">World Wide Shipping</span>
+              <span className="accessories-trust-sub">Fast delivery</span>
+            </div>
+          </div>
+          <div className="accessories-trust-item">
+            <span className="accessories-trust-icon"><Crown size={20} /></span>
+            <div className="accessories-trust-text">
+              <span className="accessories-trust-title">Exclusive Collection</span>
+              <span className="accessories-trust-sub">Limited Edition</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="shop-content-container">
         
         {/* Top Circular Category Navigation Tabs */}
         <div className="shop-category-circles-wrapper">
-          {getUnifiedCategories().map(group => {
-            const key = group.key;
-            let img = imgClothing;
-            if (key.includes('STATIONERY')) img = imgStationery;
-            else if (key.includes('GIFT')) img = imgGifts;
-            else if (key.includes('ACCESSORIES') || key.includes('FANCY')) img = imgAccessories;
-            
-            const count = allProducts.filter(p => String(p.category || '').split('>')[0].trim().toUpperCase() === key).length;
-            return {
-              key,
-              label: group.name,
-              img,
-              count: `${count} items`
-            };
-          }).map((item) => (
+          {getCategoryCirclesData().map((item) => (
             <div 
               key={item.key} 
               data-category={item.key}
-              className={`shop-category-circle-card ${activeTab === item.key ? 'active' : ''}`}
+              className={`shop-category-circle-card ${
+                item.isSub 
+                  ? (activeSubTab === item.dbName.toUpperCase() ? 'active' : '') 
+                  : (activeTab === item.key ? 'active' : '')
+              }`}
               onClick={() => {
-                setActiveTab(item.key);
-                setActiveSubTab('ALL');
-                const newUrl = `/Shop?category=${item.key.toLowerCase()}`;
-                window.history.pushState({}, '', newUrl);
+                if (item.isSub) {
+                  setActiveSubTab(item.dbName.toUpperCase());
+                  const newUrl = `/Shop?category=${activeTab.toLowerCase()}&subCategory=${item.dbName.toLowerCase()}`;
+                  window.history.pushState({}, '', newUrl);
+                } else {
+                  setActiveTab(item.key);
+                  setActiveSubTab('ALL');
+                  const newUrl = `/Shop?category=${item.key.toLowerCase()}`;
+                  window.history.pushState({}, '', newUrl);
+                }
               }}
             >
               <div className="shop-category-circle-img-container">

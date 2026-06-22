@@ -123,7 +123,8 @@ const CategorySchema = new mongoose.Schema({
   parent: { type: String, default: '—' }, // Backwards compatibility
   parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null }, // Hierarchical unlimited subcategories
   count: { type: Number, default: 0 },
-  status: { type: String, default: 'Active' }
+  status: { type: String, default: 'Active' },
+  image: { type: String, default: '' }
 });
 
 // Middleware to keep the 'parent' string synchronized with the parent's name

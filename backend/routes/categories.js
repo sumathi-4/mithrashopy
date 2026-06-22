@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 // POST /api/categories - Create category
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, parent, count, status } = req.body;
+    const { name, parent, count, status, image } = req.body;
     if (!name) {
       return res.status(400).json({ success: false, message: 'Category name is required.' });
     }
@@ -32,7 +32,8 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       name: name.trim(),
       parent: parent || '—',
       count: parseInt(count, 10) || 0,
-      status: status || 'Active'
+      status: status || 'Active',
+      image: image || ''
     });
 
     res.status(201).json({ success: true, message: 'Category created successfully!', category: newCategory });
@@ -46,7 +47,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 router.put('/:name', authenticate, requireAdmin, async (req, res) => {
   try {
     const originalName = req.params.name;
-    const { name, parent, count, status } = req.body;
+    const { name, parent, count, status, image } = req.body;
 
     const category = await Category.findOne({ name: originalName });
     if (!category) {
@@ -64,10 +65,11 @@ router.put('/:name', authenticate, requireAdmin, async (req, res) => {
     const newCount = count !== undefined ? parseInt(count, 10) : category.count;
     const newStatus = status !== undefined ? status : category.status;
     const newName = name !== undefined ? name.trim() : category.name;
+    const newImage = image !== undefined ? image : category.image;
 
     await Category.updateOne(
       { name: originalName },
-      { $set: { name: newName, parent: newParent, count: newCount, status: newStatus } }
+      { $set: { name: newName, parent: newParent, count: newCount, status: newStatus, image: newImage } }
     );
 
     // Re-link subcategories if the parent name changed

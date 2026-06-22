@@ -358,7 +358,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
           {/* Logo */}
           <a href="/" onClick={(e) => handleLinkClick(e, '/')} className="logo-link">
             <div className="logo-wrapper">
-              <img src={logoImg} alt="Mithra Shopy Logo" className="logo-img" />
+              <img src={`${logoImg}?v=2`} alt="Mithra Shopy Logo" className="logo-img" />
             </div>
           </a>
 
@@ -581,7 +581,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                 {/* Left Panel */}
                 <div className="auth-left-panel">
                   <div className="auth-left-inner">
-                    <img src={logoImg} alt="Logo" className="auth-panel-logo" />
+                    <img src={`${logoImg}?v=2`} alt="Logo" className="auth-panel-logo" />
                     <h2 className="auth-panel-brand">
                       <span className="auth-brand-mithira">Mithra</span>
                       <span className="auth-brand-shoppy">Shopy</span>

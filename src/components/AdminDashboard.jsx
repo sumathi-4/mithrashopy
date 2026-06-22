@@ -459,7 +459,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [editCategoryItem, setEditCategoryItem] = useState(null);
   const [viewCategoryItem, setViewCategoryItem] = useState(null);
-  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active' });
+  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active', image: '' });
 
   const [showAddCatalogueModal, setShowAddCatalogueModal] = useState(false);
   const [editCatalogueItem, setEditCatalogueItem] = useState(null);
@@ -768,7 +768,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       name: newCategory.name.trim(),
       parent: newCategory.parent,
       count: parseInt(newCategory.count, 10) || 0,
-      status: newCategory.status
+      status: newCategory.status,
+      image: newCategory.image || ''
     };
 
     try {
@@ -778,7 +779,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setCategories([...categories, catToAdd]);
     }
     setShowAddCategoryModal(false);
-    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active' });
+    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', image: '' });
   };
 
   const handleEditCategorySubmit = async (e) => {
@@ -798,7 +799,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             name: editCategoryItem.name.trim(),
             parent: editCategoryItem.parent,
             count: parseInt(editCategoryItem.count, 10) || 0,
-            status: editCategoryItem.status
+            status: editCategoryItem.status,
+            image: editCategoryItem.image || ''
           };
         }
         if (c.parent === editCategoryItem.originalName) {
@@ -816,7 +818,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             name: editCategoryItem.name.trim(),
             parent: editCategoryItem.parent,
             count: parseInt(editCategoryItem.count, 10) || 0,
-            status: editCategoryItem.status
+            status: editCategoryItem.status,
+            image: editCategoryItem.image || ''
           };
         }
         if (c.parent === editCategoryItem.originalName) {
@@ -1047,7 +1050,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             <button 
               type="button" 
               className="btn-primary" 
-              style={{ padding: '6px 12px', fontSize: '0.75rem', backgroundColor: '#e2ebd5', color: '#8CC63F', border: '1px solid #8CC63F', borderRadius: '6px', fontWeight: 600 }} 
+              style={{ padding: '6px 12px', fontSize: '0.75rem', backgroundColor: '#e2ebd5', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: '6px', fontWeight: 600 }} 
               onClick={() => {
                 const key = prompt('Enter custom specification label (e.g. Weight, Material, Model):');
                 if (key) {
@@ -1437,6 +1440,29 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       } catch (err) {
         console.error('Image upload failed', err);
         alert('Failed to upload image. Please try again.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCategoryImageUpload = async (e, item, setItem) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const uploadedUrl = await apiService.uploadImage(file.name, reader.result);
+        if (uploadedUrl) {
+          setItem({
+            ...item,
+            image: uploadedUrl
+          });
+          alert('Category cover image uploaded successfully!');
+        }
+      } catch (err) {
+        console.error('Category image upload failed', err);
+        alert('Failed to upload category image. Please try again.');
       }
     };
     reader.readAsDataURL(file);
@@ -1967,8 +1993,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* Gradient Defs */}
                       <defs>
                         <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FF8A00" stopOpacity="0.45"/>
-                          <stop offset="100%" stopColor="#FF8A00" stopOpacity="0.00"/>
+                          <stop offset="0%" stopColor="#C59B6C" stopOpacity="0.45"/>
+                          <stop offset="100%" stopColor="#C59B6C" stopOpacity="0.00"/>
                         </linearGradient>
                       </defs>
 
@@ -1996,7 +2022,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             C 432.5 ${180 - (chartPoints[4].value / 250000) * 160}, 432.5 ${180 - (chartPoints[5].value / 250000) * 160}, 475 ${180 - (chartPoints[5].value / 250000) * 160} 
                             C 517.5 ${180 - (chartPoints[5].value / 250000) * 160}, 517.5 ${180 - (chartPoints[6].value / 250000) * 160}, 560 ${180 - (chartPoints[6].value / 250000) * 160}`}
                         fill="none" 
-                        stroke="#FF8A00" 
+                        stroke="#C59B6C" 
                         strokeWidth="3.5"
                       />
 
@@ -2006,7 +2032,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         const cy = 180 - (pt.value / 250000) * 160;
                         return (
                           <g key={pt.date} onMouseEnter={() => setHoveredPoint({ idx: i, cx, cy, label: pt.date, val: pt.value })} onMouseLeave={() => setHoveredPoint(null)}>
-                            <circle cx={cx} cy={cy} r="5" fill="#fff" stroke="#FF8A00" strokeWidth="3.5" className="chart-dot" />
+                            <circle cx={cx} cy={cy} r="5" fill="#fff" stroke="#C59B6C" strokeWidth="3.5" className="chart-dot" />
                             <circle cx={cx} cy={cy} r="15" fill="transparent" style={{ cursor: 'pointer' }} />
                           </g>
                         );
@@ -2025,7 +2051,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {hoveredPoint && (
                         <g>
                           <line x1={hoveredPoint.cx} y1="20" x2={hoveredPoint.cx} y2="180" stroke="#ccc" strokeDasharray="3,3" />
-                          <circle cx={hoveredPoint.cx} cy={hoveredPoint.cy} r="8" fill="#FF8A00" opacity="0.3" />
+                          <circle cx={hoveredPoint.cx} cy={hoveredPoint.cy} r="8" fill="#C59B6C" opacity="0.3" />
                           <rect 
                             x={hoveredPoint.cx > 450 ? hoveredPoint.cx - 130 : hoveredPoint.cx + 10} 
                             y={hoveredPoint.cy - 35} 
@@ -2033,7 +2059,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             height="50" 
                             rx="6" 
                             fill="#fff" 
-                            stroke="#FF8A00" 
+                            stroke="#C59B6C" 
                             strokeWidth="1"
                             className="chart-tooltip-bg"
                           />
@@ -2456,7 +2482,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     name: cat.name,
                                     parent: cat.parent,
                                     count: getCategoryProductCount(cat.name),
-                                    status: cat.status
+                                    status: cat.status,
+                                    image: cat.image || ''
                                   })}
                                 >
                                   <Edit3 size={15} />
@@ -3105,7 +3132,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="banners-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                           <ImageIcon size={22} />
                         </div>
                         <div>
@@ -3148,7 +3175,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   fontSize: '0.75rem',
                                   fontWeight: 700,
                                   backgroundColor: banner.status === 'Active' ? '#eef6e6' : '#fdebeb',
-                                  color: banner.status === 'Active' ? '#8CC63F' : '#ea4335'
+                                  color: banner.status === 'Active' ? '#D4AF37' : '#ea4335'
                                 }}>
                                   {banner.status}
                                 </span>
@@ -3175,7 +3202,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {/* Pagination control */}
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#C59B6C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&gt;</span>
@@ -3187,7 +3214,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="announcements-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                           <Megaphone size={22} />
                         </div>
                         <div>
@@ -3226,7 +3253,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   fontSize: '0.75rem',
                                   fontWeight: 700,
                                   backgroundColor: ann.status === 'Active' ? '#eef6e6' : ann.status === 'Expired' ? '#fdebeb' : '#f5f5f5',
-                                  color: ann.status === 'Active' ? '#8CC63F' : ann.status === 'Expired' ? '#ea4335' : '#777'
+                                  color: ann.status === 'Active' ? '#D4AF37' : ann.status === 'Expired' ? '#ea4335' : '#777'
                                 }}>
                                   {ann.status}
                                 </span>
@@ -3253,7 +3280,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     {/* Pagination control */}
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                      <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#C59B6C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                       <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                       <span style={{ cursor: 'pointer', color: '#999' }}>&gt;</span>
@@ -3265,7 +3292,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   <div className="contact-queries-view-wrap">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                           <MessageSquare size={22} />
                         </div>
                         <div>
@@ -3318,7 +3345,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     fontSize: '0.75rem',
                                     fontWeight: 700,
                                     backgroundColor: q.status === 'Resolved' ? '#eef6e6' : q.status === 'In Progress' ? '#fdf5e6' : '#eef2fd',
-                                    color: q.status === 'Resolved' ? '#8CC63F' : q.status === 'In Progress' ? '#FF8A00' : '#2b87e3'
+                                    color: q.status === 'Resolved' ? '#D4AF37' : q.status === 'In Progress' ? '#C59B6C' : '#2b87e3'
                                   }}>
                                     {q.status}
                                   </span>
@@ -3342,7 +3369,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ cursor: 'pointer', color: '#999' }}>&lt;</span>
-                        <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#FF8A00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
+                        <span style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef0e6', color: '#C59B6C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>1</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>2</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>3</span>
                         <span style={{ cursor: 'pointer', color: '#666', fontSize: '0.85rem' }}>4</span>
@@ -3410,8 +3437,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   <Star 
                                     key={i} 
                                     size={14} 
-                                    fill={i < rev.rating ? '#FF8A00' : 'none'} 
-                                    stroke={i < rev.rating ? '#FF8A00' : '#ccc'} 
+                                    fill={i < rev.rating ? '#C59B6C' : 'none'} 
+                                    stroke={i < rev.rating ? '#C59B6C' : '#ccc'} 
                                   />
                                 ))}
                               </div>
@@ -3612,7 +3639,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'shipping' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                         <Truck size={22} />
                       </div>
                       <div>
@@ -3679,7 +3706,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableCod ? '#8CC63F' : '#ccc',
+                            backgroundColor: shippingSettings.enableCod ? '#D4AF37' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3701,7 +3728,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableExpress ? '#8CC63F' : '#ccc',
+                            backgroundColor: shippingSettings.enableExpress ? '#D4AF37' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3723,7 +3750,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           />
                           <span style={{
                             position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundColor: shippingSettings.enableInternational ? '#8CC63F' : '#ccc',
+                            backgroundColor: shippingSettings.enableInternational ? '#D4AF37' : '#ccc',
                             transition: '0.3s', borderRadius: '34px',
                           }}>
                             <span style={{
@@ -3847,7 +3874,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'payment' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                         <CreditCard size={22} />
                       </div>
                       <div>
@@ -3860,7 +3887,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* COD toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                             <Truck size={20} />
                           </div>
                           <div>
@@ -3878,7 +3905,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.cod ? '#8CC63F' : '#ccc',
+                              backgroundColor: paymentSettings.cod ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3912,7 +3939,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.razorpay ? '#8CC63F' : '#ccc',
+                              backgroundColor: paymentSettings.razorpay ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3946,7 +3973,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.upi ? '#8CC63F' : '#ccc',
+                              backgroundColor: paymentSettings.upi ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3980,7 +4007,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.stripe ? '#8CC63F' : '#ccc',
+                              backgroundColor: paymentSettings.stripe ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -3996,7 +4023,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {/* Bank Transfer toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF8A00' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C59B6C' }}>
                             <Globe size={20} />
                           </div>
                           <div>
@@ -4014,7 +4041,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: paymentSettings.bankTransfer ? '#8CC63F' : '#ccc',
+                              backgroundColor: paymentSettings.bankTransfer ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -4038,7 +4065,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'social' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                         <Share2 size={22} />
                       </div>
                       <div>
@@ -4124,7 +4151,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'email' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                         <Mail size={22} />
                       </div>
                       <div>
@@ -4203,7 +4230,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                         <button 
                           className="profile-save-btn" 
-                          style={{ backgroundColor: '#8CC63F', color: '#fff', margin: 0 }}
+                          style={{ backgroundColor: '#D4AF37', color: '#fff', margin: 0 }}
                           onClick={() => alert('Test email sent to ' + emailSettings.senderEmail)}
                         >
                           Send Test Email
@@ -4221,7 +4248,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 {settingsSubTab === 'website' && (
                   <div className="settings-form-content" style={{ display: 'block' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(122, 193, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                         <Globe size={22} />
                       </div>
                       <div>
@@ -4335,7 +4362,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'profile-info' && (
                     <div className="profile-form-content">
                       <div className="profile-left-col">
-                        <div className="profile-large-avatar" style={{ backgroundColor: 'var(--color-primary, #8CC63F)' }}>
+                        <div className="profile-large-avatar" style={{ backgroundColor: 'var(--color-primary, #D4AF37)' }}>
                           {authUser?.name?.slice(0, 1).toUpperCase() || 'A'}
                         </div>
                         <button className="profile-change-photo-btn" onClick={() => alert('Change Photo triggered')}>
@@ -4380,7 +4407,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'change-password' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '800px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #D4AF37)' }}>
                           <Lock size={22} />
                         </div>
                         <div>
@@ -4440,7 +4467,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'security' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '800px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #D4AF37)' }}>
                           <Settings size={22} />
                         </div>
                         <div>
@@ -4453,7 +4480,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* 2FA Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF8A00' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff5ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C59B6C' }}>
                               <Lock size={20} />
                             </div>
                             <div>
@@ -4470,7 +4497,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: securitySettings.twoFactor ? '#8CC63F' : '#ccc',
+                              backgroundColor: securitySettings.twoFactor ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -4484,7 +4511,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* Login Alerts Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#f0f9eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                               <Bell size={20} />
                             </div>
                             <div>
@@ -4501,7 +4528,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             />
                             <span style={{
                               position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: securitySettings.loginAlerts ? '#8CC63F' : '#ccc',
+                              backgroundColor: securitySettings.loginAlerts ? '#D4AF37' : '#ccc',
                               transition: '0.3s', borderRadius: '34px',
                             }}>
                               <span style={{
@@ -4515,7 +4542,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* Active Sessions Section */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', backgroundColor: '#faf9f6', border: '1px solid #eae6df', borderRadius: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff9e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8CC63F' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#fff9e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D4AF37' }}>
                               <Settings size={20} />
                             </div>
                             <div>
@@ -4524,7 +4551,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             </div>
                           </div>
                           <button 
-                            style={{ padding: '8px 20px', backgroundColor: '#eef6e6', color: '#8CC63F', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '8px 20px', backgroundColor: '#eef6e6', color: '#D4AF37', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                             onClick={() => alert('Active Sessions: Windows PC (Chrome) - Current active session.')}
                           >
                             View
@@ -4537,7 +4564,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {profileSubTab === 'login-history' && (
                     <div className="profile-form-content" style={{ display: 'block', maxWidth: '900px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #8CC63F)' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light, rgba(122, 193, 66, 0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary, #D4AF37)' }}>
                           <BookOpen size={22} />
                         </div>
                         <div>
@@ -4573,7 +4600,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     fontSize: '0.75rem',
                                     fontWeight: 700,
                                     backgroundColor: history.status === 'Success' ? '#eef6e6' : '#fdebeb',
-                                    color: history.status === 'Success' ? '#8CC63F' : '#ea4335'
+                                    color: history.status === 'Success' ? '#D4AF37' : '#ea4335'
                                   }}>
                                     {history.status}
                                   </span>
@@ -4871,7 +4898,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               style={{ marginBottom: '8px' }}
                             />
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                              <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                                 Upload Local File / Image
                               </label>
                               <input 
@@ -5175,7 +5202,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               style={{ marginBottom: '8px' }}
                             />
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #8CC63F', color: '#8CC63F', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                              <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                                 Upload Local File / Image
                               </label>
                               <input 
@@ -5277,7 +5304,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
               {viewProductItem.attributes && Object.keys(viewProductItem.attributes).length > 0 && (
                 <div style={{ marginBottom: '16px', background: '#f6faf0', padding: '16px', borderRadius: '12px', border: '1px solid #dbe8cb' }}>
-                  <span className="spec-lbl" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#8CC63F' }}>Category Specifications:</span>
+                  <span className="spec-lbl" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#D4AF37' }}>Category Specifications:</span>
                   <div className="view-spec-table" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {Object.entries(viewProductItem.attributes).map(([key, val]) => (
                       <div key={key} className="spec-row" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eae6df', paddingBottom: '6px' }}>
@@ -5480,6 +5507,34 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </select>
               </div>
 
+              <div className="form-field">
+                <label>Category Cover Image</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    value={newCategory.image || ''}
+                    onChange={(e) => setNewCategory({ ...newCategory, image: e.target.value })}
+                    placeholder="e.g. https://example.com/category.jpg" 
+                    className="modal-input"
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label htmlFor="add-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Upload Cover Image
+                    </label>
+                    <input 
+                      type="file" 
+                      id="add-cat-file-upload" 
+                      style={{ display: 'none' }} 
+                      accept="image/*" 
+                      onChange={(e) => handleCategoryImageUpload(e, newCategory, setNewCategory)} 
+                    />
+                    {newCategory.image && (
+                      <img src={newCategory.image} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCategoryModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary">Create Category</button>
@@ -5548,6 +5603,34 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </select>
               </div>
 
+              <div className="form-field">
+                <label>Category Cover Image</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    value={editCategoryItem.image || ''}
+                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, image: e.target.value })}
+                    placeholder="e.g. https://example.com/category.jpg" 
+                    className="modal-input"
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label htmlFor="edit-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Upload Cover Image
+                    </label>
+                    <input 
+                      type="file" 
+                      id="edit-cat-file-upload" 
+                      style={{ display: 'none' }} 
+                      accept="image/*" 
+                      onChange={(e) => handleCategoryImageUpload(e, editCategoryItem, setEditCategoryItem)} 
+                    />
+                    {editCategoryItem.image && (
+                      <img src={editCategoryItem.image} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setEditCategoryItem(null)}>Cancel</button>
                 <button type="submit" className="btn-primary">Save Changes</button>
@@ -5568,7 +5651,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewCategoryItem.name}</h4>
+                <h4 className="view-title" style={{ color: '#C59B6C' }}>{viewCategoryItem.name}</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Parent Category:</span>
@@ -5586,6 +5669,14 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <span className="spec-lbl">Status:</span>
                     <span className={`status-badge-re ${(viewCategoryItem.status || 'Active').toLowerCase()}`}>{viewCategoryItem.status || 'Active'}</span>
                   </div>
+                  {viewCategoryItem.image && (
+                    <div className="spec-row">
+                      <span className="spec-lbl">Cover Image:</span>
+                      <span className="spec-val">
+                        <img src={viewCategoryItem.image} alt={viewCategoryItem.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} />
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -5796,7 +5887,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewCatalogueItem.name}</h4>
+                <h4 className="view-title" style={{ color: '#C59B6C' }}>{viewCatalogueItem.name}</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Subtitle/Focus:</span>
@@ -5919,7 +6010,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#FF8A00' }}>{viewOrderItem.id} Details</h4>
+                <h4 className="view-title" style={{ color: '#C59B6C' }}>{viewOrderItem.id} Details</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Customer Name:</span>
@@ -5949,13 +6040,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   </div>
                   {viewOrderItem.items && Array.isArray(viewOrderItem.items) && (
                     <div style={{ marginTop: '16px', background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df' }}>
-                      <span className="spec-lbl" style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#FF8A00' }}>Items / Selected Variants Details:</span>
+                      <span className="spec-lbl" style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#C59B6C' }}>Items / Selected Variants Details:</span>
                       {viewOrderItem.items.map((item, idx) => (
                         <div key={idx} style={{ borderBottom: idx < viewOrderItem.items.length - 1 ? '1px solid #eae6df' : 'none', paddingBottom: '8px', marginBottom: '8px', fontSize: '0.85rem' }}>
                           <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name} (Qty: {item.quantity})</div>
                           <div style={{ color: '#666', marginTop: '3px' }}>Catalogue: <span style={{ color: '#000', fontWeight: 500 }}>{item.catalogue || 'Catalogue A'}</span></div>
                           {item.variant && (item.variant.size || item.variant.color) && (
-                            <div style={{ color: '#8CC63F', fontWeight: 600, marginTop: '3px' }}>
+                            <div style={{ color: '#D4AF37', fontWeight: 600, marginTop: '3px' }}>
                               Selected Variant: {item.variant.size ? `Size: ${item.variant.size}` : ''} {item.variant.color ? `| Color: ${item.variant.color}` : ''} {item.variant.sku ? `| SKU: ${item.variant.sku}` : ''} {item.variant.variantId ? `| VarID: ${item.variant.variantId}` : ''}
                             </div>
                           )}
@@ -6508,7 +6599,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               className="modal-body-form"
             >
               <div className="view-prod-details" style={{ paddingLeft: 0, marginBottom: '16px' }}>
-                <h4 className="view-title" style={{ color: '#FF8A00' }}>Inquiry Details</h4>
+                <h4 className="view-title" style={{ color: '#C59B6C' }}>Inquiry Details</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Sender Name:</span>
@@ -6574,7 +6665,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               className="modal-body-form"
             >
               <div className="view-prod-details" style={{ paddingLeft: 0, marginBottom: '16px' }}>
-                <h4 className="view-title" style={{ color: '#FF8A00' }}>Customer Review</h4>
+                <h4 className="view-title" style={{ color: '#C59B6C' }}>Customer Review</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Product:</span>
