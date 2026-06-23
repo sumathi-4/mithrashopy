@@ -8016,12 +8016,12 @@ ul {
 /* DYNAMIC CATEGORY VARIABLES FOR MODALS & DETAIL VIEW */
 /* ---------------------------------------------------- */
 .theme-clothing {
-  --theme-primary: #D4AF37;
-  --theme-primary-rgb: 212, 175, 55;
-  --theme-accent: #aa7c11;
-  --theme-btn-bg: #D4AF37;
+  --theme-primary: #5A2C3C;
+  --theme-primary-rgb: 90, 44, 60;
+  --theme-accent: #7D4D5E;
+  --theme-btn-bg: #5A2C3C;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(212, 175, 55, 0.35);
+  --theme-glow: 0 8px 25px rgba(90, 44, 60, 0.35);
 }
 .theme-gifts {
   --theme-primary: #aa7c11;
@@ -19276,5 +19276,537 @@ ul {
   color: #dfb743 !important; /* Shimmer golden title */
   font-size: 1.8rem !important;
   font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   CLOTHING WINE/MAUVE PALETTE THEME (IMAGE 1 & 2)
+   ========================================================================== */
+
+/* Outer Page Background */
+.shop-view-page.clothing-wine-theme {
+  background-color: #FAF2F0 !important; /* Soft pale blush */
+}
+
+/* Sidebar filter cards (Matches Image 2 with Dark Banner Background #4E1A29) */
+.shop-view-page.clothing-wine-theme .shop-sidebar-filters {
+  background-color: #4E1A29 !important; /* Dark wine sidebar bg */
+  border: 1px solid rgba(223, 183, 67, 0.2) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Sidebar header styling */
+.shop-view-page.clothing-wine-theme .sidebar-title-text {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
+  letter-spacing: 1px !important;
+}
+
+.shop-view-page.clothing-wine-theme .sidebar-close-x-btn {
+  color: #ffffff !important;
+  opacity: 0.8 !important;
+}
+.shop-view-page.clothing-wine-theme .sidebar-close-x-btn:hover {
+  opacity: 1 !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clear-all-btn-left,
+.shop-view-page.clothing-wine-theme .clear-all-btn-right {
+  color: #dfb743 !important; /* Golden clear all text */
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clear-all-btn-left:hover,
+.shop-view-page.clothing-wine-theme .clear-all-btn-right:hover {
+  color: #ffffff !important;
+}
+
+/* Unified inner card section list container */
+.shop-view-page.clothing-wine-theme .unified-filters-card {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 10px 15px !important;
+}
+
+/* Divider border lines inside unified filter section list container */
+.shop-view-page.clothing-wine-theme .filter-card-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 0 !important;
+  padding: 16px 0 !important;
+}
+.shop-view-page.clothing-wine-theme .filter-card-section:last-child {
+  border-bottom: none !important;
+}
+
+/* Header inside filter sections */
+.shop-view-page.clothing-wine-theme .filter-card-section h3,
+.shop-view-page.clothing-wine-theme .section-title-text,
+.shop-view-page.clothing-wine-theme .filter-header h3 {
+  color: #dfb743 !important; /* Golden Shimmer headers */
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+/* Expand Chevrons */
+.shop-view-page.clothing-wine-theme .section-chevron {
+  color: #dfb743 !important;
+}
+
+/* Text labels / span text inside filters */
+.shop-view-page.clothing-wine-theme .filter-card-section span,
+.shop-view-page.clothing-wine-theme .filter-card-section label,
+.shop-view-page.clothing-wine-theme .filter-card-section p,
+.shop-view-page.clothing-wine-theme .filter-card-section li {
+  color: #ffffff !important; /* Clean white labels */
+  font-size: 0.9rem !important;
+}
+
+/* Dynamic category tree items text colors inside list */
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper {
+  color: #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper.active {
+  background-color: rgba(142, 89, 107, 0.4) !important; /* Soft mauve highlight */
+  border-left: 3px solid #dfb743 !important; /* Gold active left border line */
+  border-radius: 4px !important;
+}
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper .sub-label {
+  color: #ffffff !important;
+}
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper .sub-count {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Checkboxes style */
+.shop-view-page.clothing-wine-theme .filter-card-section input[type="checkbox"] {
+  accent-color: #dfb743 !important;
+}
+
+/* Size buttons style */
+.shop-view-page.clothing-wine-theme .size-btn {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  transition: all 0.25s ease !important;
+}
+
+.shop-view-page.clothing-wine-theme .size-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .size-btn.active {
+  background-color: #8E596B !important; /* Mauve active background */
+  border-color: #8E596B !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(142, 89, 107, 0.4) !important;
+}
+
+/* Price Range Slider thumb and track style */
+.shop-view-page.clothing-wine-theme .pink-price-slider {
+  accent-color: #dfb743 !important; /* Gold thumb */
+}
+.shop-view-page.clothing-wine-theme .pink-price-slider::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+.shop-view-page.clothing-wine-theme .pink-price-slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Color bubbles outline on active selection */
+.shop-view-page.clothing-wine-theme .color-bubble.active {
+  outline: 2px solid #dfb743 !important;
+  outline-offset: 2px !important;
+}
+
+.shop-view-page.clothing-wine-theme .more-colors-btn .more-text {
+  color: #dfb743 !important;
+}
+
+/* Category Sub-circle Cards */
+.shop-view-page.clothing-wine-theme .subcategory-circle-card {
+  background-color: #ffffff !important;
+  border: 2px solid transparent !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s ease !important;
+}
+
+.shop-view-page.clothing-wine-theme .subcategory-circle-card.active {
+  border-color: #dfb743 !important; /* Golden active ring */
+  box-shadow: 0 0 12px rgba(223, 183, 67, 0.35) !important;
+}
+
+.shop-view-page.clothing-wine-theme .subcategory-label {
+  color: #3E232B !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .subcategory-count {
+  color: #7D4D5E !important;
+}
+
+/* Product Cards */
+.shop-view-page.clothing-wine-theme .clothing-product-card {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(90, 44, 60, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(90, 44, 60, 0.04) !important;
+  transition: all 0.3s ease !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-brand-name {
+  color: #7D4D5E !important; /* Brand label */
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-product-title {
+  color: #3E232B !important;
+  font-weight: 700 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-selling-price {
+  color: #5A2C3C !important; /* Selling price */
+  font-weight: 800 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-original-price {
+  color: #8c787d !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-discount-badge {
+  background: #5A2C3C !important;
+  color: #ffffff !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn {
+  background-color: #5A2C3C !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 6px !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn:hover {
+  background-color: #7D4D5E !important;
+  color: #ffffff !important;
+}
+
+/* Quick View Overlay (Clothing Wine Theme) */
+.quickview-split-overlay.theme-clothing .quickview-split-card {
+  background-color: #F9ECEB !important;
+  border-color: rgba(90, 44, 60, 0.2) !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-title,
+.quickview-split-overlay.theme-clothing .modal-price,
+.quickview-split-overlay.theme-clothing .modal-reviews-count,
+.quickview-split-overlay.theme-clothing .modal-desc,
+.quickview-split-overlay.theme-clothing .modal-section-title,
+.quickview-split-overlay.theme-clothing .qty-label,
+.quickview-split-overlay.theme-clothing .qty-value,
+.quickview-split-overlay.theme-clothing span,
+.quickview-split-overlay.theme-clothing p,
+.quickview-split-overlay.theme-clothing label,
+.quickview-split-overlay.theme-clothing div {
+  color: #3E232B !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-original-price {
+  color: #8c787d !important;
+  text-decoration: line-through !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-primary-action-btn {
+  background: #5A2C3C !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(90, 44, 60, 0.25) !important;
+  border-radius: 6px !important;
+  text-transform: uppercase !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-primary-action-btn:hover {
+  background: #7D4D5E !important;
+  color: #ffffff !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-secondary-action-btn {
+  background: transparent !important;
+  border: 2px solid #5A2C3C !important;
+  color: #5A2C3C !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-secondary-action-btn:hover {
+  background: rgba(90, 44, 60, 0.08) !important;
+  color: #7D4D5E !important;
+  border-color: #7D4D5E !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-close-btn-split {
+  color: #5A2C3C !important;
+}
+
+/* Product Detail Page View overrides */
+.shop-product-detail-page-view.theme-clothing {
+  background-color: #FAF2F0 !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout {
+  background-color: #F9ECEB !important;
+  border: 1px solid rgba(90, 44, 60, 0.15) !important;
+  border-radius: 20px !important;
+  padding: 35px !important;
+  color: #3E232B !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-title {
+  color: #3E232B !important;
+  font-size: 2.2rem !important;
+  font-weight: 700 !important;
+  margin-top: 10px !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .product-detail-tagline,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .product-detail-section-title,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .product-detail-qty-control span,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .detail-tab-btn,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .detail-tab-content,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .review-comment-text,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .specs-key,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .specs-val,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout div:not(.product-detail-category-tag),
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status),
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout p,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout label {
+  color: #3E232B !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-category-tag {
+  color: #5A2C3C !important;
+  font-weight: 600 !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-reviews {
+  color: #7D4D5E !important;
+  font-size: 1.05rem !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .breadcrumb-category,
+.shop-product-detail-page-view.theme-clothing .breadcrumb-divider,
+.shop-product-detail-page-view.theme-clothing .back-to-shop-btn,
+.shop-product-detail-page-view.theme-clothing .back-to-shop-btn span,
+.shop-product-detail-page-view.theme-clothing .back-to-shop-btn svg,
+.shop-product-detail-page-view.theme-clothing .product-detail-nav svg {
+  color: #5A2C3C !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .detail-tab-btn.active {
+  color: #5A2C3C !important;
+  border-bottom-color: #5A2C3C !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-price-value {
+  color: #5A2C3C !important;
+  font-weight: 800 !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-original-price {
+  color: #8c787d !important;
+  text-decoration: line-through !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-discount-badge {
+  background-color: #5A2C3C !important;
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-cart-btn {
+  background-color: #5A2C3C !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: none !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-cart-btn:hover {
+  background-color: #7D4D5E !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-buy-btn {
+  background-color: #ffffff !important;
+  border: 2px solid #5A2C3C !important;
+  color: #5A2C3C !important;
+  font-weight: 700 !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-buy-btn:hover {
+  background-color: rgba(90, 44, 60, 0.08) !important;
+  color: #7D4D5E !important;
+  border-color: #7D4D5E !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-availability-label {
+  color: #ffffff !important;
+  background-color: #2e7d32 !important; /* Keep green ratings pill style */
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+}
+
+.shop-product-detail-page-view.theme-clothing .product-detail-availability-status {
+  color: #3E232B !important;
+  background: transparent !important;
+  font-weight: 700 !important;
+}
+
+/* Similar products title */
+.shop-product-detail-page-view.theme-clothing .product-detail-similar-section .similar-title,
+.shop-product-detail-page-view.theme-clothing .similar-products-section .similar-title,
+.shop-product-detail-page-view.theme-clothing h2.similar-title {
+  color: #5A2C3C !important; /* Shimmer golden title */
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+}
+
+/* Clothing wine theme banner styling (Image 3) */
+.shop-view-page.clothing-wine-theme .shop-banner {
+  height: 520px !important;
+  background-color: #4E1A29 !important; /* Dark wine banner background */
+  border-bottom: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+/* Below banner shimmer golden border glow effects */
+.shop-view-page.clothing-wine-theme .shop-banner::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 4px !important;
+  background: linear-gradient(to right, #dfb743 0%, #f7df8f 35%, #ffffff 50%, #f7df8f 65%, #b28e20 100%) !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.8) !important;
+  z-index: 5 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-bg-image {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 55% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: right center !important;
+  z-index: 1 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-overlay-gradient {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(to right, #4E1A29 0%, #4E1A29 45%, rgba(78, 26, 41, 0.95) 55%, rgba(78, 26, 41, 0) 90%) !important;
+  z-index: 2 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-content {
+  position: relative !important;
+  z-index: 3 !important;
+  padding: 40px 6% !important;
+  max-width: 600px !important;
+  text-align: left !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-tagline {
+  font-family: var(--font-sans) !important;
+  font-size: 0.9rem !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-title {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  color: #ffffff !important;
+  font-size: 3.2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  margin: 10px 0 20px 0 !important;
+  display: block !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-subtitle {
+  font-family: var(--font-sans) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  display: inline-block !important;
+  margin-top: 10px !important;
+  margin-bottom: 30px !important;
+  max-width: 500px !important;
+  line-height: 1.4 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-divider {
+  display: none !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-explore-btn {
+  background: #8E596B !important; /* Mauve button bg */
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 28px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  margin-top: 0 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 1.2px !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-explore-btn:hover {
+  background: #a36d80 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(142, 89, 107, 0.4) !important;
 }
 

@@ -49,7 +49,7 @@ import kids_tq_157 from '../assets/kids_tq_157.jpg';
 import kids_tq_161 from '../assets/kids_tq_161.jpg';
 import kids_tq_165 from '../assets/kids_tq_165.jpg';
 import shopBannerRaw from '../assets/shop_banner_raw.jpg';
-import imgClothing from '../assets/hero_clothing.jpg';
+import imgClothing from '../assets/hero_clothing_banner.jpg';
 import imgStationery from '../assets/hero_stationery.jpg';
 import imgGifts from '../assets/hero_gifts.jpg';
 import imgAccessories from '../assets/hero_accessories.jpg';
@@ -870,7 +870,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   const getGroupColor = (groupKey) => {
     if (!groupKey) return '#D4AF37';
     switch (groupKey.toUpperCase()) {
-      case 'CLOTHING': return '#D4AF37';
+      case 'CLOTHING': return '#5A2C3C';
       case 'STATIONERY': return '#4A90E2';
       case 'GIFTS': return '#8A2BE2';
       case 'ACCESSORIES': return '#D4AF37';
@@ -1695,9 +1695,9 @@ export default function ShopView({ authUser, setAuthUser }) {
           };
         default:
           return {
-            tagline: "Shop Our",
-            title: "Clothing Collection",
-            subtitle: "Trendy and traditional ethnic apparel selected for your entire family"
+            tagline: "NEW ARRIVALS",
+            title: "Timeless Looks, Everyday You",
+            subtitle: "Comfort meets elegance in every stitch."
           };
       }
     } else if (activeTab === 'GIFTS') {
@@ -2281,6 +2281,55 @@ export default function ShopView({ authUser, setAuthUser }) {
   }
 
   const getCategoryCirclesData = () => {
+    if (activeTab === 'CLOTHING') {
+      const unified = getUnifiedCategories();
+      const clothingGroup = unified.find(g => g.key === 'CLOTHING');
+      if (clothingGroup && clothingGroup.subcategories && clothingGroup.subcategories.length > 0) {
+        const subItems = clothingGroup.subcategories.map(sub => {
+          const dbCat = categoriesList.find(c => c.name.toLowerCase() === sub.dbName.toLowerCase());
+          const customImg = dbCat?.image;
+          const subKeys = getAllSubcategoryKeysUnder(sub.dbName).map(k => k.toUpperCase());
+          const count = allProducts.filter(p => {
+            const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+            if (rootCat !== 'CLOTHING') return false;
+            if (getProductCatalogue(p) !== catalogue) return false;
+            const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+            return productSubs.some(subName => subKeys.includes(subName));
+          }).length;
+
+          return {
+            key: sub.dbName.toUpperCase(),
+            label: sub.label,
+            img: customImg || imgClothing,
+            count: `${count} items`,
+            isSub: true,
+            dbName: sub.dbName
+          };
+        });
+
+        const totalClothingCount = allProducts.filter(p => {
+          const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+          return rootCat === 'CLOTHING' && getProductCatalogue(p) === catalogue;
+        }).length;
+
+        const allCircle = {
+          key: 'ALL',
+          label: 'All Clothing',
+          img: imgClothing,
+          count: `${totalClothingCount} items`,
+          isSub: true,
+          dbName: 'ALL'
+        };
+
+        const rootDbCat = categoriesList.find(c => c.name.toLowerCase() === 'clothing');
+        if (rootDbCat?.image) {
+          allCircle.img = rootDbCat.image;
+        }
+
+        return [allCircle, ...subItems];
+      }
+    }
+
     if (activeTab === 'ACCESSORIES') {
       const unified = getUnifiedCategories();
       const accGroup = unified.find(g => g.key === 'ACCESSORIES');
@@ -2408,12 +2457,12 @@ export default function ShopView({ authUser, setAuthUser }) {
   };
 
   return (
-    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : ''}`}>
+    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : activeTab === 'CLOTHING' ? 'clothing-wine-theme' : ''}`}>
       
       {/* Premium Shop Header Banner */}
       <div className="shop-banner">
         {/* Background image on the right */}
-        <img src={activeTab === 'ACCESSORIES' ? imgAccessories : activeTab === 'GIFTS' ? imgGifts : shopBannerRaw} className="shop-banner-bg-image" alt="Exclusive Collection" />
+        <img src={activeTab === 'ACCESSORIES' ? imgAccessories : activeTab === 'GIFTS' ? imgGifts : activeTab === 'CLOTHING' ? imgClothing : shopBannerRaw} className="shop-banner-bg-image" alt="Exclusive Collection" />
         
         {/* Left-to-right gradient overlay to blend image and provide solid text area */}
         <div className="shop-banner-overlay-gradient"></div>
@@ -2424,6 +2473,11 @@ export default function ShopView({ authUser, setAuthUser }) {
           <h1 className={`shop-banner-title ${bannerContent.title === 'Exclusive Collection' ? 'shop-banner-title-exclusive' : ''}`}>
             {bannerContent.title === 'Adorn Yourself in Royal Elegance' ? (
               <>Adorn Yourself in <br /> Royal Elegance</>
+            ) : bannerContent.title === 'Timeless Looks, Everyday You' ? (
+              <>
+                <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Timeless Looks,</span>
+                <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Everyday You</span>
+              </>
             ) : bannerContent.title}
           </h1>
           <p className="shop-banner-subtitle">{bannerContent.subtitle}</p>
@@ -2434,12 +2488,12 @@ export default function ShopView({ authUser, setAuthUser }) {
             </span>
             <span className="shop-banner-divider-line"></span>
           </div>
-          {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS') && (
+          {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS' || activeTab === 'CLOTHING') && (
             <button className="shop-banner-explore-btn" onClick={() => {
               const el = document.querySelector('.shop-content-container');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}>
-              EXPLORE NOW
+              {activeTab === 'CLOTHING' ? 'EXPLORE COLLECTION' : 'EXPLORE NOW'}
             </button>
           )}
         </div>
