@@ -18969,48 +18969,312 @@ ul {
   color: #ffffff !important;
 }
 
+.shop-view-page.gifts-serene-theme .clothing-product-card {
+  background-color: #9bb8d7 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.shop-view-page.gifts-serene-theme .clothing-product-card .clothing-product-title {
+  color: #ffffff !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.gifts-serene-theme .clothing-product-card .clothing-selling-price {
+  color: #ffffff !important;
+  font-size: 1.2rem !important;
+}
+
+.shop-view-page.gifts-serene-theme .clothing-product-card .clothing-brand-name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.gifts-serene-theme .clothing-product-card .clothing-original-price {
+  color: #ff4d4d !important; /* Red color old price */
+  text-decoration: line-through !important;
+}
+
+.shop-view-page.gifts-serene-theme .clothing-card-add-cart-btn {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 10px rgba(223, 183, 67, 0.6) !important; /* shimmer gold glow */
+}
+
+.shop-view-page.gifts-serene-theme .clothing-card-add-cart-btn:hover {
+  background: linear-gradient(135deg, #b28e20 0%, #dfb743 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Instock status visibility: same as green ratings badge color in image 2 */
+.shop-view-page.gifts-serene-theme .stock-status-in,
+.quickview-split-overlay.theme-gifts .availability-label {
+  color: #ffffff !important;
+  background-color: #2e7d32 !important; /* Green background */
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.85rem !important;
+  display: inline-block !important;
+}
+
+/* Discount Badge: gold shimmer color matching accessories and fancy theme */
+.shop-view-page.gifts-serene-theme .clothing-discount-badge,
+.cat-card-gifts .clothing-discount-badge {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 3px 8px rgba(178, 142, 32, 0.4) !important;
+}
+
+/* Quick view alignment: all text white, buttons shimmer golden with glow */
+.quickview-split-overlay.theme-gifts .quickview-split-card {
+  background-color: #9bb8d7 !important;
+  color: #ffffff !important;
+}
+
+.quickview-split-overlay.theme-gifts .modal-title,
+.quickview-split-overlay.theme-gifts .modal-price,
+.quickview-split-overlay.theme-gifts .modal-reviews-count,
 .quickview-split-overlay.theme-gifts .modal-desc,
 .quickview-split-overlay.theme-gifts .modal-section-title,
-.quickview-split-overlay.theme-gifts .qty-label {
-  color: #3e3a36 !important;
+.quickview-split-overlay.theme-gifts .qty-label,
+.quickview-split-overlay.theme-gifts .modal-close-btn,
+.quickview-split-overlay.theme-gifts .modal-close-btn-split,
+.quickview-split-overlay.theme-gifts span,
+.quickview-split-overlay.theme-gifts p,
+.quickview-split-overlay.theme-gifts label,
+.quickview-split-overlay.theme-gifts div {
+  color: #ffffff !important;
+}
+
+.quickview-split-overlay.theme-gifts .modal-original-price,
+.shop-product-detail-page-view.theme-gifts .product-detail-original-price {
+  color: #ff4d4d !important;
+  text-decoration: line-through !important;
 }
 
 .quickview-split-overlay.theme-gifts .modal-add-cart-btn-split,
 .quickview-split-overlay.theme-gifts .modal-extra-link-btn.active {
-  background-color: #5a738e !important;
-  border-color: #5a738e !important;
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  border: none !important;
   color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(223, 183, 67, 0.8) !important;
 }
 
 .quickview-split-overlay.theme-gifts .modal-add-cart-btn-split:hover,
 .quickview-split-overlay.theme-gifts .modal-extra-link-btn:hover {
-  background-color: #7d93a7 !important;
-  border-color: #7d93a7 !important;
+  background: linear-gradient(135deg, #b28e20 0%, #dfb743 100%) !important;
   color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(223, 183, 67, 0.9) !important;
 }
 
 .quickview-split-overlay.theme-gifts .modal-extra-link-btn {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(223, 183, 67, 0.8) !important;
+}
+
+/* Rating elements: Green background with white text like image 2 */
+.shop-view-page.gifts-serene-theme .clothing-rating-pill-green,
+.cat-card-gifts .clothing-rating-pill-green,
+.quickview-split-overlay.theme-gifts .modal-rating-pill {
+  background-color: #2e7d32 !important;
+  background: #2e7d32 !important;
+  color: #ffffff !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-rating-stars {
+  color: #2e7d32 !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-reviews {
+  color: #ffffff !important;
+}
+
+/* Detail page buy and cart buttons overrides to align with cards instruction */
+.shop-product-detail-page-view.theme-gifts .product-detail-cart-btn {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(223, 183, 67, 0.7) !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-cart-btn:hover {
+  background: linear-gradient(135deg, #b28e20 0%, #dfb743 100%) !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-buy-btn {
+  background-color: #ffffff !important;
   color: #5a738e !important;
-  border-color: #5a738e !important;
+  border: 1px solid #5a738e !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
 }
 
-.shop-product-detail-page-view.theme-gifts .detail-description,
-.shop-product-detail-page-view.theme-gifts .detail-specs-list,
-.shop-product-detail-page-view.theme-gifts .detail-tab-content {
-  color: #3e3a36 !important;
-}
-
-.shop-product-detail-page-view.theme-gifts .detail-action-add-btn,
-.shop-product-detail-page-view.theme-gifts .detail-action-buy-btn {
-  background: #5a738e !important;
-  border-color: #5a738e !important;
+.shop-product-detail-page-view.theme-gifts .product-detail-buy-btn:hover {
+  background-color: #7d93a7 !important;
   color: #ffffff !important;
-}
-
-.shop-product-detail-page-view.theme-gifts .detail-action-add-btn:hover,
-.shop-product-detail-page-view.theme-gifts .detail-action-buy-btn:hover {
-  background: #7d93a7 !important;
   border-color: #7d93a7 !important;
+}
+
+/* Clear product details page background to transparent so it doesn't show soft cream background, only the inner grid matches quick view background #9bb8d7 */
+.shop-product-detail-page-view.theme-gifts {
+  background: transparent !important;
+  background-color: transparent !important;
   color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout {
+  background-color: #9bb8d7 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+  padding: 35px !important;
+}
+
+/* Match the details image container styling and size to other categories */
+.shop-product-detail-page-view.theme-gifts .product-detail-gallery-container {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-main-image-wrapper {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 16px !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-title {
+  color: #ffffff !important;
+  font-size: 2.2rem !important; /* Reduced title size */
+  font-weight: 700 !important;
+  margin-top: 10px !important;
+}
+
+/* Scope white text to grid card info panel to avoid turning similar products or navigation white */
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .product-detail-tagline,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .product-detail-section-title,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .product-detail-qty-control span,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .detail-tab-btn,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .detail-tab-content,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .review-comment-text,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .specs-key,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout .specs-val,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout div:not(.product-detail-category-tag),
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status),
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout p,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout label {
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-category-tag {
+  color: #dfb743 !important; /* Shimmer Golden brand color style tag */
+  font-weight: 600 !important;
+  font-size: 1.1rem !important; /* Increased tag size */
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-reviews {
+  color: #ffffff !important;
+  font-size: 1.05rem !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .breadcrumb-category,
+.shop-product-detail-page-view.theme-gifts .breadcrumb-divider,
+.shop-product-detail-page-view.theme-gifts .back-to-shop-btn,
+.shop-product-detail-page-view.theme-gifts .back-to-shop-btn span,
+.shop-product-detail-page-view.theme-gifts .back-to-shop-btn svg,
+.shop-product-detail-page-view.theme-gifts .product-detail-nav svg {
+  color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .detail-tab-btn.active {
+  color: #ffffff !important;
+  border-bottom-color: #ffffff !important;
+}
+
+/* Hide price label text */
+.shop-product-detail-page-view.theme-gifts .product-detail-price-label {
+  display: none !important;
+}
+
+/* Detail page availability text to match green quick view */
+.shop-product-detail-page-view.theme-gifts .product-detail-availability-label {
+  color: #ffffff !important;
+  background-color: #2e7d32 !important; /* Green background */
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.85rem !important;
+  display: inline-block !important;
+}
+
+.shop-product-detail-page-view.theme-gifts .product-detail-availability-status {
+  color: #ffffff !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  padding: 0 !important;
+  margin-left: 4px !important;
+}
+
+/* MITHIRA GIFTS brand name shimmer golden on product cards */
+.shop-view-page.gifts-serene-theme .clothing-brand-name,
+.cat-card-gifts .clothing-brand-name {
+  color: #dfb743 !important;
+  font-weight: 700 !important;
+}
+
+/* Quick View buttons styling for Gifts theme */
+.quickview-split-overlay.theme-gifts .modal-primary-action-btn {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(223, 183, 67, 0.8) !important;
+  text-transform: uppercase !important;
+  border-radius: 6px !important;
+}
+
+.quickview-split-overlay.theme-gifts .modal-primary-action-btn:hover {
+  background: linear-gradient(135deg, #b28e20 0%, #dfb743 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(223, 183, 67, 0.9) !important;
+}
+
+.quickview-split-overlay.theme-gifts .modal-secondary-action-btn {
+  background: transparent !important;
+  border: 2px solid #dfb743 !important;
+  color: #dfb743 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.quickview-split-overlay.theme-gifts .modal-secondary-action-btn:hover {
+  background: rgba(223, 183, 67, 0.1) !important;
+  color: #f7df8f !important;
+  border-color: #f7df8f !important;
+}
+
+/* Highlight similar products title text below the cards */
+.shop-product-detail-page-view.theme-gifts .product-detail-similar-section .similar-title,
+.shop-product-detail-page-view.theme-gifts .similar-products-section .similar-title,
+.shop-product-detail-page-view.theme-gifts h2.similar-title {
+  color: #dfb743 !important; /* Shimmer golden title */
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
 }
 

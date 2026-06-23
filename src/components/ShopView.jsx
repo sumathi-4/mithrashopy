@@ -751,8 +751,11 @@ const getSelectedVariant = (prod, color, size) => {
 const getSimilarProducts = (currentProd, allProds) => {
   if (!currentProd) return [];
   
-  // Mandatory filter: must match same category and not be the same product
-  const candidates = allProds.filter(p => p.category === currentProd.category && p.id !== currentProd.id);
+  const currentId = String(currentProd.id || currentProd._id || '');
+  const candidates = allProds.filter(p => {
+    const pId = String(p.id || p._id || '');
+    return p.category === currentProd.category && pId !== currentId;
+  });
   
   // Score candidates
   const scored = candidates.map(p => {
@@ -1852,9 +1855,9 @@ export default function ShopView({ authUser, setAuthUser }) {
               </div>
 
               {/* Availability Info */}
-              <div style={{ margin: '12px 0 16px 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 600, color: '#555' }}>Availability:</span>
-                <span style={{ color: isOutOfStock ? '#ff3333' : '#D4AF37', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#FDFBF7', fontSize: '0.82rem' }}>
+              <div className="product-detail-availability-row" style={{ margin: '12px 0 16px 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="product-detail-availability-label" style={{ fontWeight: 600, color: '#555' }}>Availability:</span>
+                <span className="product-detail-availability-status" style={{ color: isOutOfStock ? '#ff3333' : '#D4AF37', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#FDFBF7', fontSize: '0.82rem' }}>
                   {isOutOfStock ? "Out of Stock" : "In Stock"}
                 </span>
               </div>
