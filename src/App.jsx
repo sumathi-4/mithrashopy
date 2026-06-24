@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TrustBar from './components/TrustBar';
 import CategoryCards from './components/CategoryCards';
+import VideoShowcase from './components/VideoShowcase';
 import ProductsSection from './components/ProductsSection';
 import CelebrityCollection from './components/CelebrityCollection';
 import PremiumCollection from './components/PremiumCollection';
@@ -113,6 +114,7 @@ function App() {
           <Hero />
           <TrustBar />
           <CategoryCards />
+          <VideoShowcase />
           <ProductsSection authUser={authUser} setAuthUser={setAuthUser} />
           <CelebrityCollection />
           <PremiumCollection />

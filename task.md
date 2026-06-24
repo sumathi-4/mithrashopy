@@ -1,0 +1,12 @@
+- [x] Increase filter sidebar width to `380px` and decrease gap to `30px` in `src/index.css`.
+- [x] Set shop product grid to 4 columns (`repeat(4, 1fr)`) and 5 columns when hidden.
+- [x] Remove max-height and internal scrollbar from sidebars.
+- [x] Enlarge filter font sizes to `1.08rem` and headings to `1.25rem`. Brighten blue color to `#0b3294`.
+- [x] Make "Exclusive Products" text golden color (`#b89047`) and increase font-size to `2.8rem`.
+- [x] Enlarge crown logo above Exclusive Products section to `90px` to make it prominent.
+- [x] Design a premium sort bar above product cards showing total premium products count and a styled sort select box on both pages.
+- [x] Remove 🎛️ and 🔄 emojis from the Filters title and RESET buttons in `ProductsSection.jsx`.
+- [x] Redesign Category accordion in `ProductsSection.jsx` to render flat categories checklist with a search bar and "Show More" truncation toggle.
+- [x] Redesign Category accordion in `ShopView.jsx` to render flat categories checklist with search and "Show More", dynamically filtered by the active top tab category.
+- [x] Fix reset filter buttons in both components to clear all filter arrays and states.
+- [x] Verify project compilation succeeds without any errors.

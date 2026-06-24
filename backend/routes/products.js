@@ -72,6 +72,12 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
 
+    if (variants && Array.isArray(variants) && variants.length > 0) {
+      if (variants.some(v => !v.image || !v.image.trim())) {
+        return res.status(400).json({ success: false, message: 'Each product variant must have an image uploaded.' });
+      }
+    }
+
     // Auto-generate sequential numeric ID
     const maxProd = await Product.findOne().sort({ id: -1 });
     const id = maxProd ? maxProd.id + 1 : 1;
@@ -115,6 +121,12 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
     const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice } = req.body;
+
+    if (variants && Array.isArray(variants) && variants.length > 0) {
+      if (variants.some(v => !v.image || !v.image.trim())) {
+        return res.status(400).json({ success: false, message: 'Each product variant must have an image uploaded.' });
+      }
+    }
 
     const updateFields = {};
     if (name !== undefined) updateFields.name = name.trim();

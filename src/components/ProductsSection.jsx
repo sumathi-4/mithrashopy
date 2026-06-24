@@ -1,29 +1,336 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Star, ChevronLeft, ChevronRight, X, ChevronDown, ChevronUp, Menu, Eye, ShoppingCart } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { apiService } from '../services/apiService';
 import clothingUser1 from '../assets/clothing_user_1.jpg';
 import clothingUser2 from '../assets/clothing_user_2.jpg';
-import clothingUser3 from '../assets/clothing_user_3.jpg';
 import { useToast } from './ToastProvider';
+import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
 
 export default function ProductsSection({ authUser, setAuthUser }) {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState('ALL');
-  const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
   
-  // Slider state for New Arrivals (index-based)
+  // Real product data states
+  const [productsList, setProductsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState(() => authUser?.wishlist || []);
   const [currentArrivalIndex, setCurrentArrivalIndex] = useState(0);
 
-  // Mock navigation function
+  // Left filters state matching image3/mockup design
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [selectedSubcategories, setSelectedSubcategories] = useState([]);
+  const [selectedShopFor, setSelectedShopFor] = useState([]);
+  const [selectedSizes, setSelectedSizes] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [showInStock, setShowInStock] = useState(true);
+  const [showOutOfStock, setShowOutOfStock] = useState(true);
+  const [selectedRatings, setSelectedRatings] = useState([]);
+  const [selectedDiscounts, setSelectedDiscounts] = useState([]);
+  const [filterNewArrivals, setFilterNewArrivals] = useState(false);
+  const [filterBestSellers, setFilterBestSellers] = useState(false);
+  
+  const [maxPrice, setMaxPrice] = useState(10000); // price slider
+  const [searchQuery, setSearchQuery] = useState(''); // search products
+  const [sortBy, setSortBy] = useState('relevance');
+  
+  // Flat Categories checklist states
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
+  // Local Quick View state variables
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [modalColor, setModalColor] = useState('');
+  const [modalSize, setModalSize] = useState('M');
+  const [modalQty, setModalQty] = useState(1);
+
+  // Accordion Open/Closed States (Category and Shop For are default true, others false)
+  const [isCategoryAccordionOpen, setIsCategoryAccordionOpen] = useState(true);
+  const [isShopForAccordionOpen, setIsShopForAccordionOpen] = useState(true);
+  const [isPriceAccordionOpen, setIsPriceAccordionOpen] = useState(false);
+  const [isSizeAccordionOpen, setIsSizeAccordionOpen] = useState(false);
+  const [isColorsAccordionOpen, setIsColorsAccordionOpen] = useState(false);
+  const [isAvailabilityAccordionOpen, setIsAvailabilityAccordionOpen] = useState(false);
+  const [isRatingAccordionOpen, setIsRatingAccordionOpen] = useState(false);
+  const [isOffersAccordionOpen, setIsOffersAccordionOpen] = useState(false);
+  const [isCollectionAccordionOpen, setIsCollectionAccordionOpen] = useState(false);
+
+  // Categories Tree from DB
+  const [categoriesList, setCategoriesList] = useState([]);
+
+  useEffect(() => {
+    apiService.getCategories().then(data => {
+      if (data && data.length > 0) {
+        setCategoriesList(data);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const getUnifiedCategories = () => {
+    const defaultGroups = [
+      { name: 'Clothing', key: 'CLOTHING' },
+      { name: 'Stationery', key: 'STATIONERY' },
+      { name: 'Gifts', key: 'GIFTS' },
+      { name: 'Accessories', key: 'ACCESSORIES' }
+    ];
+
+    const buildTree = (parentName, parentKey) => {
+      if (!categoriesList || categoriesList.length === 0) return [];
+      const dbChildren = categoriesList.filter(cat => {
+        if (!cat.parent) return false;
+        const pName = cat.parent.toLowerCase().trim();
+        const searchName = parentName.toLowerCase().trim();
+        if (pName === searchName) return true;
+        if (searchName === 'accessories') {
+          return pName === 'accessories' || pName === 'fancy' || pName === 'accessories & fancy' || pName === 'accessories and fancy';
+        }
+        return false;
+      });
+      return dbChildren.map(cat => {
+        const uniqueKey = `${parentKey}_${cat.name.toUpperCase().replace(/\s+/g, '_')}`;
+        return {
+          key: uniqueKey,
+          dbName: cat.name,
+          label: cat.name,
+          children: buildTree(cat.name, uniqueKey)
+        };
+      });
+    };
+
+    const structure = [];
+    const dbRoots = categoriesList.filter(
+      cat =>
+        (!cat.parent || cat.parent === '—') &&
+        cat.name !== '—' &&
+        cat.showInFilters !== false
+    );
+
+    defaultGroups.forEach(def => {
+      const dbRoot = dbRoots.find(r => {
+        const rName = r.name.toLowerCase().trim();
+        const defName = def.name.toLowerCase().trim();
+        if (rName === defName) return true;
+        if (def.key === 'ACCESSORIES') {
+          return rName === 'accessories' || rName === 'fancy' || rName === 'accessories & fancy' || rName === 'accessories and fancy';
+        }
+        return false;
+      });
+      const subcategories = dbRoot ? buildTree(dbRoot.name, def.key) : [];
+      structure.push({
+        name: def.name,
+        key: def.key,
+        subcategories
+      });
+    });
+
+    return structure;
+  };
+
+  const getProductSubCategoryFallback = (p) => {
+    const title = (p.title || p.name || '').toLowerCase();
+    const cat = String(p.rawCategory || p.category || '').split('>')[0].trim().toUpperCase();
+    
+    if (cat === 'CLOTHING') {
+      if (title.includes('girl')) return 'GIRLS';
+      if (title.includes('boy')) return 'BOYS';
+      if (title.includes('kids') || title.includes('child')) return 'KIDS';
+      if (title.includes('women') || title.includes('saree') || title.includes('frock') || title.includes('lehenga') || title.includes('anarkali') || title.includes('kurti')) return 'WOMEN';
+      if (title.includes('men') || title.includes('male') || title.includes('dhoti') || title.includes('kurta') || title.includes('shirt')) return 'MEN';
+      return 'WOMEN';
+    }
+    if (cat === 'STATIONERY') {
+      if (title.includes('pen')) return 'PENS';
+      if (title.includes('journal') || title.includes('planner')) return 'JOURNALS';
+      if (title.includes('notebook') || title.includes('diary')) return 'NOTEBOOKS';
+      return 'SCHOOL';
+    }
+    if (cat === 'GIFTS') {
+      if (title.includes('birthday')) return 'BIRTHDAY';
+      if (title.includes('wedding')) return 'WEDDING';
+      if (title.includes('anniversary')) return 'ANNIVERSARY';
+      return 'RETURN';
+    }
+    if (cat === 'ACCESSORIES') {
+      if (title.includes('jewel') || title.includes('ring') || title.includes('necklace') || title.includes('choker') || title.includes('anklet')) return 'JEWELLERY';
+      if (title.includes('hair') || title.includes('gajra') || title.includes('clip')) return 'HAIR';
+      if (title.includes('bag') || title.includes('handbag') || title.includes('wallet')) return 'FANCY';
+      return 'FASHION';
+    }
+    return 'ALL';
+  };
+
+  const getProductSubCategories = (p) => {
+    const subs = [];
+    const parts = String(p.rawCategory || p.category || '').split('>').map(s => s.trim().toUpperCase());
+    if (parts.length > 1) {
+      parts.slice(1).forEach(part => {
+        if (part) subs.push(part);
+      });
+    }
+    if (p.subCategory) {
+      const subUpper = String(p.subCategory).trim().toUpperCase();
+      if (!subs.includes(subUpper)) {
+        subs.push(subUpper);
+      }
+    }
+    if (subs.length === 0) {
+      const guessed = getProductSubCategoryFallback(p);
+      if (guessed && guessed !== 'ALL') {
+        subs.push(guessed);
+      }
+    }
+    return subs;
+  };
+
+  const getProductSizes = (p) => {
+    if (p.sizes && Array.isArray(p.sizes) && p.sizes.length > 0) return p.sizes;
+    const idStr = String(p.id || '');
+    const charCode = idStr.charCodeAt(idStr.length - 1) || 0;
+    const sizes = ['S', 'M', 'L', 'XL'];
+    if (charCode % 2 === 0) sizes.push('XS');
+    if (charCode % 3 === 0) sizes.push('2XL');
+    return sizes;
+  };
+
+  const getProductColors = (p) => {
+    if (p.colors && Array.isArray(p.colors) && p.colors.length > 0) return p.colors;
+    const idStr = String(p.id || '');
+    const charCode = idStr.charCodeAt(idStr.length - 1) || 0;
+    const colors = ['White', 'Black'];
+    if (charCode % 2 === 0) colors.push('Pink');
+    if (charCode % 3 === 0) colors.push('Red');
+    if (charCode % 4 === 0) colors.push('Yellow');
+    if (charCode % 5 === 0) colors.push('Green');
+    if (charCode % 6 === 0) colors.push('Purple');
+    if (charCode % 7 === 0) colors.push('Blue');
+    return colors;
+  };
+
+  const isProductInStock = (p) => {
+    if (p.stock !== undefined) return p.stock > 0;
+    const val = p.title || p.name || '';
+    return (val.length % 7 !== 0);
+  };
+
+  const getProductDiscount = (p) => {
+    if (p.discount) {
+      const dVal = parseFloat(String(p.discount).replace(/[^0-9.]/g, ''));
+      if (!isNaN(dVal)) return dVal;
+    }
+    const price = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+    const originalPrice = p.originalPrice ? (typeof p.originalPrice === 'number' ? p.originalPrice : parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) || 0) : 0;
+    if (originalPrice > price) {
+      return Math.round(((originalPrice - price) / originalPrice) * 100);
+    }
+    return 0;
+  };
+
+  const getProductGender = (p) => {
+    const title = (p.title || p.name || '').toLowerCase();
+    const cat = String(p.rawCategory || p.category || '').toLowerCase();
+    const sub = String(p.subCategory || '').toLowerCase();
+    
+    if (title.includes('women') || title.includes('girl') || title.includes('lady') || title.includes('ladies') || title.includes('saree') || title.includes('kurti') || title.includes('lehenga') || title.includes('frock') || title.includes('anarkali') || cat.includes('women') || cat.includes('girl')) {
+      return 'Women';
+    }
+    if (title.includes('men') || title.includes('boy') || title.includes('gent') || title.includes('gents') || title.includes('dhoti') || title.includes('kurta') || title.includes('shirt') || cat.includes('men') || cat.includes('boy')) {
+      return 'Men';
+    }
+    if (title.includes('kids') || title.includes('child') || title.includes('baby') || cat.includes('kids') || cat.includes('child')) {
+      return 'Kids';
+    }
+    return 'Other';
+  };
+
+
   const handleNavigation = (path) => {
     window.history.pushState({}, '', path);
     window.dispatchEvent(new Event('popstate'));
   };
 
+  const [cart, setCart] = useState(() => {
+    if (authUser) return authUser.cart || [];
+    try {
+      const local = localStorage.getItem('mithira_guest_cart');
+      return local ? JSON.parse(local) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     setWishlist(authUser?.wishlist || []);
+    setCart(authUser?.cart || (() => {
+      try {
+        const local = localStorage.getItem('mithira_guest_cart');
+        return local ? JSON.parse(local) : [];
+      } catch {
+        return [];
+      }
+    })());
   }, [authUser]);
+
+  const toggleCart = (id, title, size = null, color = null) => {
+    let updated;
+    let updatedItems = [];
+    if (cart.includes(id)) {
+      updated = cart.filter(item => item !== id);
+      addToast({ message: `Removed from cart`, type: 'cart' });
+    } else {
+      updated = [...cart, id];
+      addToast({ message: `🛒 Added "${title}" to cart!`, type: 'cart' });
+    }
+    setCart(updated);
+
+    const prevItems = authUser ? (authUser.cartItems || []) : (JSON.parse(localStorage.getItem('mithira_guest_cart_items') || '[]'));
+    const isRemoving = !updated.includes(id);
+
+    if (isRemoving) {
+      updatedItems = prevItems.filter(item => item.productId !== id);
+    } else {
+      const prod = productsList.find(p => p.id === id || String(p.id) === String(id));
+      const selectedVariant = getSelectedVariant(prod, color, size);
+      const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
+      const sku = selectedVariant ? selectedVariant.sku : null;
+
+      updatedItems = [...prevItems.filter(item => item.productId !== id), {
+        productId: id,
+        quantity: 1,
+        variant: { size, color, variantId, sku }
+      }];
+    }
+
+    if (authUser) {
+      apiService.syncCart(updated, updatedItems).then(res => {
+        if (res && setAuthUser) {
+          setAuthUser(prev => {
+            const newUser = { ...prev, cart: res.cart || updated, cartItems: res.cartItems || updatedItems };
+            localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+            return newUser;
+          });
+        }
+      });
+    } else {
+      localStorage.setItem('mithira_guest_cart', JSON.stringify(updated));
+      localStorage.setItem('mithira_guest_cart_items', JSON.stringify(updatedItems));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('mithira_cart_update'));
+    }
+  };
+
+
+  const handleProductClick = (product) => {
+    sessionStorage.setItem('auto_open_product_id', String(product.id));
+    handleNavigation('/Shop');
+  };
+
+  const handleQuickViewClick = (product) => {
+    setActiveImageIndex(0);
+    setModalColor('');
+    setModalSize('M');
+    setModalQty(1);
+    setQuickViewProduct(product);
+  };
 
   const toggleWishlist = (id) => {
     let updated;
@@ -48,68 +355,191 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     }
   };
 
-  const trendingProducts = [
+  const trendingProductsFallback = [
     {
-      id: 't1',
-      title: "Girls Anarkali Dress",
+      id: 104,
+      title: "White Lace Gown",
       category: "CLOTHING",
-      price: "₹1,699",
+      rawCategory: "Clothing > Kids > Girls > Gowns",
+      subCategory: "Gowns",
+      price: "₹1,899",
+      originalPrice: "₹2,235",
+      discount: "15% off",
       rating: 5,
-      reviews: 128,
-      image: clothingUser1,
-      badge: "BEST SELLER"
+      reviews: 64,
+      image: resolveProductImage({ image: 'white_gown.jpg' }),
+      badge: ""
     },
     {
-      id: 't2',
-      title: "Premium Handbag",
-      category: "ACCESSORIES",
-      price: "₹2,499",
-      rating: 5,
-      reviews: 96,
-      image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't3',
-      title: "Premium Stationery Set",
-      category: "STATIONERY",
-      price: "₹699",
-      rating: 5,
-      reviews: 210,
-      image: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't4',
-      title: "Luxury Gift Hamper",
+      id: 105,
+      title: "Premium Gift Set",
       category: "GIFTS",
+      rawCategory: "Gifts",
+      subCategory: "Gift Hamper",
+      price: "₹1,499",
+      originalPrice: "₹1,665",
+      discount: "10% off",
+      rating: 5,
+      reviews: 112,
+      image: resolveProductImage({ image: 'premium_gift_set.jpg' }),
+      badge: ""
+    },
+    {
+      id: 106,
+      title: "Kids Formal Suit",
+      category: "CLOTHING",
+      rawCategory: "Clothing > Kids > Formal",
+      subCategory: "Formal",
+      price: "₹2,299",
+      originalPrice: "₹2,613",
+      discount: "12% off",
+      rating: 5,
+      reviews: 45,
+      image: resolveProductImage({ image: 'kids_formal_suit.jpg' }),
+      badge: ""
+    },
+    {
+      id: 107,
+      title: "Gold Anklets",
+      category: "ACCESSORIES",
+      rawCategory: "Accessories > Jewellery > Anklets",
+      subCategory: "Anklets",
+      price: "₹899",
+      originalPrice: "₹1,124",
+      discount: "20% off",
+      rating: 5,
+      reviews: 132,
+      image: resolveProductImage({ image: 'gold_anklets.jpg' }),
+      badge: ""
+    },
+    {
+      id: 108,
+      title: "Diamond Ginkgo Ring",
+      category: "ACCESSORIES",
+      rawCategory: "Accessories > Jewellery > Ring",
+      subCategory: "Ring",
+      price: "₹7,499",
+      originalPrice: "₹7,894",
+      discount: "5% off",
+      rating: 5,
+      reviews: 28,
+      image: resolveProductImage({ image: 'diamond_ring.jpg' }),
+      badge: ""
+    },
+    {
+      id: 109,
+      title: "Heavy Worked Joker Necklace",
+      category: "ACCESSORIES",
+      rawCategory: "Accessories > Jewellery > Heavy Worked Joker",
+      subCategory: "Heavy Worked Joker",
+      price: "₹12,999",
+      originalPrice: "₹14,130",
+      discount: "8% off",
+      rating: 5,
+      reviews: 19,
+      image: resolveProductImage({ image: 'heavy_joker_necklace.jpg' }),
+      badge: ""
+    },
+    {
+      id: 110,
+      title: "Simple Chain Jewellery Set",
+      category: "ACCESSORIES",
+      rawCategory: "Accessories > Jewellery > Simple Chain",
+      subCategory: "Simple Chain",
+      price: "₹2,499",
+      originalPrice: "₹3,048",
+      discount: "18% off",
+      rating: 5,
+      reviews: 87,
+      image: resolveProductImage({ image: 'simple_chain_jewellery.jpg' }),
+      badge: ""
+    },
+    {
+      id: 111,
+      title: "Luxe Leather Notebook",
+      category: "STATIONERY",
+      rawCategory: "Stationery > Book",
+      subCategory: "Book",
+      price: "₹749",
+      originalPrice: "₹851",
+      discount: "12% off",
+      rating: 5,
+      reviews: 61,
+      image: resolveProductImage({ image: 'luxe_leather_notebook.jpg' }),
+      badge: ""
+    },
+    {
+      id: 112,
+      title: "Anarkali",
+      category: "CLOTHING",
+      rawCategory: "Clothing > Women > Kurti",
+      subCategory: "Kurti",
+      price: "₹3,299",
+      originalPrice: "₹4,229",
+      discount: "22% off",
+      rating: 5,
+      reviews: 103,
+      image: resolveProductImage({ image: 'green_anarkali2.jpg' }),
+      badge: ""
+    },
+    {
+      id: 113,
+      title: "Blue Formal Suit",
+      category: "CLOTHING",
+      rawCategory: "Clothing > Men > Formal Suites",
+      subCategory: "Formal Suites",
+      price: "₹5,999",
+      originalPrice: "₹7,058",
+      discount: "15% off",
+      rating: 5,
+      reviews: 47,
+      image: resolveProductImage({ image: 'blue_formal_suit2.jpg' }),
+      badge: ""
+    },
+    {
+      id: 114,
+      title: "School Stationery Kit",
+      category: "STATIONERY",
+      rawCategory: "Stationery",
+      subCategory: "School Items",
+      price: "₹599",
+      originalPrice: "₹749",
+      discount: "20% off",
+      rating: 5,
+      reviews: 94,
+      image: resolveProductImage({ image: 'school_stationery_kit.jpg' }),
+      badge: ""
+    },
+    {
+      id: 115,
+      title: "Bridal Floral Hair Accessory",
+      category: "ACCESSORIES",
+      rawCategory: "Accessories > Hair Accessories",
+      subCategory: "Hair Accessories",
       price: "₹1,299",
+      originalPrice: "₹1,529",
+      discount: "15% off",
       rating: 5,
-      reviews: 176,
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
+      reviews: 58,
+      image: resolveProductImage({ image: 'bridal_hair_accessory.jpg' }),
+      badge: ""
     },
     {
-      id: 't5',
-      title: "Gold Plated Necklace",
-      category: "ACCESSORIES",
-      price: "₹2,199",
+      id: 116,
+      title: "Teal Ruffle Frock",
+      category: "CLOTHING",
+      rawCategory: "Clothing > Kids > Girls > Frock",
+      subCategory: "Frock",
+      price: "₹899",
+      originalPrice: "₹999",
+      discount: "10% off",
       rating: 5,
-      reviews: 134,
-      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
-    },
-    {
-      id: 't6',
-      title: "Ladies Wrist Watch",
-      category: "ACCESSORIES",
-      price: "₹1,599",
-      rating: 5,
-      reviews: 88,
-      image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=600&q=80",
-      badge: "BEST SELLER"
+      reviews: 72,
+      image: resolveProductImage({ image: 'teal_ruffle_frock.jpg' }),
+      badge: ""
     }
   ];
+
 
   const newArrivalsProducts = [
     {
@@ -180,6 +610,78 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     }
   ];
 
+  // Fetch real products from backend or localStorage on mount
+  useEffect(() => {
+    apiService.getProducts()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped = data.map((p) => {
+            let catUpper = (p.category || 'CLOTHING').toUpperCase();
+            let cleanCategory = 'CLOTHING';
+
+            if (p.category && p.category.includes('>')) {
+              const rootCat = p.category.split('>')[0].toUpperCase();
+              if (rootCat.includes('CLOTHING') || rootCat.includes('DRESS')) cleanCategory = 'CLOTHING';
+              else if (rootCat.includes('STATIONERY') || rootCat.includes('PEN') || rootCat.includes('PENCIL') || rootCat.includes('NOTEBOOK') || rootCat.includes('WRITING') || rootCat.includes('PAPER')) cleanCategory = 'STATIONERY';
+              else if (rootCat.includes('GIFT') || rootCat.includes('VALENTINE')) cleanCategory = 'GIFTS';
+              else if (rootCat.includes('ACCESSORIES') || rootCat.includes('FANCY') || rootCat.includes('JEWEL') || rootCat.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+              else cleanCategory = rootCat;
+            } else {
+              if (catUpper.includes('CLOTHING') || catUpper.includes('DRESS')) cleanCategory = 'CLOTHING';
+              else if (catUpper.includes('STATIONERY') || catUpper.includes('PEN') || catUpper.includes('PENCIL') || catUpper.includes('NOTEBOOK') || catUpper.includes('WRITING') || catUpper.includes('PAPER')) cleanCategory = 'STATIONERY';
+              else if (catUpper.includes('GIFT') || catUpper.includes('VALENTINE')) cleanCategory = 'GIFTS';
+              else if (catUpper.includes('ACCESSORIES') || catUpper.includes('FANCY') || catUpper.includes('JEWEL') || catUpper.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+              else cleanCategory = catUpper;
+            }
+
+            // Extract price formatting safely
+            const rawPrice = p.price;
+            const displayPrice = typeof rawPrice === 'number' ? `₹${rawPrice}` : (String(rawPrice).startsWith('₹') ? rawPrice : `₹${rawPrice}`);
+            const rawOriginalPrice = p.originalPrice || '';
+            const displayOriginalPrice = rawOriginalPrice ? (typeof rawOriginalPrice === 'number' ? `₹${rawOriginalPrice}` : (String(rawOriginalPrice).startsWith('₹') ? rawOriginalPrice : `₹${rawOriginalPrice}`)) : '';
+            const discountStr = p.discount && p.discount !== '0' ? `${p.discount}% off` : '';
+
+            // Handle images array or string using helper
+            const imgUrl = resolveProductImage(p);
+
+            return {
+              ...p,
+              id: p.id || String(Math.random()),
+              title: p.name || p.title || 'Premium Item',
+              category: cleanCategory,
+              rawCategory: p.category || '',
+              subCategory: p.subCategory || '',
+              price: displayPrice,
+              originalPrice: displayOriginalPrice,
+              discount: discountStr,
+              rating: Math.floor(parseFloat(p.rating || '4')),
+              reviews: p.reviews || 75,
+              image: imgUrl,
+              badge: p.badge || (p.sales > 20 ? 'BEST SELLER' : ''),
+              stock: p.stock,
+              sizes: p.sizes,
+              colors: p.colors
+            };
+          });
+          
+          // Filter to display all 13 exclusive products on the home page (IDs 104-116)
+          const exclusiveOnly = mapped.filter(p => {
+            const pid = Number(p.id);
+            return pid === 104 || pid === 105 || pid === 106 || pid === 107 || pid === 108 ||
+                   pid === 109 || pid === 110 || pid === 111 || pid === 112 || pid === 113 ||
+                   pid === 114 || pid === 115 || pid === 116;
+          });
+          setProductsList(exclusiveOnly);
+        } else {
+          setProductsList(trendingProductsFallback);
+        }
+      })
+      .catch(() => {
+        setProductsList(trendingProductsFallback);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   // Auto slider setup for New Arrivals
   useEffect(() => {
     if (newArrivalsProducts.length === 0) return;
@@ -190,9 +692,28 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     return () => clearInterval(timer);
   }, [newArrivalsProducts.length]);
 
-  const filteredTrending = activeTab === 'ALL'
-    ? trendingProducts
-    : trendingProducts.filter(p => p.category === activeTab);
+  const handleResetFilters = () => {
+    setSelectedSubcategories([]);
+    setSelectedShopFor([]);
+    setSelectedSizes([]);
+    setSelectedColors([]);
+    setShowInStock(true);
+    setShowOutOfStock(true);
+    setSelectedRatings([]);
+    setSelectedDiscounts([]);
+    setFilterNewArrivals(false);
+    setFilterBestSellers(false);
+    setMaxPrice(10000);
+    setSearchQuery('');
+    setSortBy('relevance');
+    setCategorySearchQuery('');
+    setShowAllCategories(false);
+  };
+
+  const getCategoryCount = (categoryKey) => {
+    if (categoryKey === 'ALL') return productsList.length;
+    return productsList.filter(p => p.category.toUpperCase() === categoryKey.toUpperCase()).length;
+  };
 
   const getThemeClass = (category) => {
     switch (category) {
@@ -215,65 +736,667 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     ));
   };
 
+  const getCategoriesToShow = () => {
+    let list = [];
+    if (categoriesList && categoriesList.length > 0) {
+      const namesSet = new Set();
+      categoriesList.forEach(cat => {
+        if (cat.name && cat.name !== '—' && cat.showInFilters !== false) {
+          const nameUpper = cat.name.toUpperCase().trim();
+          const parentUpper = cat.parent ? cat.parent.toUpperCase().trim() : '';
+          const mainGroups = ['CLOTHING', 'STATIONERY', 'GIFTS', 'ACCESSORIES', 'FANCY'];
+          if (parentUpper && parentUpper !== '—') {
+            namesSet.add(cat.name.trim());
+          } else if (!mainGroups.includes(nameUpper)) {
+            namesSet.add(cat.name.trim());
+          }
+        }
+      });
+      list = Array.from(namesSet);
+    }
+    
+    if (list.length === 0) {
+      list = [
+        'Girls', 'Boys', 'Kids', 'Women', 'Men', 
+        'Pens', 'Journals', 'Notebooks', 'School', 
+        'Birthday', 'Wedding', 'Anniversary', 'Return Gifts', 
+        'Jewellery', 'Hair Accessories', 'Fancy Bags', 'Fashion Accessories'
+      ];
+    }
+    
+    return list.sort((a, b) => a.localeCompare(b));
+  };
+
+  const renderCategoryTree = () => {
+    const allCategories = getCategoriesToShow();
+    const filtered = allCategories.filter(cat => 
+      cat.toLowerCase().includes(categorySearchQuery.toLowerCase())
+    );
+    const displayed = showAllCategories ? filtered : filtered.slice(0, 8);
+    
+    return (
+      <div className="flat-category-checklist-container">
+        <input 
+          type="text"
+          className="category-list-search"
+          placeholder="Search categories..."
+          value={categorySearchQuery}
+          onChange={(e) => setCategorySearchQuery(e.target.value)}
+        />
+        
+        <div className="filter-category-list-m3">
+          {displayed.length > 0 ? (
+            displayed.map(catName => {
+              const catUpper = catName.toUpperCase();
+              const isChecked = selectedSubcategories.includes(catUpper);
+              return (
+                <label key={catName} className="checkbox-filter-row">
+                  <input 
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      if (isChecked) {
+                        setSelectedSubcategories(selectedSubcategories.filter(s => s !== catUpper));
+                      } else {
+                        setSelectedSubcategories([...selectedSubcategories, catUpper]);
+                      }
+                    }}
+                  />
+                  <span>{catName}</span>
+                </label>
+              );
+            })
+          ) : (
+            <div style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic', padding: '4px 0' }}>
+              No categories found
+            </div>
+          )}
+        </div>
+        
+        {filtered.length > 8 && (
+          <button 
+            type="button"
+            className="show-more-toggle-btn"
+            onClick={() => setShowAllCategories(!showAllCategories)}
+          >
+            {showAllCategories ? 'Show Less ▴' : 'Show More ▾'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // Apply filters: Search, Subcategories, Shop For, Price, Sizes, Colors, Availability, Ratings, Discounts, Collections
+  let displayProducts = productsList;
+
+  // 1. Search Query
+  if (searchQuery.trim() !== '') {
+    displayProducts = displayProducts.filter(p => 
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.subCategory && p.subCategory.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }
+
+  // 2. Subcategories Checkbox Filter
+  if (selectedSubcategories.length > 0) {
+    displayProducts = displayProducts.filter(p => {
+      const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+      return productSubs.some(sub => selectedSubcategories.includes(sub));
+    });
+  }
+
+  // 3. Shop For (Gender) Filter
+  if (selectedShopFor.length > 0) {
+    displayProducts = displayProducts.filter(p => {
+      const gender = getProductGender(p);
+      return selectedShopFor.includes(gender);
+    });
+  }
+
+  // 4. Price Filter
+  displayProducts = displayProducts.filter(p => {
+    const priceNum = parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+    return priceNum <= maxPrice;
+  });
+
+  // 5. Sizes Filter
+  if (selectedSizes.length > 0) {
+    displayProducts = displayProducts.filter(p => {
+      const pSizes = getProductSizes(p);
+      return pSizes.some(size => selectedSizes.includes(size));
+    });
+  }
+
+  // 6. Colors Filter
+  if (selectedColors.length > 0) {
+    displayProducts = displayProducts.filter(p => {
+      const pColors = getProductColors(p);
+      return pColors.some(color => selectedColors.includes(color));
+    });
+  }
+
+  // 7. Availability Filter
+  displayProducts = displayProducts.filter(p => {
+    const inStock = isProductInStock(p);
+    if (showInStock && showOutOfStock) return true;
+    if (showInStock) return inStock;
+    if (showOutOfStock) return !inStock;
+    return false;
+  });
+
+  // 8. Ratings Filter
+  if (selectedRatings.length > 0) {
+    const minRating = Math.min(...selectedRatings);
+    displayProducts = displayProducts.filter(p => p.rating >= minRating);
+  }
+
+  // 9. Discounts Filter
+  if (selectedDiscounts.length > 0) {
+    const minDiscount = Math.min(...selectedDiscounts);
+    displayProducts = displayProducts.filter(p => getProductDiscount(p) >= minDiscount);
+  }
+
+  // 10. Collections Filter
+  if (filterNewArrivals || filterBestSellers) {
+    displayProducts = displayProducts.filter(p => {
+      const isNew = p.badge === 'NEW' || p.badge === 'NEW ARRIVAL' || String(p.id).startsWith('n');
+      const isBest = p.badge === 'BEST SELLER' || String(p.id).startsWith('t');
+      if (filterNewArrivals && filterBestSellers) return isNew || isBest;
+      if (filterNewArrivals) return isNew;
+      if (filterBestSellers) return isBest;
+      return true;
+    });
+  }
+
+  // Apply sorting
+  if (sortBy === 'price-low') {
+    displayProducts = [...displayProducts].sort((a, b) => {
+      const pA = parseFloat(String(a.price).replace(/[^0-9.]/g, '')) || 0;
+      const pB = parseFloat(String(b.price).replace(/[^0-9.]/g, '')) || 0;
+      return pA - pB;
+    });
+  } else if (sortBy === 'price-high') {
+    displayProducts = [...displayProducts].sort((a, b) => {
+      const pA = parseFloat(String(a.price).replace(/[^0-9.]/g, '')) || 0;
+      const pB = parseFloat(String(b.price).replace(/[^0-9.]/g, '')) || 0;
+      return pB - pA;
+    });
+  } else if (sortBy === 'rating') {
+    displayProducts = [...displayProducts].sort((a, b) => b.rating - a.rating);
+  }
+
   const currentArrival = newArrivalsProducts[currentArrivalIndex];
 
   return (
     <div className="products-section-outer">
       
-      {/* 1. TRENDING PRODUCTS (AJIO Top Trends Style: Big, Glassy, Premium Hover Anim) */}
-      <section id="offers" className="trending-products-section">
-
-        <div className="section-container">
+      {/* 1. EXCLUSIVE PRODUCTS SECTION (Full Width, Left-hand Sidebar filters matching image3) */}
+      <section id="offers" className="trending-products-section full-width-section-m3">
+        <div className="section-container-full-m3">
           
           <div className="section-header">
             <img src={logoImg} className="section-crown-icon" alt="Logo" style={{ objectFit: 'contain' }} />
-            <h2 className="section-title">Trending Products</h2>
-            <p className="section-subtitle">AJIO Inspired Top Trends & Hot Deals</p>
+            <h2 className="section-title">Exclusive Products</h2>
+            <p className="section-subtitle">Top Trends &amp; Curated Hot Deals</p>
           </div>
 
-          {/* Tab Navigation Filter */}
-          <div className="trending-tabs">
-            {['ALL', 'CLOTHING', 'STATIONERY', 'GIFTS', 'ACCESSORIES'].map((tab) => (
-              <button
-                key={tab}
-                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
+          {/* Toggle Button Row for Collapsing Sidebar */}
+          <div className="filters-toggle-row-m3" style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '20px' }}>
+            <button 
+              className={`exclusive-filters-toggle-btn ${showSidebar ? 'active' : ''}`}
+              onClick={() => setShowSidebar(!showSidebar)}
+            >
+              {showSidebar ? <X size={16} /> : <Menu size={16} />}
+              <span>{showSidebar ? 'Hide Filters' : 'Show Filters'}</span>
+            </button>
           </div>
 
-          {/* AJIO-Style Grid of LARGE, GLASSY products */}
-          <div className="products-grid ajio-trending-grid">
-            {filteredTrending.map((product) => (
-              <div key={product.id} className={`product-card ajio-big-card ${getThemeClass(product.category)}`}>
-                
-                <div className="prod-img-wrapper ajio-img-wrapper">
-                  <span className="prod-badge">{product.badge}</span>
-                  <button 
-                    className={`prod-wishlist-btn ${wishlist.includes(product.id) ? 'active' : ''}`}
-                    onClick={() => toggleWishlist(product.id)}
-                    aria-label="Add to Wishlist"
-                  >
-                    <Heart size={18} fill={wishlist.includes(product.id) ? "currentColor" : "none"} />
-                  </button>
-                  <img src={product.image} alt={product.title} className="prod-img" />
-                  
-                  <div className="ajio-glass-overlay">
-                    <h4 className="ajio-title">{product.title}</h4>
-                    <div className="ajio-meta">
-                      <span className="ajio-price">{product.price}</span>
-                      <div className="ajio-rating">
-                        <div className="stars-wrapper">{renderStars(product.rating)}</div>
-                        <span className="reviews-count">({product.reviews})</span>
-                      </div>
-                    </div>
+          <div className={`exclusive-products-layout ${!showSidebar ? 'filters-hidden' : ''}`}>
+            
+            {/* Left Sidebar: Collapsible Filters */}
+            <aside className={`exclusive-filters-sidebar ${showSidebar ? 'active-sidebar' : 'inactive-sidebar'}`}>
+              
+
+
+              {/* Filters Header Container with RESET button */}
+              <div className="filters-header-box-m3">
+                <div className="filters-title-row">
+                  <span className="filters-title-m3">Filters</span>
+                </div>
+                <button className="filter-reset-btn" onClick={handleResetFilters}>
+                  RESET
+                </button>
+              </div>
+
+              {/* Search Block */}
+              <div className="filter-block-m3">
+                <span className="filter-label-m3">SEARCH</span>
+                <div className="filter-search-box-m3">
+                  <span className="search-icon-m3">🔍</span>
+                  <input
+                    type="text"
+                    className="filter-search-input-m3"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="unified-filters-card">
+                {/* 1. Category Accordion (default open) */}
+                <div className="filter-card-section category-accordion">
+                  <div className="section-title-row" onClick={() => setIsCategoryAccordionOpen(!isCategoryAccordionOpen)}>
+                    <h3 className="section-title-text">Category</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isCategoryAccordionOpen ? 'rotated' : ''}`} />
                   </div>
+                  {isCategoryAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      {renderCategoryTree()}
+                    </div>
+                  )}
                 </div>
 
+                {/* 2. Shop For Accordion (default open) */}
+                <div className="filter-card-section shop-for-accordion">
+                  <div className="section-title-row" onClick={() => setIsShopForAccordionOpen(!isShopForAccordionOpen)}>
+                    <h3 className="section-title-text">Shop For</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isShopForAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isShopForAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      {['Men', 'Women', 'Kids', 'Other'].map(gender => {
+                        const isChecked = selectedShopFor.includes(gender);
+                        return (
+                          <label key={gender} className="checkbox-filter-row">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedShopFor(selectedShopFor.filter(g => g !== gender));
+                                } else {
+                                  setSelectedShopFor([...selectedShopFor, gender]);
+                                }
+                              }}
+                            />
+                            <span>{gender}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Price Range Accordion */}
+                <div className="filter-card-section price-accordion">
+                  <div className="section-title-row" onClick={() => setIsPriceAccordionOpen(!isPriceAccordionOpen)}>
+                    <h3 className="section-title-text">Price Range</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isPriceAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isPriceAccordionOpen && (
+                    <div className="section-content price-slider-container" style={{ marginTop: '10px' }}>
+                      <input 
+                        type="range" 
+                        min="100" 
+                        max="15000" 
+                        step="100"
+                        value={maxPrice} 
+                        onChange={(e) => setMaxPrice(Number(e.target.value))}
+                        className="pink-price-slider"
+                      />
+                      <div className="price-labels-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <span>₹100</span>
+                        <span>₹{maxPrice.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Size Accordion */}
+                <div className="filter-card-section size-accordion">
+                  <div className="section-title-row" onClick={() => setIsSizeAccordionOpen(!isSizeAccordionOpen)}>
+                    <h3 className="section-title-text">Size</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isSizeAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isSizeAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      <div className="size-buttons-grid">
+                        {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
+                          const isChecked = selectedSizes.includes(size);
+                          return (
+                            <button 
+                              key={size}
+                              className={`size-btn ${isChecked ? 'active' : ''}`}
+                              onClick={() => {
+                                if (isChecked) {
+                                  setSelectedSizes(selectedSizes.filter(s => s !== size));
+                                } else {
+                                  setSelectedSizes([...selectedSizes, size]);
+                                }
+                              }}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Colors Accordion */}
+                <div className="filter-card-section color-accordion">
+                  <div className="section-title-row" onClick={() => setIsColorsAccordionOpen(!isColorsAccordionOpen)}>
+                    <h3 className="section-title-text">Colors</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isColorsAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isColorsAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      <div className="color-circles-list">
+                        {[
+                          { name: 'Pink', value: '#E94FA8' },
+                          { name: 'Red', value: '#FF0000' },
+                          { name: 'Yellow', value: '#FFCC00' },
+                          { name: 'Green', value: '#00CC66' },
+                          { name: 'Purple', value: '#8A2BE2' },
+                          { name: 'Black', value: '#000000' },
+                          { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
+                          { name: 'Blue', value: '#4A90E2' }
+                        ].map(color => {
+                          const isChecked = selectedColors.includes(color.name);
+                          return (
+                            <button 
+                              key={color.name}
+                              className={`color-bubble ${isChecked ? 'active' : ''}`}
+                              style={{ backgroundColor: color.value, border: color.border || 'none' }}
+                              onClick={() => {
+                                if (isChecked) {
+                                  setSelectedColors(selectedColors.filter(c => c !== color.name));
+                                } else {
+                                  setSelectedColors([...selectedColors, color.name]);
+                                }
+                              }}
+                              title={color.name}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 6. Availability Accordion */}
+                <div className="filter-card-section availability-accordion">
+                  <div className="section-title-row" onClick={() => setIsAvailabilityAccordionOpen(!isAvailabilityAccordionOpen)}>
+                    <h3 className="section-title-text">Availability</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isAvailabilityAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isAvailabilityAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={showInStock}
+                          onChange={(e) => setShowInStock(e.target.checked)}
+                        />
+                        <span>In Stock</span>
+                      </label>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={showOutOfStock}
+                          onChange={(e) => setShowOutOfStock(e.target.checked)}
+                        />
+                        <span>Out of Stock</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* 7. Rating Accordion */}
+                <div className="filter-card-section rating-accordion">
+                  <div className="section-title-row" onClick={() => setIsRatingAccordionOpen(!isRatingAccordionOpen)}>
+                    <h3 className="section-title-text">Rating</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isRatingAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isRatingAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      {[5, 4, 3, 2, 1].map(stars => {
+                        const isChecked = selectedRatings.includes(stars);
+                        return (
+                          <label key={stars} className="checkbox-filter-row">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedRatings(selectedRatings.filter(r => r !== stars));
+                                } else {
+                                  setSelectedRatings([...selectedRatings, stars]);
+                                }
+                              }}
+                            />
+                            <span>{stars}★ & above</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 8. Discount & Offers Accordion */}
+                <div className="filter-card-section offers-accordion">
+                  <div className="section-title-row" onClick={() => setIsOffersAccordionOpen(!isOffersAccordionOpen)}>
+                    <h3 className="section-title-text">Discount & Offers</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isOffersAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isOffersAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      {[10, 20, 30, 40].map(pct => {
+                        const isChecked = selectedDiscounts.includes(pct);
+                        return (
+                          <label key={pct} className="checkbox-filter-row">
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedDiscounts(selectedDiscounts.filter(d => d !== pct));
+                                } else {
+                                  setSelectedDiscounts([...selectedDiscounts, pct]);
+                                }
+                              }}
+                            />
+                            <span>{pct}% and above</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 9. Bestsellers & New Arrivals Accordion */}
+                <div className="filter-card-section collections-accordion">
+                  <div className="section-title-row" onClick={() => setIsCollectionAccordionOpen(!isCollectionAccordionOpen)}>
+                    <h3 className="section-title-text">Collections</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isCollectionAccordionOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isCollectionAccordionOpen && (
+                    <div className="section-content" style={{ marginTop: '10px' }}>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={filterNewArrivals}
+                          onChange={(e) => setFilterNewArrivals(e.target.checked)}
+                        />
+                        <span>New Arrivals</span>
+                      </label>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={filterBestSellers}
+                          onChange={(e) => setFilterBestSellers(e.target.checked)}
+                        />
+                        <span>Best Sellers</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+
+            </aside>
+
+            {/* Right Side: Redesigned 4-Column Product Grid */}
+            <main className="exclusive-products-content">
+              {/* Premium Sort Bar (Matches Image 2) */}
+              <div className="premium-sort-bar-m2">
+                <div className="showing-products-count">
+                  Showing <span className="gold-count">{displayProducts.length}</span> premium products
+                </div>
+                <div className="sort-by-container">
+                  <span className="sort-by-label">SORT BY:</span>
+                  <select 
+                    className="premium-sort-select"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    <option value="relevance">Recommended</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Rating</option>
+                  </select>
+                </div>
+              </div>
+              {loading ? (
+                <div className="products-grid exclusive-four-grid">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="product-card premium-four-card card-skeleton" style={{ height: '380px', background: '#f5f5f5' }} />
+                  ))}
+                </div>
+              ) : displayProducts.length === 0 ? (
+                <div className="no-products-found">
+                  <p>No products match your selected filters.</p>
+                  <button className="reset-filters-btn" onClick={handleResetFilters}>
+                    Clear Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="products-grid exclusive-four-grid">
+                  {displayProducts.map((product) => {
+                    const isWishlisted = wishlist.includes(product.id);
+                    const isInCart = cart.includes(product.id);
+                    
+                    const originalPriceNum = product.originalPrice ? parseFloat(String(product.originalPrice).replace(/[^0-9.]/g, '')) : 0;
+                    const priceNum = parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0;
+                    const discountPercentage = product.discount ? parseFloat(String(product.discount).replace(/[^0-9.]/g, '')) : (originalPriceNum ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100) : 0);
+                    
+                    const brandName = product.brand || 'Mithira Collection';
+                    const inStock = product.stock !== undefined ? product.stock > 0 : true;
+
+                    return (
+                      <div 
+                        key={product.id} 
+                        className="clothing-product-card theme-clothing animate-fade-in-up"
+                        onClick={() => handleProductClick(product)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}>
+                          {/* Discount Badge */}
+                          {discountPercentage > 0 && (
+                            <div className="clothing-discount-badge">
+                              {discountPercentage}% OFF
+                            </div>
+                          )}
+                          
+                          {/* Wishlist float button (top-right of image) */}
+                          <button 
+                            className={`clothing-wishlist-float-btn ${isWishlisted ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                            aria-label="Add to Wishlist"
+                          >
+                            <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
+                          </button>
+
+                          <img src={product.image} alt={product.title} className="clothing-img" />
+
+                          {/* Image Hover Overlay */}
+                          <div className="clothing-hover-overlay">
+                            <button 
+                              className={`clothing-hover-action-btn hover-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                              title="Add to Wishlist"
+                            >
+                              <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+                            </button>
+                            <button 
+                              className="clothing-hover-action-btn hover-quickview-btn"
+                              onClick={(e) => { e.stopPropagation(); handleQuickViewClick(product); }}
+                              title="Quick View"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button 
+                              className={`clothing-hover-action-btn hover-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(product.id, product.title); }}
+                              title="Add to Cart"
+                            >
+                              <ShoppingCart size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="clothing-info-section">
+                          <div className="clothing-brand-row">
+                            <span className="clothing-brand-name">{brandName}</span>
+                            <div className="clothing-stock-badge">
+                              {inStock ? (
+                                <span className="stock-status-in">In Stock</span>
+                              ) : (
+                                <span className="stock-status-out">Out of Stock</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <h4 className="clothing-product-title" onClick={() => handleProductClick(product)}>
+                            {product.title}
+                          </h4>
+
+                          <div className="clothing-rating-badge-container">
+                            <div className="clothing-rating-pill-green">
+                              <span>{(product.rating || 5).toFixed(1)}</span>
+                              <span className="rating-star-icon">★</span>
+                              <span className="rating-divider">|</span>
+                              <span className="rating-count">{product.reviews || 0}</span>
+                            </div>
+                          </div>
+
+                          <div className="clothing-price-and-action">
+                            <div className="clothing-price-box">
+                              <span className="clothing-selling-price">
+                                {String(product.price).startsWith('₹') ? product.price : `₹${product.price}`}
+                              </span>
+                              {product.originalPrice && (
+                                <span className="clothing-original-price">
+                                  {String(product.originalPrice).startsWith('₹') ? product.originalPrice : `₹${product.originalPrice}`}
+                                </span>
+                              )}
+                            </div>
+                            <button 
+                              className={`clothing-card-add-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(product.id, product.title); }}
+                            >
+                              {isInCart ? "IN CART" : "ADD TO CART"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
           </div>
 
           <div className="section-footer-btn">
@@ -407,10 +1530,526 @@ export default function ProductsSection({ authUser, setAuthUser }) {
             </button>
           </div>
 
+      {quickViewProduct && (() => {
+        const images = getAllProductImages(quickViewProduct, modalColor);
+        const colors = getProductThemedColors(quickViewProduct);
+
+        // Find selected variant matching active modalColor and modalSize
+        const selectedVariant = getSelectedVariant(quickViewProduct, modalColor, modalSize);
+        const displayPrice = (selectedVariant && selectedVariant.price !== null && selectedVariant.price !== undefined) 
+          ? selectedVariant.price 
+          : quickViewProduct.price;
+        
+        const displayStock = selectedVariant ? selectedVariant.stock : quickViewProduct.stock;
+        const isOutOfStock = displayStock <= 0;
+        
+        const mainImageUrl = images[activeImageIndex] || resolveProductImage(quickViewProduct);
+
+        const handlePrevThumbnail = () => {
+          setActiveImageIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+        };
+        const handleNextThumbnail = () => {
+          setActiveImageIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+        };
+
+        const priceNum = typeof displayPrice === 'number' ? displayPrice : parseFloat(String(displayPrice).replace(/[^0-9.]/g, '')) || 0;
+        const displayPriceStr = `₹${priceNum.toLocaleString()}`;
+
+        const origPrice = quickViewProduct.originalPrice || '';
+        const origPriceNum = origPrice ? (typeof origPrice === 'number' ? origPrice : parseFloat(String(origPrice).replace(/[^0-9.]/g, '')) || 0) : Math.round(priceNum * 1.5);
+        const displayOriginalPriceStr = `₹${origPriceNum.toLocaleString()}`;
+
+        const discountVal = quickViewProduct.discount ? parseInt(String(quickViewProduct.discount).replace(/[^0-9.]/g, '')) : Math.round(((origPriceNum - priceNum) / origPriceNum) * 100);
+
+        return (
+          <div className={`modal-overlay quickview-split-overlay animate-fade-in ${getCategoryThemeClass(quickViewProduct.category)}`} onClick={() => setQuickViewProduct(null)}>
+            <div className="quickview-split-card animate-scale-in" onClick={(e) => e.stopPropagation()}>
+              
+              {/* Modal Top Header Bar */}
+              <div className="quickview-modal-header">
+                <span className="quickview-modal-title-top">Quick View</span>
+                <button className="modal-close-btn" onClick={() => setQuickViewProduct(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="quickview-split-layout">
+                {/* Left Pane: Gallery Section */}
+                <div className="quickview-split-gallery-pane">
+                  {/* Thumbnails column with Nav Chevrons */}
+                  {images.length > 1 ? (
+                    <div className="quickview-thumbnails-nav-wrapper">
+                      <button className="thumbnail-nav-arrow up" onClick={handlePrevThumbnail}>
+                        <ChevronUp size={14} />
+                      </button>
+                      <div className="quickview-gallery-thumbnails">
+                        {(() => {
+                          const hasVariantImages = quickViewProduct.variants && quickViewProduct.variants.some(v => v.image && isRealImg(v.image));
+                          return images.map((img, idx) => (
+                            <div 
+                              key={idx}
+                              className={`quickview-thumbnail-wrapper ${activeImageIndex === idx ? 'active' : ''}`}
+                              onClick={() => {
+                                setActiveImageIndex(idx);
+                                if (hasVariantImages && colors && colors[idx]) {
+                                  setModalColor(colors[idx].name);
+                                  const matchVar = quickViewProduct.variants.find(v => v.color?.toLowerCase() === colors[idx].name.toLowerCase());
+                                  if (matchVar && matchVar.size) {
+                                    setModalSize(matchVar.size);
+                                  }
+                                }
+                              }}
+                            >
+                              <img src={img} alt={`thumb-${idx}`} className="quickview-thumbnail-img" />
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                      <button className="thumbnail-nav-arrow down" onClick={handleNextThumbnail}>
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                  ) : null}
+                  
+                  {/* Main Image display */}
+                  <div className="quickview-main-image-wrapper">
+                    <img 
+                      src={mainImageUrl} 
+                      alt={quickViewProduct.title} 
+                      className="quickview-split-img" 
+                    />
+                  </div>
+                </div>
+
+                {/* Right Pane: Info & Selector Controls */}
+                <div className="quickview-split-info-pane">
+                  <h2 className="modal-title">{quickViewProduct.title}</h2>
+                  
+                  {/* Ratings */}
+                  <div className="modal-rating-row">
+                    <span className="modal-stars" style={{ color: '#ffb300' }}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <Star key={i} size={15} fill={i < (quickViewProduct.rating || 5) ? '#ffb300' : 'none'} color="#ffb300" style={{ display: 'inline-block', marginRight: '2px' }} />
+                      ))}
+                    </span>
+                    <span className="modal-reviews-count">({quickViewProduct.reviews || "48"} Reviews)</span>
+                  </div>
+
+                  <div className="modal-price-row">
+                    <span className="modal-price">{displayPriceStr}</span>
+                    <span className="modal-original-price">{displayOriginalPriceStr}</span>
+                    {discountVal > 0 && (
+                      <span className="modal-discount-badge" style={{ background: '#e53935', color: '#fff', borderRadius: '4px', padding: '2px 7px', fontSize: '0.78rem', fontWeight: 700, marginLeft: '8px' }}>
+                        {discountVal}% OFF
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="modal-availability-row">
+                    <span className="availability-label">Availability:</span>
+                    <span className={`availability-status ${isOutOfStock ? 'out-of-stock-status' : ''}`} style={{ color: isOutOfStock ? '#ff3333' : '#43a047' }}>{isOutOfStock ? "Out of Stock" : "In Stock"}</span>
+                  </div>
+
+                  <p className="modal-desc">
+                    {quickViewProduct.description || "Elegant and premium collection item designed to complement your cultural roots. Crafted with pure fabric and detailed quality finishes."}
+                  </p>
+
+                  {/* Category-specific Selectors */}
+                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+
+                  {/* Quantity Block */}
+                  <div className="modal-section-block quantity-section">
+                    <span className="modal-section-title">Quantity:</span>
+                    <div className="modal-quantity-selector">
+                      <button className="qty-btn" onClick={() => setModalQty(Math.max(1, modalQty - 1))}>-</button>
+                      <span className="qty-value">{modalQty}</span>
+                      <button className="qty-btn" onClick={() => setModalQty(modalQty + 1)}>+</button>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Row */}
+                  <div className="modal-actions-buttons-row">
+                    <button 
+                      className="modal-primary-action-btn"
+                      onClick={() => {
+                        toggleCart(quickViewProduct.id, quickViewProduct.title, modalSize, modalColor);
+                      }}
+                    >
+                      {cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart"}
+                    </button>
+                    <button 
+                      className="modal-secondary-action-btn"
+                      onClick={() => {
+                        sessionStorage.setItem('auto_open_product_id', String(quickViewProduct.id));
+                        setQuickViewProduct(null);
+                        handleNavigation('/Shop');
+                      }}
+                    >
+                      Go to Product
+                    </button>
+                  </div>
+
+                  {/* Wishlist Link */}
+                  <div className="modal-wishlist-row">
+                    <button 
+                      className={`modal-wishlist-btn-bottom ${wishlist.includes(quickViewProduct.id) ? 'active' : ''}`}
+                      onClick={() => toggleWishlist(quickViewProduct.id)}
+                    >
+                      <Heart size={15} fill={wishlist.includes(quickViewProduct.id) ? "currentColor" : "none"} style={{ display: 'inline-block', marginRight: '5px', verticalAlign: 'middle' }} />
+                      {wishlist.includes(quickViewProduct.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
         </div>
       </section>
-
 
     </div>
   );
 }
+
+// Helper functions for local Quick View modal
+const getColorHex = (name) => {
+  if (!name) return '#cccccc';
+  const colors = {
+    'white': '#ffffff',
+    'black': '#111111',
+    'pink': '#ff80ab',
+    'red': '#e53935',
+    'yellow': '#fdd835',
+    'green': '#43a047',
+    'purple': '#8e24aa',
+    'blue': '#1e88e5',
+    'darkred': '#b71c1c',
+    'crimson red': '#b32142',
+    'champagne gold': '#D4AF37',
+    'midnight black': '#111111',
+    'lavender': '#ce93d8',
+    'soft pink': '#f8bbd0',
+    'plum': '#4a148c',
+    'sage': '#81c784',
+    'grey': '#9e9e9e',
+    'peach': '#ffcc80',
+    'cream': '#fff9c4',
+    'aqua': '#80deea',
+    'navy': '#3949ab',
+    'olive': '#2e7d32'
+  };
+  const key = name.toLowerCase().trim();
+  return colors[key] || name.trim() || '#cccccc';
+};
+
+const getSelectedVariant = (prod, color, size) => {
+  if (!prod || !prod.variants || prod.variants.length === 0) return null;
+  let matched = prod.variants.find(v => 
+    (color && v.color && String(v.color).toLowerCase() === String(color).toLowerCase()) &&
+    (size && v.size && String(v.size).toLowerCase() === String(size).toLowerCase())
+  );
+  if (!matched && color) {
+    matched = prod.variants.find(v => v.color && String(v.color).toLowerCase() === String(color).toLowerCase());
+  }
+  return matched;
+};
+
+const getProductThemedColors = (prod) => {
+  if (!prod) return [];
+  if (prod.variants && prod.variants.length > 0) {
+    const uniqueColors = [];
+    const seenColors = new Set();
+    for (const v of prod.variants) {
+      if (v.color) {
+        const norm = v.color.trim().toLowerCase();
+        if (norm && !seenColors.has(norm)) {
+          seenColors.add(norm);
+          uniqueColors.push(v.color.trim());
+        }
+      }
+    }
+    if (uniqueColors.length > 0) {
+      return uniqueColors.map(colorName => ({
+        name: colorName,
+        hex: getColorHex(colorName)
+      }));
+    }
+  }
+  return [];
+};
+
+const getAllProductImages = (prod, selectedColor = '') => {
+  return resolveProductGallery(prod, selectedColor);
+};
+
+const getCategoryThemeClass = (category) => {
+  const cat = String(category).toUpperCase();
+  if (cat.includes('CLOTHING') || cat.includes('DRESS')) return 'theme-clothing';
+  if (cat.includes('STATIONERY') || cat.includes('PEN') || cat.includes('PENCIL') || cat.includes('NOTEBOOK') || cat.includes('OFFICE') || cat.includes('PAPER') || cat.includes('WRITING')) return 'theme-stationery';
+  if (cat.includes('GIFT') || cat.includes('VALENTINE')) return 'theme-gifts';
+  if (cat.includes('ACCESSORIES') || cat.includes('FANCY') || cat.includes('JEWEL') || cat.includes('WATCH')) return 'theme-accessories';
+  return 'theme-clothing';
+};
+
+const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize) => {
+  setModalColor(colorName);
+  if (prod && prod.variants) {
+    const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
+    if (hasVariantImages) {
+      const colors = getProductThemedColors(prod);
+      const colorIdx = colors.findIndex(c => c.name.toLowerCase() === colorName.toLowerCase());
+      if (colorIdx !== -1) {
+        setActiveImageIndex(colorIdx);
+      }
+    } else {
+      const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
+      if (matchVar) {
+        const isImgValid = matchVar.image && isRealImg(matchVar.image);
+        if (isImgValid) {
+          setActiveImageIndex(0);
+        }
+      }
+    }
+    const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
+    if (matchVar && matchVar.size) {
+      setModalSize(matchVar.size);
+    }
+  }
+};
+
+const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty) => {
+  if (!prod) return null;
+  
+  if (prod.variants && prod.variants.length > 0) {
+    const varColors = getProductThemedColors(prod);
+    const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
+    const availableSizes = prod.variants
+      .filter(v => !activeColor || v.color?.toLowerCase() === activeColor.toLowerCase())
+      .map(v => v.size)
+      .filter(Boolean);
+    const uniqueSizes = [...new Set(availableSizes)];
+    
+    return (
+      <>
+        {varColors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Color: <span className="color-name">{modalColor || varColors[0]?.name || ""}</span></span>
+            <div className="modal-color-dots">
+              {varColors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  onClick={() => {
+                    handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize);
+                  }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {uniqueSizes.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Select Size</span>
+            <div className="modal-size-pills">
+              {uniqueSizes.map((sz) => (
+                <button 
+                  key={sz}
+                  className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                  onClick={() => setModalSize(sz)}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  const category = String(prod.category).toUpperCase();
+
+  if (category.includes('CLOTHING') || category.includes('DRESS')) {
+    const sizeOptions = prod.attributes?.size 
+      ? prod.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
+      : (prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']);
+    return (
+      <>
+        {colors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Color: <span className="color-name">{colors[activeImageIndex]?.name || colors[0]?.name || ""}</span></span>
+            <div className="modal-color-dots">
+              {colors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  onClick={() => {
+                    if (idx < images.length) {
+                      setActiveImageIndex(idx);
+                    }
+                    setModalColor(c.name);
+                  }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="modal-section-block">
+          <span className="modal-section-title">Select Size</span>
+          <div className="modal-size-pills">
+            {sizeOptions.map((sz) => (
+              <button 
+                key={sz}
+                className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                onClick={() => setModalSize(sz)}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (category.includes('STATIONERY')) {
+    const packs = ['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'];
+    const packSize = modalSize.includes('Pack') ? modalSize : 'Pack of 3';
+    return (
+      <>
+        <div className="modal-section-block">
+          <span className="modal-section-title">Ink Color: {modalColor || "Blue"}</span>
+          <div className="modal-color-dots">
+            {[
+              { name: 'Blue', hex: '#0d47a1' },
+              { name: 'Black', hex: '#212121' },
+              { name: 'Red', hex: '#b71c1c' }
+            ].map((c, idx) => (
+              <button 
+                key={idx}
+                className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                style={{ backgroundColor: c.hex }}
+                onClick={() => setModalColor(c.name)}
+                title={c.name}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="modal-section-block">
+          <span className="modal-section-title">Pack Size</span>
+          <div className="modal-size-pills">
+            {packs.map((sz) => (
+              <button 
+                key={sz}
+                className={`modal-size-btn ${packSize === sz ? 'active' : ''}`}
+                onClick={() => setModalSize(sz)}
+                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (category.includes('GIFT')) {
+    const wrapThemes = ['Classic Red', 'Mystic Violet', 'Minimalist White', 'Premium Gold'];
+    const selectedTheme = modalColor.includes('Classic') || modalColor.includes('Mystic') || modalColor.includes('Minimal') || modalColor.includes('Premium') ? modalColor : 'Classic Red';
+    return (
+      <>
+        <div className="modal-section-block">
+          <span className="modal-section-title">Occasion Theme: {modalSize || "Birthday"}</span>
+          <div className="modal-size-pills">
+            {['Birthday', 'Anniversary', 'Wedding', 'Corporate'].map((sz) => (
+              <button 
+                key={sz}
+                className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                onClick={() => setModalSize(sz)}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Personalization Details:</span>
+            <input 
+              type="text" 
+              className="modal-input" 
+              placeholder="Enter name or message to print..." 
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #eae6df', marginTop: '6px', outline: 'none' }}
+            />
+          </div>
+        )}
+
+        <div className="modal-section-block">
+          <span className="modal-section-title">Gift Wrapping Theme</span>
+          <div className="modal-size-pills">
+            {wrapThemes.map((sz) => (
+              <button 
+                key={sz}
+                className={`modal-size-btn ${selectedTheme === sz ? 'active' : ''}`}
+                onClick={() => setModalColor(sz)}
+                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (category.includes('ACCESSORIES') || category.includes('FANCY')) {
+    return (
+      <>
+        {colors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title">Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name || "Default"}</span>
+            <div className="modal-color-dots">
+              {colors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  onClick={() => {
+                    if (idx < images.length) {
+                      setActiveImageIndex(idx);
+                    }
+                    setModalColor(c.name);
+                  }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="modal-section-block">
+          <span className="modal-section-title">Size:</span>
+          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'inherit', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', width: 'fit-content' }}>
+            One Size (Adjustable)
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return null;
+};

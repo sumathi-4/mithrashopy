@@ -3055,7 +3055,7 @@ ul {
 
 /* SHOP VIEW PAGE STYLING */
 .shop-view-page {
-  background-color: #faf7f5;
+  background-color: #ffffff !important;
   min-height: 100vh;
   padding-bottom: 80px;
 }
@@ -3242,8 +3242,8 @@ ul {
 /* Two Column Workspace Layout */
 .shop-main-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 40px;
+  grid-template-columns: 380px 1fr;
+  gap: 30px;
   align-items: flex-start;
   margin-top: 20px;
   transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1), gap 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -3257,7 +3257,7 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  width: 280px;
+  width: 380px;
   opacity: 1;
   transform: translateX(0);
   transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
@@ -8252,7 +8252,7 @@ ul {
 /* FULL-WIDTH GRID LAYOUT (Filters Hidden state) */
 /* ---------------------------------------------------- */
 .shop-main-layout.filters-hidden {
-  grid-template-columns: 0px 1fr !important;
+  grid-template-columns: 1fr !important;
   gap: 0px !important;
 }
 
@@ -8288,36 +8288,36 @@ ul {
 /* DYNAMIC CATEGORY VARIABLES FOR MODALS & DETAIL VIEW */
 /* ---------------------------------------------------- */
 .theme-clothing {
-  --theme-primary: #4E1A29;
-  --theme-primary-rgb: 78, 26, 41;
-  --theme-accent: #7D4D5E;
-  --theme-btn-bg: #4E1A29;
+  --theme-primary: #0c3570;
+  --theme-primary-rgb: 12, 53, 112;
+  --theme-accent: #dfb743;
+  --theme-btn-bg: #0c3570;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(78, 26, 41, 0.35);
+  --theme-glow: 0 8px 25px rgba(12, 53, 112, 0.35);
 }
 .theme-gifts {
-  --theme-primary: #aa7c11;
-  --theme-primary-rgb: 255, 138, 0;
-  --theme-accent: #D4AF37;
-  --theme-btn-bg: #aa7c11;
+  --theme-primary: #0c3570;
+  --theme-primary-rgb: 12, 53, 112;
+  --theme-accent: #dfb743;
+  --theme-btn-bg: #0c3570;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(255, 138, 0, 0.35);
+  --theme-glow: 0 8px 25px rgba(12, 53, 112, 0.35);
 }
 .theme-stationery {
-  --theme-primary: #D4AF37;
-  --theme-primary-rgb: 212, 175, 55;
-  --theme-accent: #aa7c11;
-  --theme-btn-bg: #D4AF37;
+  --theme-primary: #0c3570;
+  --theme-primary-rgb: 12, 53, 112;
+  --theme-accent: #dfb743;
+  --theme-btn-bg: #0c3570;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(212, 175, 55, 0.35);
+  --theme-glow: 0 8px 25px rgba(12, 53, 112, 0.35);
 }
 .theme-accessories {
-  --theme-primary: #aa7c11;
-  --theme-primary-rgb: 255, 138, 0;
-  --theme-accent: #D4AF37;
-  --theme-btn-bg: #aa7c11;
+  --theme-primary: #0c3570;
+  --theme-primary-rgb: 12, 53, 112;
+  --theme-accent: #dfb743;
+  --theme-btn-bg: #0c3570;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(255, 138, 0, 0.3);
+  --theme-glow: 0 8px 25px rgba(12, 53, 112, 0.3);
 }
 
 /* Applying Variables to Quick View & Product details elements */
@@ -9251,29 +9251,29 @@ ul {
 
 /* Full Product Detail View Light Overrides */
 .shop-product-detail-page-view.theme-clothing {
-  background-color: #fff4f6 !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-gifts {
-  background-color: #f7f6fb !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-stationery {
-  background-color: #f4f8fb !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-accessories {
-  background-color: #fbf9f4 !important;
+  background-color: #ffffff !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout {
-  background-color: #fffdfd !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-gifts .product-detail-grid-layout {
-  background-color: #fcfcff !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-stationery .product-detail-grid-layout {
-  background-color: #fbfdfe !important;
+  background-color: #ffffff !important;
 }
 .shop-product-detail-page-view.theme-accessories .product-detail-grid-layout {
-  background-color: #fffefb !important;
+  background-color: #ffffff !important;
 }
 
 /* ---------------------------------------------------- */
@@ -23000,5 +23000,1341 @@ ul {
   display: none !important;
 }
 
+/* ── Video Showcase Section ── */
+.video-showcase-section {
+  width: 100%;
+  padding: 10px 0 30px;
+  background: #ffffff;
+}
+
+.video-container-wrap {
+  position: relative;
+  width: 94vw;
+  max-width: 1200px;
+  height: clamp(380px, 45vw, 520px);
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(229, 207, 156, 0.45); /* Elegant gold outline */
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Simple Overlay centered at the bottom of the video */
+.video-overlay-simple {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: auto;
+}
+
+/* Premium styled single View Trends button */
+.video-trends-btn {
+  background: #1b2a4a;
+  color: #ffffff;
+  border: 2px solid #b89047;
+  padding: 14px 36px;
+  border-radius: 30px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(27, 42, 74, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+}
+
+.video-trends-btn:hover {
+  background: #b89047;
+  border-color: #b89047;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(184, 144, 71, 0.4);
+}
+
+.trends-arrow {
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.video-trends-btn:hover .trends-arrow {
+  transform: translateX(4px);
+}
+
+/* Responsive adjustment for Mobile screens */
+@media (max-width: 768px) {
+  .video-container-wrap {
+    height: 380px;
+  }
+  .video-overlay-simple {
+    bottom: 12%;
+    width: 80%;
+    display: flex;
+    justify-content: center;
+  }
+  .video-trends-btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+    padding: 12px 24px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ── Exclusive Products Layout with Sidebar & 4-Column Grid ── */
+.full-width-section-m3 {
+  width: 100vw !important;
+  max-width: 100% !important;
+  padding: 60px 4% !important;
+  margin-left: calc(-50vw + 50%) !important;
+  margin-right: calc(-50vw + 50%) !important;
+  box-sizing: border-box !important;
+}
+
+.section-container-full-m3 {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.exclusive-products-layout {
+  display: flex;
+  gap: 40px;
+  margin-top: 40px;
+  width: 100%;
+}
+
+/* Statically opened sidebar pushed to the corner of the web page */
+.exclusive-filters-sidebar {
+  width: 380px;
+  flex: 0 0 380px;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 30px 24px;
+  box-shadow: 0 10px 30px rgba(13, 32, 96, 0.04);
+}
+
+.filter-sort-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.sort-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.sort-dropdown {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0d2060; /* Royal Blue */
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.sort-dropdown:focus {
+  border-color: #b89047; /* Royal Gold */
+}
+
+/* Header with RESET button (Image3 Style) */
+.filters-header-box-m3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #edf2f6;
+}
+
+.filters-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-icon-sliders {
+  font-size: 1.1rem;
+  color: #b89047; /* Royal Gold */
+}
+
+.filters-title-m3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0d2060; /* Royal Blue */
+  letter-spacing: 0.02em;
+}
+
+.filter-reset-btn {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b89047; /* Royal Gold */
+  background: #fdfbf7;
+  border: 1px solid #e5cf9c;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+  background: #b89047;
+  color: #ffffff;
+  border-color: #b89047;
+}
+
+/* Filter block containers (Image3 Style) */
+.filter-block-m3 {
+  margin-bottom: 28px;
+}
+
+.filter-label-m3 {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* Search bar styling (Image3 style) */
+.filter-search-box-m3 {
+  position: relative;
+  width: 100%;
+}
+
+.filter-search-input-m3 {
+  width: 100%;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px 10px 36px;
+  font-size: 0.9rem;
+  font-weight: 550;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-search-input-m3:focus {
+  border-color: #b89047; /* Royal Gold */
+}
+
+.search-icon-m3 {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: #b89047; /* Royal Gold */
+}
+
+/* Category list styling (Image3 list style) */
+.filter-category-list-m3 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-cat-item-btn-m3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: left;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.filter-cat-item-btn-m3:hover {
+  background: #f8fafc;
+  color: #0d2060;
+}
+
+/* Active category item styling matching Image3 dark theme transformed to royal blue + gold */
+.filter-cat-item-btn-m3.active {
+  background: #0d2060; /* Royal Blue */
+  color: #b89047; /* Royal Gold */
+  box-shadow: 0 4px 12px rgba(13, 32, 96, 0.15);
+}
+
+.cat-item-count-badge-m3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #b89047;
+  background: #fdfbf7;
+  border: 1px solid #e5cf9c;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.cat-item-count-badge-m3.active {
+  background: #b89047; /* Royal Gold badge */
+  color: #ffffff; /* White text */
+  border-color: #b89047;
+}
+
+/* Custom Price Slider styling (Image3 style) */
+.filter-price-header-m3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-price-val-m3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #b89047; /* Royal Gold */
+}
+
+.filter-price-slider-m3 {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  margin: 10px 0;
+}
+
+/* Webkit browser slider thumb */
+.filter-price-slider-m3::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #b89047; /* Royal Gold thumb */
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.filter-price-slider-m3::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.filter-price-range-labels-m3 {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.exclusive-products-content {
+  flex: 1;
+}
+
+/* 4-Column Card Grid matching image2 */
+.products-grid.exclusive-four-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 30px !important;
+  width: 100%;
+}
+
+/* Redesigned Premium Cards with Big Text as requested */
+.product-card.premium-four-card {
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  cursor: pointer;
+}
+
+.product-card.premium-four-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(13, 32, 96, 0.08);
+  border-color: #e5cf9c;
+}
+
+.premium-four-card .prod-img-wrapper {
+  aspect-ratio: 1 / 1.35;
+  overflow: hidden;
+  position: relative;
+  background: #f7fafc;
+  width: 100%;
+}
+
+.premium-four-card .prod-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.premium-four-card:hover .prod-img {
+  transform: scale(1.04);
+}
+
+.variant-tag {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.prod-info-block {
+  padding: 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.prod-card-title {
+  font-size: 1.05rem; /* Larger font size as requested */
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.prod-card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.prod-card-price {
+  font-size: 1.25rem; /* Larger font size as requested */
+  font-weight: 800;
+  color: #1a202c;
+}
+
+.prod-card-orig-price {
+  font-size: 0.95rem; /* Larger font size as requested */
+  color: #a0aec0;
+  text-decoration: line-through;
+}
+
+.prod-card-discount {
+  font-size: 0.95rem; /* Larger font size as requested */
+  color: #b89047;
+  font-weight: 700;
+}
+
+.prod-card-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #e6f4ea;
+  color: #137333;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.rating-star {
+  font-size: 0.7rem;
+}
+
+.rating-reviews-text {
+  font-size: 0.82rem;
+  color: #718096;
+  font-weight: 550;
+}
+
+.no-products-found {
+  padding: 60px 20px;
+  text-align: center;
+  color: #718096;
+  width: 100%;
+}
+
+.reset-filters-btn {
+  margin-top: 15px;
+  background: #0d2060; /* Royal Blue */
+  color: #ffffff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: background 0.2s ease;
+}
+
+.reset-filters-btn:hover {
+  background: #b89047; /* Royal Gold */
+}
+
+/* Responsive adjustment for Mobile screens */
+@media (max-width: 991px) {
+  .full-width-section-m3 {
+    padding: 40px 16px !important;
+  }
+  .exclusive-products-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .exclusive-filters-sidebar {
+    width: 100%;
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid #edf2f7;
+    padding-right: 0;
+    padding-bottom: 20px;
+    margin-bottom: 10px;
+  }
+  .products-grid.exclusive-four-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-grid.exclusive-four-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* ========================================== */
+/* PREMIUM COLLAPSIBLE FILTERS SIDEBAR STYLES */
+/* ========================================== */
+
+/* Sidebar Base Styles */
+.exclusive-filters-sidebar, 
+.shop-sidebar-filters {
+  background-color: #edf3f8 !important; /* light pastel shade of royal blue */
+  border: 1px solid #d0deec !important;
+  border-radius: 16px;
+  padding: 24px !important;
+  box-shadow: 0 10px 30px rgba(13, 32, 96, 0.05) !important;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* Collapsed Sidebar Styles */
+.exclusive-filters-sidebar.inactive-sidebar,
+.shop-sidebar-filters.inactive-sidebar {
+  width: 0px !important;
+  min-width: 0px !important;
+  flex: 0 0 0px !important;
+  opacity: 0 !important;
+  transform: translateX(-30px) !important;
+  pointer-events: none !important;
+  margin-right: -40px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  height: 0px !important;
+}
+
+/* Layout transition gap */
+.exclusive-products-layout {
+  transition: gap 0.4s ease;
+}
+.exclusive-products-layout.filters-hidden {
+  gap: 0px !important;
+}
+
+.exclusive-filters-sidebar h2,
+.exclusive-filters-sidebar h3,
+.exclusive-filters-sidebar .filters-title-m3,
+.shop-sidebar-filters h2,
+.shop-sidebar-filters h3,
+.shop-sidebar-filters .sidebar-title-text,
+.shop-sidebar-filters .section-title-text,
+.filter-block-m3 .filter-label-m3,
+.filter-card-section .section-title-text {
+  color: #b89047 !important; /* Premium Gold */
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  font-size: 1.15rem !important;
+}
+
+/* Sidebar Content Text and Interactive elements (Dark Royal Blue) */
+.exclusive-filters-sidebar span,
+.exclusive-filters-sidebar label,
+.exclusive-filters-sidebar p,
+.exclusive-filters-sidebar li,
+.exclusive-filters-sidebar button,
+.exclusive-filters-sidebar input,
+.exclusive-filters-sidebar select,
+.shop-sidebar-filters span,
+.shop-sidebar-filters label,
+.shop-sidebar-filters p,
+.shop-sidebar-filters li,
+.shop-sidebar-filters button,
+.shop-sidebar-filters input,
+.shop-sidebar-filters select,
+.category-sub-item-header-wrapper .sub-label,
+.category-sub-item-header-wrapper .sub-count,
+.checkbox-filter-row span,
+.sort-label {
+  color: #0b3294 !important; /* Brighter Royal Blue */
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-size: 1.05rem !important;
+}
+
+/* Accordion sections */
+.filter-card-section, .filter-block-m3 {
+  border-bottom: 1.5px solid rgba(13, 32, 96, 0.08) !important;
+  padding: 18px 0 !important;
+  margin: 0 !important;
+}
+.filter-card-section:last-of-type, .filter-block-m3:last-of-type {
+  border-bottom: none !important;
+}
+
+.section-title-row, .filters-header-box-m3 {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* Custom Range Slider Styling */
+.filter-price-slider-m3, .pink-price-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(13, 32, 96, 0.15) !important;
+  outline: none;
+  margin: 15px 0;
+}
+.filter-price-slider-m3::-webkit-slider-thumb, .pink-price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0d2060 !important; /* Dark Royal Blue thumb */
+  border: 2px solid #b89047 !important; /* Premium Gold border */
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.filter-price-slider-m3::-webkit-slider-thumb:hover, .pink-price-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Custom Checkboxes */
+.checkbox-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+.checkbox-filter-row input[type="checkbox"], 
+.filter-checkbox-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #0b3294 !important; /* Brighter Royal Blue */
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+.checkbox-filter-row input[type="checkbox"]:checked,
+.filter-checkbox-input:checked {
+  background-color: #0b3294 !important;
+  border-color: #0b3294 !important;
+}
+.checkbox-filter-row input[type="checkbox"]:checked::after,
+.filter-checkbox-input:checked::after {
+  content: "✓";
+  font-size: 12px;
+  color: #edf3f8 !important;
+  font-weight: bold;
+}
+
+/* Size Buttons */
+.size-buttons-grid, .sizes-grid-m3 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.size-btn, .size-toggle-btn {
+  background: transparent !important;
+  border: 1.5px solid #0d2060 !important;
+  color: #0d2060 !important;
+  border-radius: 8px;
+  padding: 8px 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.size-btn.active, .size-toggle-btn.active {
+  background: #0d2060 !important;
+  color: #edf3f8 !important;
+  border-color: #0d2060 !important;
+  box-shadow: 0 4px 10px rgba(13, 32, 96, 0.2);
+}
+.size-btn:hover:not(.active), .size-toggle-btn:hover:not(.active) {
+  background: rgba(13, 32, 96, 0.05) !important;
+}
+
+/* Circular Color Swatches */
+.color-circles-list, .colors-grid-m3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.color-bubble, .color-bubble-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+.color-bubble.active, .color-bubble-swatch.active {
+  transform: scale(1.15);
+  border-color: #0d2060 !important; /* highlight active with Dark Royal Blue */
+  box-shadow: 0 0 8px rgba(13, 32, 96, 0.4);
+}
+
+/* Toggle filters buttons styling (Extremely premium) */
+.shop-filters-toggle-btn, .exclusive-filters-toggle-btn {
+  background: #0d2060 !important;
+  color: #edf3f8 !important;
+  border: 1px solid #b89047 !important;
+  padding: 10px 22px !important;
+  border-radius: 30px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.05em !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(13, 32, 96, 0.15) !important;
+}
+.shop-filters-toggle-btn:hover, .exclusive-filters-toggle-btn:hover {
+  background: #edf3f8 !important;
+  color: #0d2060 !important;
+  box-shadow: 0 6px 20px rgba(13, 32, 96, 0.25) !important;
+}
+
+/* Sort Select dropdown inside sidebar */
+.sort-dropdown {
+  border: 1.5px solid #0d2060 !important;
+  color: #0d2060 !important;
+  background-color: transparent !important;
+}
+
+/* Category Checkbox Nested items list */
+.category-group-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.category-sub-list-container {
+  margin-left: 15px;
+  border-left: 1.5px solid rgba(13, 32, 96, 0.1);
+  padding-left: 10px;
+}
+
+/* Category Search Bar and Toggle Buttons */
+.category-list-search {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(11, 50, 148, 0.2);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: #0b3294;
+  outline: none;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease;
+}
+.category-list-search:focus {
+  border-color: #b89047;
+}
+
+.show-more-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #b89047 !important;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-top: 8px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+.show-more-toggle-btn:hover {
+  color: #0b3294 !important;
+}
+
+/* 4-column desktop overrides for shop products grid */
+@media (min-width: 1025px) {
+  .shop-products-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+  }
+  .shop-main-layout.filters-hidden .shop-products-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 20px !important;
+  }
+}
+
+/* Premium Sort Bar (Image 2 style) */
+.premium-sort-bar-m2 {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: #edf3f8 !important;
+  border: 1.5px solid rgba(11, 50, 148, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 16px 28px !important;
+  margin-bottom: 24px !important;
+  box-shadow: 0 4px 20px rgba(13, 32, 96, 0.03) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Exclusive Products Section Subtitle Color (Royal Blue) */
+.trending-products-section .section-subtitle {
+  color: #0b3294 !important;
+  font-weight: 600 !important;
+}
+
+.premium-sort-bar-m2:hover {
+  border-color: #e5cf9c !important;
+  box-shadow: 0 6px 22px rgba(184, 144, 71, 0.1) !important;
+}
+
+.showing-products-count {
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+  color: #0b3294 !important;
+}
+
+.showing-products-count .gold-count {
+  color: #b89047 !important;
+  font-weight: 800 !important;
+  font-size: 1.15rem !important;
+  margin: 0 4px;
+}
+
+.sort-by-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.sort-by-label {
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  color: #0b3294 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase;
+}
+
+.premium-sort-select {
+  border: 1.5px solid #e5cf9c !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #0b3294 !important;
+  background: #ffffff !important;
+  outline: none !important;
+  cursor: pointer !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  min-width: 170px !important;
+  box-shadow: 0 2px 6px rgba(184, 144, 71, 0.05) !important;
+}
+
+.premium-sort-select:focus {
+  border-color: #b89047 !important;
+  box-shadow: 0 0 0 3px rgba(184, 144, 71, 0.15) !important;
+}
+
+/* Exclusive Products Header styles (Golden Text & Larger Logo) */
+.trending-products-section .section-title {
+  color: #b89047 !important;
+  font-size: 2.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.trending-products-section .section-crown-icon {
+  width: 90px !important;
+  height: 90px !important;
+  margin-bottom: 15px !important;
+  object-fit: contain !important;
+  transition: transform 0.3s ease !important;
+}
+
+.trending-products-section .section-crown-icon:hover {
+  transform: scale(1.08);
+}
+
+/* Enlarged text overrides for Sidebar filters */
+.exclusive-filters-sidebar h2,
+.exclusive-filters-sidebar h3,
+.exclusive-filters-sidebar .filters-title-m3,
+.shop-sidebar-filters h2,
+.shop-sidebar-filters h3,
+.shop-sidebar-filters .sidebar-title-text,
+.shop-sidebar-filters .section-title-text,
+.filter-block-m3 .filter-label-m3,
+.filter-card-section .section-title-text {
+  font-size: 1.25rem !important;
+}
+
+.exclusive-filters-sidebar span,
+.exclusive-filters-sidebar label,
+.exclusive-filters-sidebar p,
+.exclusive-filters-sidebar li,
+.exclusive-filters-sidebar button,
+.exclusive-filters-sidebar input,
+.exclusive-filters-sidebar select,
+.shop-sidebar-filters span,
+.shop-sidebar-filters label,
+.shop-sidebar-filters p,
+.shop-sidebar-filters li,
+.shop-sidebar-filters button,
+.shop-sidebar-filters input,
+.shop-sidebar-filters select,
+.category-sub-item-header-wrapper .sub-label,
+.category-sub-item-header-wrapper .sub-count,
+.checkbox-filter-row span,
+.sort-label {
+  font-size: 1.08rem !important;
+}
+
+.checkbox-filter-row {
+  font-size: 1.08rem !important;
+}
 
 
+/* ==========================================================================
+   PREMIUM SOFT CREAM & ROYAL BLUE WITH GOLDEN BORDER THEME OVERRIDES
+   ========================================================================== */
+
+/* 1. All Product Cards Background (Soft Cream), Golden Border, and Royal Blue Text */
+.clothing-product-card,
+.cat-card-stationery,
+.cat-card-gifts,
+.cat-card-accessories,
+.clothing-product-card.cat-card-stationery,
+.clothing-product-card.cat-card-gifts,
+.clothing-product-card.cat-card-accessories,
+.clothing-product-card.theme-clothing,
+.clothing-product-card.theme-stationery,
+.clothing-product-card.theme-gifts,
+.clothing-product-card.theme-accessories,
+.shop-view-page .clothing-product-card,
+.theme-clothing .clothing-product-card,
+.theme-stationery .clothing-product-card,
+.theme-gifts .clothing-product-card,
+.theme-accessories .clothing-product-card,
+.prod-theme-clothing,
+.prod-theme-stationery,
+.prod-theme-gifts,
+.prod-theme-accessories {
+  background: #ffffff !important;
+  border: 2px solid #dfb743 !important; /* Golden border */
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.08) !important;
+  border-radius: 12px !important;
+}
+
+.clothing-product-card:hover,
+.cat-card-stationery:hover,
+.cat-card-gifts:hover,
+.cat-card-accessories:hover {
+  border-color: #ffd740 !important; /* Brighter gold on hover */
+  box-shadow: 0 8px 25px rgba(223, 183, 67, 0.25) !important;
+}
+
+/* Brands, Titles, Prices, and Ratings inside Product Cards to Royal Blue */
+.clothing-product-card .clothing-brand-name,
+.cat-card-stationery .clothing-brand-name,
+.cat-card-gifts .clothing-brand-name,
+.cat-card-accessories .clothing-brand-name,
+.clothing-product-card .clothing-product-title,
+.cat-card-stationery .clothing-product-title,
+.cat-card-gifts .clothing-product-title,
+.cat-card-accessories .clothing-product-title,
+.clothing-product-card .clothing-selling-price,
+.cat-card-stationery .clothing-selling-price,
+.cat-card-gifts .clothing-selling-price,
+.cat-card-accessories .clothing-selling-price {
+  color: #0c3570 !important;
+}
+
+.clothing-product-card .clothing-original-price,
+.cat-card-stationery .clothing-original-price,
+.cat-card-gifts .clothing-original-price,
+.cat-card-accessories .clothing-original-price {
+  color: rgba(12, 53, 112, 0.5) !important;
+}
+
+/* Card Button: Add to Cart (Royal Blue Background, Cream/White Text) */
+.clothing-product-card .clothing-card-add-cart-btn,
+.cat-card-stationery .clothing-card-add-cart-btn,
+.cat-card-gifts .clothing-card-add-cart-btn,
+.cat-card-accessories .clothing-card-add-cart-btn {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border: 2px solid #0c3570 !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+}
+
+.clothing-product-card .clothing-card-add-cart-btn:hover,
+.cat-card-stationery .clothing-card-add-cart-btn:hover,
+.cat-card-gifts .clothing-card-add-cart-btn:hover,
+.cat-card-accessories .clothing-card-add-cart-btn:hover {
+  background: #ffffff !important;
+  color: #0c3570 !important;
+  border-color: #0c3570 !important;
+}
+
+/* Wishlist float button and hover buttons inside card */
+.clothing-product-card .clothing-hover-action-btn:hover,
+.cat-card-stationery .clothing-hover-action-btn:hover,
+.cat-card-gifts .clothing-hover-action-btn:hover,
+.cat-card-accessories .clothing-hover-action-btn:hover {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+}
+
+.clothing-product-card .clothing-wishlist-float-btn {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #0c3570 !important;
+  border: 1px solid rgba(12, 53, 112, 0.2) !important;
+}
+.clothing-product-card .clothing-wishlist-float-btn.active {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+}
+
+/* Card Image Fixed-Size Sizing */
+.clothing-img-wrapper {
+  height: 320px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+.clothing-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+
+/* 2. Quick View Modal Overrides (Soft Cream Background, Golden Border, Royal Blue Text) */
+.quickview-split-card,
+.quickview-split-overlay .quickview-split-card,
+.quickview-split-overlay.theme-clothing .quickview-split-card,
+.quickview-split-overlay.theme-stationery .quickview-split-card,
+.quickview-split-overlay.theme-gifts .quickview-split-card,
+.quickview-split-overlay.theme-accessories .quickview-split-card,
+.clothing-wine-theme .quickview-split-overlay .quickview-split-card,
+.stationery-lavender-theme .quickview-split-overlay .quickview-split-card,
+.gifts-serene-theme .quickview-split-overlay .quickview-split-card,
+.accessories-luxury-theme .quickview-split-overlay .quickview-split-card {
+  background: #ffffff !important;
+  border: 2px solid #dfb743 !important; /* Golden border */
+  box-shadow: 0 10px 40px rgba(223, 183, 67, 0.3) !important;
+}
+
+/* Quick View Texts to Royal Blue */
+.quickview-split-overlay .modal-title,
+.quickview-split-overlay .modal-reviews-count,
+.quickview-split-overlay .modal-desc,
+.quickview-split-overlay .modal-section-title,
+.quickview-split-overlay .qty-label,
+.quickview-split-overlay .qty-value,
+.quickview-split-overlay span:not(.availability-status):not(.modal-discount-badge):not(.modal-original-price),
+.quickview-split-overlay p,
+.quickview-split-overlay label,
+.quickview-split-overlay div:not(.modal-discount-badge):not(.quickview-thumbnail-wrapper):not(.quickview-gallery-thumbnails) {
+  color: #0c3570 !important;
+}
+
+.quickview-split-overlay .modal-price {
+  color: #0c3570 !important;
+  font-weight: 800 !important;
+}
+
+.quickview-split-overlay .modal-original-price {
+  color: rgba(12, 53, 112, 0.5) !important;
+}
+
+/* Quick View Close and Control Buttons */
+.quickview-split-overlay .modal-close-btn {
+  color: #0c3570 !important;
+}
+
+/* Quick View Quantity selector */
+.quickview-split-overlay .modal-quantity-selector {
+  background: transparent !important;
+  border: 1px solid rgba(12, 53, 112, 0.3) !important;
+}
+.quickview-split-overlay .modal-quantity-selector button.qty-btn {
+  color: #0c3570 !important;
+  background: transparent !important;
+}
+.quickview-split-overlay .modal-quantity-selector button.qty-btn:hover {
+  color: #ffffff !important;
+  background-color: #0c3570 !important;
+}
+.quickview-split-overlay .modal-quantity-selector .qty-value {
+  color: #0c3570 !important;
+}
+
+/* Size Pills in Quick View */
+.quickview-split-overlay .modal-size-btn {
+  border: 1px solid #0c3570 !important;
+  color: #0c3570 !important;
+  background: transparent !important;
+}
+.quickview-split-overlay .modal-size-btn.active {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border-color: #0c3570 !important;
+}
+
+/* Quick View Main Buttons */
+.quickview-split-overlay .modal-primary-action-btn {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border: 2px solid #0c3570 !important;
+}
+.quickview-split-overlay .modal-primary-action-btn:hover {
+  background: #ffffff !important;
+  color: #0c3570 !important;
+  border-color: #0c3570 !important;
+}
+
+.quickview-split-overlay .modal-secondary-action-btn {
+  background: transparent !important;
+  border: 2px solid #0c3570 !important;
+  color: #0c3570 !important;
+}
+.quickview-split-overlay .modal-secondary-action-btn:hover {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border-color: #0c3570 !important;
+}
+
+.quickview-split-overlay .modal-wishlist-btn-bottom {
+  color: #0c3570 !important;
+}
+
+/* Quick View Thumbnails active state */
+.quickview-thumbnail-wrapper.active {
+  border-color: #dfb743 !important;
+}
+
+/* Quick View Image Fixed Size Sizing */
+.quickview-main-image-wrapper {
+  height: 440px !important;
+  width: 330px !important;
+  flex-shrink: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(12, 53, 112, 0.1) !important;
+}
+.quickview-split-layout .quickview-split-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+
+/* 3. Product Detail Page Overrides (Soft Cream Background, Golden Border, Royal Blue Text) */
+.shop-product-detail-page-view .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-accessories .product-detail-grid-layout,
+.shop-product-detail-page-view.clothing-wine-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.stationery-lavender-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.gifts-serene-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.accessories-luxury-theme .product-detail-grid-layout {
+  background: #ffffff !important;
+  border: 2px solid #dfb743 !important; /* Golden border */
+  box-shadow: 0 0 25px rgba(223, 183, 67, 0.25) !important;
+  border-radius: 20px !important;
+}
+
+/* Product Detail Texts to Royal Blue */
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-tagline,
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-section-title,
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-qty-control span,
+.shop-product-detail-page-view .product-detail-grid-layout .detail-tab-btn,
+.shop-product-detail-page-view .product-detail-grid-layout .detail-tab-content,
+.shop-product-detail-page-view .product-detail-grid-layout .review-comment-text,
+.shop-product-detail-page-view .product-detail-grid-layout .specs-key,
+.shop-product-detail-page-view .product-detail-grid-layout .specs-val,
+.shop-product-detail-page-view .product-detail-grid-layout div:not(.product-detail-category-tag):not(.product-detail-badge-pill):not(.product-detail-discount-badge),
+.shop-product-detail-page-view .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status):not(.product-detail-discount-badge):not(.product-detail-original-price),
+.shop-product-detail-page-view .product-detail-grid-layout p,
+.shop-product-detail-page-view .product-detail-grid-layout label {
+  color: #0c3570 !important;
+}
+
+.shop-product-detail-page-view .product-detail-title {
+  color: #0c3570 !important;
+}
+
+.shop-product-detail-page-view .product-detail-category-tag {
+  color: #0c3570 !important;
+}
+
+.shop-product-detail-page-view .product-detail-price-value {
+  color: #0c3570 !important;
+  font-weight: 800 !important;
+}
+
+.shop-product-detail-page-view .product-detail-original-price {
+  color: rgba(12, 53, 112, 0.5) !important;
+}
+
+/* Tabs outline / active state */
+.shop-product-detail-page-view .detail-tab-btn {
+  border-bottom: 2px solid rgba(12, 53, 112, 0.1) !important;
+}
+.shop-product-detail-page-view .detail-tab-btn.active {
+  border-bottom: 2px solid #0c3570 !important;
+  font-weight: bold !important;
+}
+
+/* Quantity Control in details */
+.shop-product-detail-page-view .product-detail-qty-control {
+  border: 1px solid rgba(12, 53, 112, 0.3) !important;
+}
+.shop-product-detail-page-view .product-detail-qty-btn {
+  color: #0c3570 !important;
+}
+
+/* Action Buttons in details */
+.shop-product-detail-page-view .product-detail-cart-btn {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border: 2px solid #0c3570 !important;
+}
+.shop-product-detail-page-view .product-detail-cart-btn:hover {
+  background: #ffffff !important;
+  color: #0c3570 !important;
+  border-color: #0c3570 !important;
+}
+
+.shop-product-detail-page-view .product-detail-buy-btn {
+  background: transparent !important;
+  border: 2px solid #0c3570 !important;
+  color: #0c3570 !important;
+}
+.shop-product-detail-page-view .product-detail-buy-btn:hover {
+  background: #0c3570 !important;
+  color: #ffffff !important;
+  border-color: #0c3570 !important;
+}
+
+/* Product Detail Thumbnails active state */
+.product-detail-thumbnail-wrapper.active {
+  border-color: #dfb743 !important;
+}
+
+/* Product Details Main Image Fixed Size Sizing */
+.product-detail-main-image-wrapper {
+  height: 440px !important;
+  width: 330px !important;
+  flex-shrink: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(12, 53, 112, 0.1) !important;
+  background: #ffffff !important;
+}
+.product-detail-main-image-wrapper .product-detail-main-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.trending-products-section {
+  background-color: #ffffff !important;
+}

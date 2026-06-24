@@ -323,6 +323,394 @@ async function seedStoreData() {
       console.log('✅ Women Kurti seeded successfully');
     }
 
+    // Seed the 3 new premium products requested by user
+    const existingPurpleNotebook = await Product.findOne({ id: 101 });
+    if (!existingPurpleNotebook) {
+      await Product.create({
+        id: 101,
+        name: 'Purple Notebook',
+        category: 'Stationery > Book',
+        subCategory: 'book',
+        catalogue: 'Catalogue A',
+        price: 399,
+        stock: 50,
+        sales: 15,
+        status: 'Active',
+        image: 'purple_notebook.jpg',
+        images: ['purple_notebook.jpg'],
+        description: 'A premium soft-bound purple notebook with elegant embossed details, featuring gold-edged pages and a matching bookmark ribbon.',
+        brand: 'Mithira Luxe',
+        rating: 4.9,
+        reviews: 42,
+        discount: 15,
+        originalPrice: 469
+      });
+      console.log('✅ Purple Notebook (id: 101) seeded successfully');
+    }
+
+    const existingAnarkali = await Product.findOne({ id: 102 });
+    if (!existingAnarkali) {
+      await Product.create({
+        id: 102,
+        name: 'Anarkali',
+        category: 'Clothing > Women > Kurti',
+        subCategory: 'kurti',
+        catalogue: 'Catalogue A',
+        price: 2499,
+        stock: 35,
+        sales: 28,
+        status: 'Active',
+        image: 'green_anarkali.jpg',
+        images: ['green_anarkali.jpg'],
+        description: 'An elegant green Anarkali dress featuring intricate golden embroidery, a flared silhouette, and full sleeves. Perfect for festive occasions.',
+        brand: 'Mithira Heritage',
+        rating: 5.0,
+        reviews: 88,
+        discount: 20,
+        originalPrice: 3125
+      });
+      console.log('✅ Anarkali (id: 102) seeded successfully');
+    }
+
+    const existingBlueSuit = await Product.findOne({ id: 103 });
+    if (!existingBlueSuit) {
+      await Product.create({
+        id: 103,
+        name: 'Blue Formal Suit',
+        category: 'Clothing > Men > formal suites',
+        subCategory: 'formal suites',
+        catalogue: 'Catalogue A',
+        price: 4999,
+        stock: 20,
+        sales: 12,
+        status: 'Active',
+        image: 'blue_suit.jpg',
+        images: ['blue_suit.jpg'],
+        description: 'A slim-fit royal blue formal suit featuring a single-breasted blazer and matching trousers. Crafted from premium wool-blend fabric for a sophisticated look.',
+        brand: 'Aurelian Noir',
+        rating: 4.8,
+        reviews: 36,
+        discount: 10,
+        originalPrice: 5550
+      });
+      console.log('✅ Blue Formal Suit (id: 103) seeded successfully');
+    }
+
+    // Seed 5 new exclusive products requested by user (replace previous 3 on home page)
+    const existingWhiteGown = await Product.findOne({ id: 104 });
+    if (!existingWhiteGown) {
+      await Product.create({
+        id: 104,
+        name: 'White Lace Gown',
+        category: 'Clothing > Kids > Girls > Gowns',
+        subCategory: 'Gowns',
+        catalogue: 'Catalogue A',
+        price: 1899,
+        stock: 30,
+        sales: 22,
+        status: 'Active',
+        image: 'white_gown.jpg',
+        images: ['white_gown.jpg'],
+        description: 'An enchanting white lace gown for girls with a beautiful satin bow belt, layered tiered skirt, and delicate floral lace detailing. Perfect for parties and special occasions.',
+        brand: 'Mithira Kids',
+        rating: 4.9,
+        reviews: 64,
+        discount: 15,
+        originalPrice: 2235
+      });
+      console.log('✅ White Lace Gown (id: 104) seeded successfully');
+    }
+
+    const existingPremiumGiftSet = await Product.findOne({ id: 105 });
+    if (!existingPremiumGiftSet) {
+      await Product.create({
+        id: 105,
+        name: 'Premium Gift Set',
+        category: 'Gifts',
+        subCategory: 'Gift Hamper',
+        catalogue: 'Catalogue A',
+        price: 1499,
+        stock: 45,
+        sales: 38,
+        status: 'Active',
+        image: 'premium_gift_set.jpg',
+        images: ['premium_gift_set.jpg'],
+        description: 'A luxurious premium gift set featuring beautifully wrapped green and ivory boxes tied with gold satin ribbons. Perfect for birthdays, anniversaries, and celebrations.',
+        brand: 'Mithira Gifting',
+        rating: 4.8,
+        reviews: 112,
+        discount: 10,
+        originalPrice: 1665
+      });
+      console.log('✅ Premium Gift Set (id: 105) seeded successfully');
+    }
+
+    const existingKidsFormalSuit = await Product.findOne({ id: 106 });
+    if (!existingKidsFormalSuit) {
+      await Product.create({
+        id: 106,
+        name: 'Kids Formal Suit',
+        category: 'Clothing > Kids > Formal',
+        subCategory: 'Formal',
+        catalogue: 'Catalogue A',
+        price: 2299,
+        stock: 25,
+        sales: 18,
+        status: 'Active',
+        image: 'kids_formal_suit.jpg',
+        images: ['kids_formal_suit.jpg'],
+        description: 'A sharp charcoal grey formal vest suit with matching trousers and a navy blue bow tie for boys. Ideal for school events, weddings, and formal occasions.',
+        brand: 'Mithira Kids',
+        rating: 4.7,
+        reviews: 45,
+        discount: 12,
+        originalPrice: 2613
+      });
+      console.log('✅ Kids Formal Suit (id: 106) seeded successfully');
+    }
+
+    const existingGoldAnklets = await Product.findOne({ id: 107 });
+    if (!existingGoldAnklets) {
+      await Product.create({
+        id: 107,
+        name: 'Gold Anklets',
+        category: 'Accessories > Jewellery > Anklets',
+        subCategory: 'Anklets',
+        catalogue: 'Catalogue A',
+        price: 899,
+        stock: 60,
+        sales: 45,
+        status: 'Active',
+        image: 'gold_anklets.jpg',
+        images: ['gold_anklets.jpg'],
+        description: 'Elegant traditional gold-plated anklets with delicate bell charms and intricate chain links. Adds a touch of grace and tradition to any outfit.',
+        brand: 'Mithira Jewels',
+        rating: 5.0,
+        reviews: 132,
+        discount: 20,
+        originalPrice: 1124
+      });
+      console.log('✅ Gold Anklets (id: 107) seeded successfully');
+    }
+
+    const existingDiamondRing = await Product.findOne({ id: 108 });
+    if (!existingDiamondRing) {
+      await Product.create({
+        id: 108,
+        name: 'Diamond Ginkgo Ring',
+        category: 'Accessories > Jewellery > Ring',
+        subCategory: 'Ring',
+        catalogue: 'Catalogue A',
+        price: 7499,
+        stock: 15,
+        sales: 8,
+        status: 'Active',
+        image: 'diamond_ring.jpg',
+        images: ['diamond_ring.jpg'],
+        description: 'A breathtaking 18K gold ring inspired by the ginkgo leaf with diamond accents. Features hand-etched botanical detailing and brilliant-cut diamonds for an exquisite, nature-inspired look.',
+        brand: 'Aurelian Jewels',
+        rating: 5.0,
+        reviews: 28,
+        discount: 5,
+        originalPrice: 7894
+      });
+      console.log('✅ Diamond Ginkgo Ring (id: 108) seeded successfully');
+    }
+
+    // Seed 5 more new exclusive products (109-113) requested by user — DO NOT remove existing 104-108
+    const existingHeavyJoker = await Product.findOne({ id: 109 });
+    if (!existingHeavyJoker) {
+      await Product.create({
+        id: 109,
+        name: 'Heavy Worked Joker Necklace',
+        category: 'Accessories > Jewellery > Heavy Worked Joker',
+        subCategory: 'Heavy Worked Joker',
+        catalogue: 'Catalogue A',
+        price: 12999,
+        stock: 10,
+        sales: 6,
+        status: 'Active',
+        image: 'heavy_joker_necklace.jpg',
+        images: ['heavy_joker_necklace.jpg'],
+        description: 'A majestic diamond-studded gold joker necklace with intricate filigree work and a breathtaking pear-shaped pendant. The epitome of bridal luxury craftsmanship.',
+        brand: 'Aurelian Jewels',
+        rating: 5.0,
+        reviews: 19,
+        discount: 8,
+        originalPrice: 14130
+      });
+      console.log('✅ Heavy Worked Joker Necklace (id: 109) seeded successfully');
+    }
+
+    const existingSimpleChain = await Product.findOne({ id: 110 });
+    if (!existingSimpleChain) {
+      await Product.create({
+        id: 110,
+        name: 'Simple Chain Jewellery Set',
+        category: 'Accessories > Jewellery > Simple Chain',
+        subCategory: 'Simple Chain',
+        catalogue: 'Catalogue A',
+        price: 2499,
+        stock: 40,
+        sales: 55,
+        status: 'Active',
+        image: 'simple_chain_jewellery.jpg',
+        images: ['simple_chain_jewellery.jpg'],
+        description: 'An elegant everyday jewellery set featuring layered gold chains, pearl drop earrings, diamond hoop bracelets, and delicate rings — all in premium gold plating on a soft silk backdrop.',
+        brand: 'Mithira Jewels',
+        rating: 4.9,
+        reviews: 87,
+        discount: 18,
+        originalPrice: 3048
+      });
+      console.log('✅ Simple Chain Jewellery Set (id: 110) seeded successfully');
+    }
+
+    const existingLuxeNotebook = await Product.findOne({ id: 111 });
+    if (!existingLuxeNotebook) {
+      await Product.create({
+        id: 111,
+        name: 'Luxe Leather Notebook',
+        category: 'Stationery > Book',
+        subCategory: 'Book',
+        catalogue: 'Catalogue A',
+        price: 749,
+        stock: 60,
+        sales: 34,
+        status: 'Active',
+        image: 'luxe_leather_notebook.jpg',
+        images: ['luxe_leather_notebook.jpg'],
+        description: 'A premium purple vegan-leather hardbound notebook with gold-edged pages, Fleur-de-lis embossed detailing, satin bookmark ribbon, and a matching gold pen. Perfect for journaling and gifting.',
+        brand: 'Mithira Luxe',
+        rating: 4.8,
+        reviews: 61,
+        discount: 12,
+        originalPrice: 851
+      });
+      console.log('✅ Luxe Leather Notebook (id: 111) seeded successfully');
+    }
+
+    const existingAnarkali2 = await Product.findOne({ id: 112 });
+    if (!existingAnarkali2) {
+      await Product.create({
+        id: 112,
+        name: 'Anarkali',
+        category: 'Clothing > Women > Kurti',
+        subCategory: 'Kurti',
+        catalogue: 'Catalogue A',
+        price: 3299,
+        stock: 28,
+        sales: 41,
+        status: 'Active',
+        image: 'green_anarkali2.jpg',
+        images: ['green_anarkali2.jpg'],
+        description: 'A stunning emerald green Anarkali gown with rich gold zari embroidery covering the full length of the flared skirt. Full sleeves with intricate floral motifs. The ultimate festive statement piece.',
+        brand: 'Mithira Heritage',
+        rating: 5.0,
+        reviews: 103,
+        discount: 22,
+        originalPrice: 4229
+      });
+      console.log('✅ Anarkali 2 (id: 112) seeded successfully');
+    }
+
+    const existingBlueFormalSuit2 = await Product.findOne({ id: 113 });
+    if (!existingBlueFormalSuit2) {
+      await Product.create({
+        id: 113,
+        name: 'Blue Formal Suit',
+        category: 'Clothing > Men > Formal Suites',
+        subCategory: 'Formal Suites',
+        catalogue: 'Catalogue A',
+        price: 5999,
+        stock: 18,
+        sales: 14,
+        status: 'Active',
+        image: 'blue_formal_suit2.jpg',
+        images: ['blue_formal_suit2.jpg'],
+        description: 'A sharp, tailored royal blue single-breasted formal suit with gold-button detailing by Aurelian Noir. Crafted from premium Italian wool blend, this suit radiates power and elegance.',
+        brand: 'Aurelian Noir',
+        rating: 4.9,
+        reviews: 47,
+        discount: 15,
+        originalPrice: 7058
+      });
+      console.log('✅ Blue Formal Suit 2 (id: 113) seeded successfully');
+    }
+
+    // Seed 3 more exclusive products (114-116) — DO NOT remove existing 104-113
+    const existingSchoolKit = await Product.findOne({ id: 114 });
+    if (!existingSchoolKit) {
+      await Product.create({
+        id: 114,
+        name: 'School Stationery Kit',
+        category: 'Stationery',
+        subCategory: 'School Items',
+        catalogue: 'Catalogue A',
+        price: 599,
+        stock: 80,
+        sales: 67,
+        status: 'Active',
+        image: 'school_stationery_kit.jpg',
+        images: ['school_stationery_kit.jpg'],
+        description: 'A complete school stationery kit featuring spiral notebooks, color pencils, sketch pens, scissors, a sharpener, and a pencil holder. Everything a student needs in one vibrant set.',
+        brand: 'Mithira Stationery',
+        rating: 4.8,
+        reviews: 94,
+        discount: 20,
+        originalPrice: 749
+      });
+      console.log('✅ School Stationery Kit (id: 114) seeded successfully');
+    }
+
+    const existingBridalHair = await Product.findOne({ id: 115 });
+    if (!existingBridalHair) {
+      await Product.create({
+        id: 115,
+        name: 'Bridal Floral Hair Accessory',
+        category: 'Accessories > Hair Accessories',
+        subCategory: 'Hair Accessories',
+        catalogue: 'Catalogue A',
+        price: 1299,
+        stock: 35,
+        sales: 29,
+        status: 'Active',
+        image: 'bridal_hair_accessory.jpg',
+        images: ['bridal_hair_accessory.jpg'],
+        description: 'An exquisite bridal hair accessory featuring a large silk lotus flower, cascading jasmine bud strings, gold chain draping, and delicate jhumka bells. Perfect for weddings and festive occasions.',
+        brand: 'Mithira Bridal',
+        rating: 5.0,
+        reviews: 58,
+        discount: 15,
+        originalPrice: 1529
+      });
+      console.log('✅ Bridal Floral Hair Accessory (id: 115) seeded successfully');
+    }
+
+    const existingTealFrock = await Product.findOne({ id: 116 });
+    if (!existingTealFrock) {
+      await Product.create({
+        id: 116,
+        name: 'Teal Ruffle Frock',
+        category: 'Clothing > Kids > Girls > Frock',
+        subCategory: 'Frock',
+        catalogue: 'Catalogue A',
+        price: 899,
+        stock: 45,
+        sales: 33,
+        status: 'Active',
+        image: 'teal_ruffle_frock.jpg',
+        images: ['teal_ruffle_frock.jpg'],
+        description: 'A gorgeous teal organza frock for girls with golden sequin embroidery on the bodice, a flared tiered skirt with vibrant green ruffle hem detailing. Lightweight and perfect for parties.',
+        brand: 'Mithira Kids',
+        rating: 4.9,
+        reviews: 72,
+        discount: 10,
+        originalPrice: 999
+      });
+      console.log('✅ Teal Ruffle Frock (id: 116) seeded successfully');
+    }
+
     const defaultCategories = [
       { name: 'Clothing', parent: '—' },
       { name: 'Stationery', parent: '—' },
@@ -355,7 +743,25 @@ async function seedStoreData() {
       { name: 'Jewellery', parent: 'Accessories' },
       { name: 'Fancy Items', parent: 'Accessories' },
       { name: 'Hair Accessories', parent: 'Accessories' },
-      { name: 'Fashion Accessories', parent: 'Accessories' }
+      { name: 'Fashion Accessories', parent: 'Accessories' },
+
+      // Previously seeded categories
+      { name: 'book', parent: 'Stationery' },
+
+      // New categories for exclusive products (batch 1: IDs 104-108)
+      { name: 'Gowns', parent: 'Girls' },
+      { name: 'Formal', parent: 'Kids' },
+      { name: 'Gift Hamper', parent: 'Gifts' },
+      { name: 'Anklets', parent: 'Jewellery' },
+      { name: 'Ring', parent: 'Jewellery' },
+
+      // New categories for exclusive products (batch 2: IDs 109-113)
+      { name: 'Heavy Worked Joker', parent: 'Jewellery' },
+      { name: 'Simple Chain', parent: 'Jewellery' },
+      { name: 'Formal Suites', parent: 'Men' },
+
+      // New categories for exclusive products (batch 3: IDs 114-116)
+      { name: 'Frock', parent: 'Girls' }
     ];
 
     for (const cat of defaultCategories) {

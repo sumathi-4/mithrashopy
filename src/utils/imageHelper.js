@@ -7,6 +7,22 @@ import clothingUser2 from '../assets/clothing_user_2.jpg';
 import clothingUser3 from '../assets/clothing_user_3.jpg';
 import clothingUser4 from '../assets/clothing_user_4.jpg';
 import clothingUser5 from '../assets/clothing_user_5.jpg';
+import purpleNotebook from '../assets/purple_notebook.jpg';
+import greenAnarkali from '../assets/green_anarkali.jpg';
+import blueSuit from '../assets/blue_suit.jpg';
+import whiteGown from '../assets/white_gown.jpg';
+import premiumGiftSet from '../assets/premium_gift_set.jpg';
+import kidsFormalSuit from '../assets/kids_formal_suit.jpg';
+import goldAnklets from '../assets/gold_anklets.jpg';
+import diamondRing from '../assets/diamond_ring.jpg';
+import heavyJokerNecklace from '../assets/heavy_joker_necklace.jpg';
+import simpleChainJewellery from '../assets/simple_chain_jewellery.jpg';
+import luxeLeatherNotebook from '../assets/luxe_leather_notebook.jpg';
+import greenAnarkali2 from '../assets/green_anarkali2.jpg';
+import blueFormalSuit2 from '../assets/blue_formal_suit2.jpg';
+import schoolStationeryKit from '../assets/school_stationery_kit.jpg';
+import bridalHairAccessory from '../assets/bridal_hair_accessory.jpg';
+import tealRuffleFrock from '../assets/teal_ruffle_frock.jpg';
 
 // Helper to check if it's a real URL or a local path reference
 export const isRealImg = (img) => {
@@ -23,6 +39,55 @@ export const isRealImg = (img) => {
 export const resolveProductImage = (prod) => {
   if (!prod) return imgClothing;
   const imageVal = prod.image || '';
+  
+  if (imageVal === 'purple_notebook.jpg' || imageVal.includes('purple_notebook')) {
+    return purpleNotebook;
+  }
+  if (imageVal === 'green_anarkali.jpg' || imageVal.includes('green_anarkali') || imageVal.includes('anarkali')) {
+    return greenAnarkali;
+  }
+  if (imageVal === 'blue_suit.jpg' || imageVal.includes('blue_suit')) {
+    return blueSuit;
+  }
+  if (imageVal === 'white_gown.jpg' || imageVal.includes('white_gown')) {
+    return whiteGown;
+  }
+  if (imageVal === 'premium_gift_set.jpg' || imageVal.includes('premium_gift_set')) {
+    return premiumGiftSet;
+  }
+  if (imageVal === 'kids_formal_suit.jpg' || imageVal.includes('kids_formal_suit')) {
+    return kidsFormalSuit;
+  }
+  if (imageVal === 'gold_anklets.jpg' || imageVal.includes('gold_anklets')) {
+    return goldAnklets;
+  }
+  if (imageVal === 'diamond_ring.jpg' || imageVal.includes('diamond_ring')) {
+    return diamondRing;
+  }
+  if (imageVal === 'heavy_joker_necklace.jpg' || imageVal.includes('heavy_joker_necklace')) {
+    return heavyJokerNecklace;
+  }
+  if (imageVal === 'simple_chain_jewellery.jpg' || imageVal.includes('simple_chain_jewellery')) {
+    return simpleChainJewellery;
+  }
+  if (imageVal === 'luxe_leather_notebook.jpg' || imageVal.includes('luxe_leather_notebook')) {
+    return luxeLeatherNotebook;
+  }
+  if (imageVal === 'green_anarkali2.jpg' || imageVal.includes('green_anarkali2')) {
+    return greenAnarkali2;
+  }
+  if (imageVal === 'blue_formal_suit2.jpg' || imageVal.includes('blue_formal_suit2')) {
+    return blueFormalSuit2;
+  }
+  if (imageVal === 'school_stationery_kit.jpg' || imageVal.includes('school_stationery_kit')) {
+    return schoolStationeryKit;
+  }
+  if (imageVal === 'bridal_hair_accessory.jpg' || imageVal.includes('bridal_hair_accessory')) {
+    return bridalHairAccessory;
+  }
+  if (imageVal === 'teal_ruffle_frock.jpg' || imageVal.includes('teal_ruffle_frock')) {
+    return tealRuffleFrock;
+  }
   
   if (isRealImg(imageVal)) {
     return imageVal;
@@ -80,18 +145,18 @@ export const resolveProductGallery = (prod, selectedColor = '') => {
       const galleryImgs = uniqueColors.map(color => {
         // Find first variant for this color that has a valid image
         const match = prod.variants.find(v => v.color?.toLowerCase() === color.toLowerCase() && isRealImg(v.image));
-        if (match) return match.image;
+        if (match) return resolveProductImage({ image: match.image });
         
         // Fallback to first variant matching this color regardless of image validity
         const anyMatch = prod.variants.find(v => v.color?.toLowerCase() === color.toLowerCase());
-        if (anyMatch && isRealImg(anyMatch.image)) return anyMatch.image;
+        if (anyMatch && isRealImg(anyMatch.image)) return resolveProductImage({ image: anyMatch.image });
         
         // Fallback to main product images
         if (prod.images && prod.images.length > 0) {
           const realOnes = prod.images.filter(isRealImg);
-          if (realOnes.length > 0) return realOnes[0];
+          if (realOnes.length > 0) return resolveProductImage({ image: realOnes[0] });
         }
-        if (isRealImg(prod.image)) return prod.image;
+        if (isRealImg(prod.image)) return resolveProductImage({ image: prod.image });
         
         // Ultimate fallback to category default image
         return resolveProductImage(prod);
@@ -113,7 +178,7 @@ export const resolveProductGallery = (prod, selectedColor = '') => {
   }
   
   if (imgs.length > 0) {
-    return imgs;
+    return imgs.map(img => resolveProductImage({ image: img }));
   }
   
   // 3. Fallback static gallery

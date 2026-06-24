@@ -1503,6 +1503,14 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
+
+    if (newProduct.variants && newProduct.variants.length > 0) {
+      const missingImage = newProduct.variants.some(v => !v.image || !v.image.trim());
+      if (missingImage) {
+        alert("Each product variant must have an image uploaded! Please upload an image for all variants.");
+        return;
+      }
+    }
     
     const imagesArray = newProduct.images ? newProduct.images.split(',').map(img => img.trim()).filter(Boolean) : [];
     const mainImg = imagesArray[0] || (newProduct.category.includes('Clothing') ? 'Kids' : 'Accessories');
@@ -1541,6 +1549,14 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const handleEditProductSubmit = async (e) => {
     e.preventDefault();
     if (!editProductItem.name || !editProductItem.price || !editProductItem.stock) return;
+
+    if (editProductItem.variants && editProductItem.variants.length > 0) {
+      const missingImage = editProductItem.variants.some(v => !v.image || !v.image.trim());
+      if (missingImage) {
+        alert("Each product variant must have an image uploaded! Please upload an image for all variants.");
+        return;
+      }
+    }
 
     const imagesArray = typeof editProductItem.images === 'string' 
       ? editProductItem.images.split(',').map(img => img.trim()).filter(Boolean) 

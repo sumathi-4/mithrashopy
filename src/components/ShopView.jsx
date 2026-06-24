@@ -795,7 +795,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [fullDetailProduct, setFullDetailProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [modalSize, setModalSize] = useState('M');
   const [modalColor, setModalColor] = useState('Red');
   const [modalQty, setModalQty] = useState(1);
@@ -986,22 +986,27 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [priceRange, setPriceRange] = useState(15000);
   const [showInStock, setShowInStock] = useState(true);
   const [showOutOfStock, setShowOutOfStock] = useState(true);
-  const [selectedRating, setSelectedRating] = useState(null);
+  const [selectedRatings, setSelectedRatings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter Collapse/Expand States (defaulting to false/closed to match Image 2)
+  // Filter Collapse/Expand States (Category and Gender/Shop For default to true, others false)
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
   const [isPriceOpen, setIsPriceOpen] = useState(false);
   const [isSizeOpen, setIsSizeOpen] = useState(false);
   const [isColorsOpen, setIsColorsOpen] = useState(false);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
-  const [isGenderOpen, setIsGenderOpen] = useState(false);
+  const [isGenderOpen, setIsGenderOpen] = useState(true);
 
-  // Redesigned Sidebar Additional Filter States
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
+  // Redesigned Sidebar Additional Filter States (Multi-select)
+  const [selectedSubcategories, setSelectedSubcategories] = useState([]);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [selectedShopFor, setSelectedShopFor] = useState([]);
+  const [selectedSizes, setSelectedSizes] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [selectedDiscounts, setSelectedDiscounts] = useState([]);
   const [filterNewArrivals, setFilterNewArrivals] = useState(false);
   const [filterBestSellers, setFilterBestSellers] = useState(false);
   const [filterOffers, setFilterOffers] = useState(false);
@@ -1017,89 +1022,127 @@ export default function ShopView({ authUser, setAuthUser }) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRating, selectedSize, selectedColor, filterNewArrivals, filterBestSellers, filterOffers]);
+  }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRatings, selectedSubcategories, selectedShopFor, selectedSizes, selectedColors, selectedDiscounts, filterNewArrivals, filterBestSellers, filterOffers]);
+
+  const getCategoriesToShow = () => {
+    let list = [];
+    if (categoriesList && categoriesList.length > 0) {
+      const namesSet = new Set();
+      categoriesList.forEach(cat => {
+        if (cat.name && cat.name !== '—' && cat.showInFilters !== false) {
+          const nameUpper = cat.name.toUpperCase().trim();
+          const parentUpper = cat.parent ? cat.parent.toUpperCase().trim() : '';
+          const mainGroups = ['CLOTHING', 'STATIONERY', 'GIFTS', 'ACCESSORIES', 'FANCY'];
+          
+          let include = false;
+          if (activeTab === 'ALL') {
+            if (parentUpper && parentUpper !== '—') {
+              include = true;
+            } else if (!mainGroups.includes(nameUpper)) {
+              include = true;
+            }
+          } else {
+            if (parentUpper === activeTab) {
+              include = true;
+            } else if (activeTab === 'ACCESSORIES') {
+              if (parentUpper === 'ACCESSORIES' || parentUpper === 'FANCY' || parentUpper === 'ACCESSORIES & FANCY' || parentUpper === 'ACCESSORIES AND FANCY') {
+                include = true;
+              }
+            }
+            
+            if (!include && parentUpper) {
+              const parentCat = categoriesList.find(c => c.name.toUpperCase().trim() === parentUpper);
+              if (parentCat && parentCat.parent) {
+                const grandParentUpper = parentCat.parent.toUpperCase().trim();
+                if (grandParentUpper === activeTab || (activeTab === 'ACCESSORIES' && (grandParentUpper === 'ACCESSORIES' || grandParentUpper === 'FANCY'))) {
+                  include = true;
+                }
+              }
+            }
+          }
+          
+          if (include) {
+            namesSet.add(cat.name.trim());
+          }
+        }
+      });
+      list = Array.from(namesSet);
+    }
+    
+    if (list.length === 0) {
+      const fallbacks = {
+        CLOTHING: ['Girls', 'Boys', 'Kids', 'Women', 'Men'],
+        STATIONERY: ['Pens', 'Journals', 'Notebooks', 'School'],
+        GIFTS: ['Birthday', 'Wedding', 'Anniversary', 'Return Gifts'],
+        ACCESSORIES: ['Jewellery', 'Hair Accessories', 'Fancy Bags', 'Fashion Accessories']
+      };
+      
+      if (activeTab === 'ALL') {
+        list = Object.values(fallbacks).flat();
+      } else {
+        list = fallbacks[activeTab] || [];
+      }
+    }
+    
+    return list.sort((a, b) => a.localeCompare(b));
+  };
 
   const renderDynamicCategoriesFilter = () => {
-    const unifiedStructure = getUnifiedCategories();
-
-    const renderNode = (node, groupKey, depth = 0) => {
-      const hasChildren = node.children && node.children.length > 0;
-      const isExpanded = expandedSubcategories[node.key];
-      const indent = depth * 12;
-
-      return (
-        <li key={node.key} style={{ listStyle: 'none', margin: '4px 0', padding: '0', display: 'flex', flexDirection: 'column' }}>
-          <div 
-            className={`category-sub-item-header-wrapper ${activeTab === groupKey && activeSubTab === node.dbName.toUpperCase() ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab(groupKey);
-              setActiveSubTab(node.dbName.toUpperCase());
-              if (hasChildren) {
-                toggleSubcategoryExpand(node.key);
-              }
-            }}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              cursor: 'pointer', 
-              padding: '6px 12px', 
-              paddingLeft: `${12 + indent}px`, 
-              borderRadius: '6px', 
-              transition: 'all 0.2s' 
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {depth === 0 ? (
-                <span className="subcategory-bullet" style={{ backgroundColor: getGroupColor(groupKey) }}></span>
-              ) : (
-                <span style={{ 
-                  width: '4px', 
-                  height: '4px', 
-                  backgroundColor: getGroupColor(groupKey), 
-                  borderRadius: '50%', 
-                  display: 'inline-block',
-                  marginRight: '2px',
-                  flexShrink: 0
-                }}></span>
-              )}
-              <span className="sub-label" style={{ color: activeTab === groupKey && activeSubTab === node.dbName.toUpperCase() ? getGroupColor(groupKey) : '' }}>{node.label}</span>
-              {hasChildren && (
-                <span style={{ 
-                  fontSize: '8px', 
-                  display: 'inline-block', 
-                  transition: 'transform 0.2s', 
-                  transform: isExpanded ? 'rotate(90deg)' : 'none', 
-                  color: getGroupColor(groupKey) 
-                }}>
-                  ▶
-                </span>
-              )}
-            </div>
-            <span className="sub-count">({getCategorySubCount(groupKey, node.dbName.toUpperCase())})</span>
-          </div>
-          {hasChildren && isExpanded && (
-            <ul className="category-sub-sub-list" style={{ padding: '0', margin: '0', listStyle: 'none', display: 'flex', flexDirection: 'column' }}>
-              {node.children.map(child => renderNode(child, groupKey, depth + 1))}
-            </ul>
-          )}
-        </li>
-      );
-    };
-
+    const allCategories = getCategoriesToShow();
+    const filtered = allCategories.filter(cat => 
+      cat.toLowerCase().includes(categorySearchQuery.toLowerCase())
+    );
+    const displayed = showAllCategories ? filtered : filtered.slice(0, 8);
+    
     return (
-      <>
-        {unifiedStructure.map(group => (
-          <div key={group.key} className={`category-group ${group.key.toLowerCase()}-group`}>
-            <h4 className={`category-group-title ${activeTab === group.key ? 'active' : ''}`} onClick={() => { setActiveTab(group.key); setActiveSubTab('ALL'); }}>
-              <span>{group.icon || <Shirt size={14} />} {group.name.toUpperCase()}</span>
-            </h4>
-            <ul className="category-sub-list" style={{ listStyle: 'none', padding: '0', margin: '0' }}>
-              {group.subcategories.map(sub => renderNode(sub, group.key, 0))}
-            </ul>
-          </div>
-        ))}
-      </>
+      <div className="flat-category-checklist-container">
+        <input 
+          type="text"
+          className="category-list-search"
+          placeholder="Search categories..."
+          value={categorySearchQuery}
+          onChange={(e) => setCategorySearchQuery(e.target.value)}
+        />
+        
+        <div className="filter-category-list-m3">
+          {displayed.length > 0 ? (
+            displayed.map(catName => {
+              const catUpper = catName.toUpperCase();
+              const isChecked = selectedSubcategories.includes(catUpper);
+              return (
+                <label key={catName} className="checkbox-filter-row">
+                  <input 
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      if (isChecked) {
+                        setSelectedSubcategories(selectedSubcategories.filter(s => s !== catUpper));
+                      } else {
+                        setSelectedSubcategories([...selectedSubcategories, catUpper]);
+                      }
+                    }}
+                  />
+                  <span>{catName}</span>
+                </label>
+              );
+            })
+          ) : (
+            <div style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic', padding: '4px 0' }}>
+              No categories found
+            </div>
+          )}
+        </div>
+        
+        {filtered.length > 8 && (
+          <button 
+            type="button"
+            className="show-more-toggle-btn"
+            onClick={() => setShowAllCategories(!showAllCategories)}
+          >
+            {showAllCategories ? 'Show Less ▴' : 'Show More ▾'}
+          </button>
+        )}
+      </div>
     );
   };
 
@@ -1241,14 +1284,20 @@ export default function ShopView({ authUser, setAuthUser }) {
     setPriceRange(15000);
     setShowInStock(true);
     setShowOutOfStock(true);
-    setSelectedRating(null);
-    setSelectedSize(null);
-    setSelectedColor(null);
+    setSelectedRatings([]);
+    setSelectedSizes([]);
+    setSelectedColors([]);
+    setSelectedSubcategories([]);
+    setSelectedShopFor([]);
+    setSelectedDiscounts([]);
     setFilterNewArrivals(false);
     setFilterBestSellers(false);
     setFilterOffers(false);
     setActiveTab('ALL');
     setActiveSubTab('ALL');
+    setSearchQuery('');
+    setCategorySearchQuery('');
+    setShowAllCategories(false);
   };
 
   // Reset active selectors when product selection changes
@@ -1524,6 +1573,28 @@ export default function ShopView({ authUser, setAuthUser }) {
           };
         });
         setAllProducts(mapped);
+        
+        const autoOpenId = sessionStorage.getItem('auto_open_product_id');
+        if (autoOpenId) {
+          sessionStorage.removeItem('auto_open_product_id');
+          const found = mapped.find(p => String(p.id) === String(autoOpenId));
+          if (found) {
+            setFullDetailProduct(found);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+        
+        const autoQuickViewId = sessionStorage.getItem('auto_quickview_product_id');
+        if (autoQuickViewId) {
+          sessionStorage.removeItem('auto_quickview_product_id');
+          const found = mapped.find(p => String(p.id) === String(autoQuickViewId));
+          if (found) {
+            setActiveImageIndex(0);
+            setModalColor('');
+            setModalSize('M');
+            setQuickViewProduct(found);
+          }
+        }
       }
     });
   }, []);
@@ -1542,6 +1613,36 @@ export default function ShopView({ authUser, setAuthUser }) {
     return (val.length % 7 !== 0);
   };
 
+  const getProductDiscount = (p) => {
+    if (p.discount) {
+      const dVal = parseFloat(String(p.discount).replace(/[^0-9.]/g, ''));
+      if (!isNaN(dVal)) return dVal;
+    }
+    const price = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+    const originalPrice = p.originalPrice ? (typeof p.originalPrice === 'number' ? p.originalPrice : parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) || 0) : 0;
+    if (originalPrice > price) {
+      return Math.round(((originalPrice - price) / originalPrice) * 100);
+    }
+    return 0;
+  };
+
+  const getProductGender = (p) => {
+    const title = (p.title || p.name || '').toLowerCase();
+    const cat = String(p.category || '').toLowerCase();
+    const sub = String(p.subCategory || '').toLowerCase();
+    
+    if (title.includes('women') || title.includes('girl') || title.includes('lady') || title.includes('ladies') || title.includes('saree') || title.includes('kurti') || title.includes('lehenga') || title.includes('frock') || title.includes('anarkali') || cat.includes('women') || cat.includes('girl')) {
+      return 'Women';
+    }
+    if (title.includes('men') || title.includes('boy') || title.includes('gent') || title.includes('gents') || title.includes('dhoti') || title.includes('kurta') || title.includes('shirt') || cat.includes('men') || cat.includes('boy')) {
+      return 'Men';
+    }
+    if (title.includes('kids') || title.includes('child') || title.includes('baby') || cat.includes('kids') || cat.includes('child')) {
+      return 'Kids';
+    }
+    return 'Other';
+  };
+
   // Helper to get catalogue assignment
   const getProductCatalogue = (p) => {
     if (p.catalogue) {
@@ -1551,87 +1652,21 @@ export default function ShopView({ authUser, setAuthUser }) {
     return 'A';
   };
 
-  // Filtering products
-  let filteredProducts = activeTab === 'ALL'
-    ? allProducts
-    : allProducts.filter(p => {
-        const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
-        return rootCat === activeTab.toUpperCase();
-      });
-
-  // Gender/Audience/Subcategory filter
-  if (activeSubTab !== 'ALL') {
-    const allowedKeys = getAllSubcategoryKeysUnder(activeSubTab);
-    filteredProducts = filteredProducts.filter(p => {
-      const productSubs = getProductSubCategories(p);
-      return productSubs.some(sub => allowedKeys.includes(sub));
-    });
-  }
-
-  // Catalogue filter
-  filteredProducts = filteredProducts.filter(p => getProductCatalogue(p) === catalogue);
-
-  // Search filter
-  if (searchQuery.trim() !== '') {
-    filteredProducts = filteredProducts.filter(p => 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.subCategory && p.subCategory.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }
-
-  // Price filter
-  if (priceRange < 15000) {
-    filteredProducts = filteredProducts.filter(p => p.price <= priceRange);
-  }
-
-  // Availability filter
-  filteredProducts = filteredProducts.filter(p => {
-    const inStock = isProductInStock(p);
-    if (showInStock && showOutOfStock) return true;
-    if (showInStock) return inStock;
-    if (showOutOfStock) return !inStock;
-    return false;
+  // Filtering products to ONLY show exclusive products (IDs 104-116)
+  let filteredProducts = allProducts.filter(p => {
+    const pid = Number(p.id);
+    const isExclusive = pid === 104 || pid === 105 || pid === 106 || pid === 107 || pid === 108 ||
+                        pid === 109 || pid === 110 || pid === 111 || pid === 112 || pid === 113 ||
+                        pid === 114 || pid === 115 || pid === 116;
+    if (!isExclusive) return false;
+    
+    if (activeTab === 'ALL') return true;
+    const pCat = String(p.category || '').toUpperCase();
+    if (activeTab === 'ACCESSORIES') {
+      return pCat === 'ACCESSORIES' || pCat === 'FANCY';
+    }
+    return pCat === activeTab;
   });
-
-  // Rating filter
-  if (selectedRating !== null) {
-    filteredProducts = filteredProducts.filter(p => p.rating === selectedRating);
-  }
-
-  // Size filter
-  if (selectedSize) {
-    filteredProducts = filteredProducts.filter(p => getProductSizes(p).includes(selectedSize));
-  }
-
-  // Color filter
-  if (selectedColor) {
-    filteredProducts = filteredProducts.filter(p => getProductColors(p).includes(selectedColor));
-  }
-
-  // New Arrivals filter
-  if (filterNewArrivals) {
-    filteredProducts = filteredProducts.filter(p => p.badge === 'NEW' || p.badge === 'NEW ARRIVAL' || p.id.startsWith('n'));
-  }
-
-  // Best Sellers filter
-  if (filterBestSellers) {
-    filteredProducts = filteredProducts.filter(p => p.badge === 'BEST SELLER' || p.id.startsWith('t'));
-  }
-
-  // Offers filter
-  if (filterOffers) {
-    filteredProducts = filteredProducts.filter(p => p.badge === 'OFFER' || p.badge === 'SALE' || p.price < 1000);
-  }
-
-  // Sorting products
-  if (sortBy === 'PRICE_LOW_HIGH') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sortBy === 'PRICE_HIGH_LOW') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sortBy === 'RATING') {
-    filteredProducts.sort((a, b) => b.rating - a.rating);
-  }
 
   /*
   const renderStars = (rating) => {
@@ -1731,7 +1766,7 @@ export default function ShopView({ authUser, setAuthUser }) {
 
   const getRatingCount = (r) => allProducts.filter(p => p.rating === r).length;
 
-  const productsPerPage = 12;
+  const productsPerPage = 24;
   const totalProductsCount = filteredProducts.length;
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -2499,423 +2534,20 @@ export default function ShopView({ authUser, setAuthUser }) {
   };
 
   return (
-    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : activeTab === 'CLOTHING' ? 'clothing-wine-theme' : activeTab === 'STATIONERY' ? 'stationery-lavender-theme' : ''}`}>
+    <div className="shop-view-page">
       
-      {/* Premium Shop Header Banner */}
-
-
-      {/* Accessories Luxury Trust Bar / Gifts Trust Bar / Stationery Trust Bar */}
-      {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS' || activeTab === 'STATIONERY') && (
-        <div className="accessories-trust-bar">
-          <div className="accessories-trust-item">
-            <span className="accessories-trust-icon"><Award size={20} /></span>
-            <div className="accessories-trust-text">
-              <span className="accessories-trust-title">Premium Quality</span>
-              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? 'Finest Materials' : 'Finest products'}</span>
-            </div>
-          </div>
-          <div className="accessories-trust-item">
-            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <Sparkles size={20} /> : <Shield size={20} />}</span>
-            <div className="accessories-trust-text">
-              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Trendy Designs' : 'Secure & Safe'}</span>
-              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? 'For Every Style' : 'Protected payments'}</span>
-            </div>
-          </div>
-          <div className="accessories-trust-item">
-            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <RotateCcw size={20} /> : <Globe size={20} />}</span>
-            <div className="accessories-trust-text">
-              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Easy Returns' : 'World Wide Shipping'}</span>
-              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? '30 Days Policy' : 'Fast delivery'}</span>
-            </div>
-          </div>
-          <div className="accessories-trust-item">
-            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <Shield size={20} /> : <Crown size={20} />}</span>
-            <div className="accessories-trust-text">
-              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Secure Payments' : 'Exclusive Collection'}</span>
-              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? '100% Safe Checkout' : 'Limited Edition'}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="shop-content-container">
         
-        {/* Top Circular Category Navigation Tabs */}
-        <div className="shop-category-circles-wrapper">
-          {getCategoryCirclesData().map((item) => (
-            <div 
-              key={item.key} 
-              data-category={item.key}
-              className={`shop-category-circle-card ${
-                item.isSub 
-                  ? (activeSubTab === item.dbName.toUpperCase() ? 'active' : '') 
-                  : (activeTab === item.key ? 'active' : '')
-              }`}
-              onClick={() => {
-                if (item.isSub) {
-                  setActiveSubTab(item.dbName.toUpperCase());
-                  const newUrl = `/Shop?category=${activeTab.toLowerCase()}&subCategory=${item.dbName.toLowerCase()}`;
-                  window.history.pushState({}, '', newUrl);
-                } else {
-                  setActiveTab(item.key);
-                  setActiveSubTab('ALL');
-                  const newUrl = `/Shop?category=${item.key.toLowerCase()}`;
-                  window.history.pushState({}, '', newUrl);
-                }
-              }}
-            >
-              <div className="shop-category-circle-img-container">
-                <img src={item.img} className="shop-category-circle-img" alt={item.label} />
-              </div>
-              <span className="shop-category-circle-name">{item.label}</span>
-              <span className="shop-category-circle-count">{item.count}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Two Column Layout: Left Sidebar + Right Products */}
-        <div className={`shop-main-layout ${!showSidebar ? 'filters-hidden' : ''}`}>
+        {/* Full-width layout (Filters Hidden state) */}
+        <div className="shop-main-layout filters-hidden" style={{ gridTemplateColumns: '1fr', gap: '0' }}>
           
-          {/* Left Sidebar Filters */}
-          <aside className={`shop-sidebar-filters ${showSidebar ? 'active-sidebar' : 'inactive-sidebar'}`}>
-            
-            {/* Redesigned Sidebar Header (Matches Image 2) */}
-            <div className="sidebar-header-row">
-              <button className="sidebar-close-x-btn" onClick={() => setShowSidebar(false)}>
-                <X size={18} />
-              </button>
-              <h2 className="sidebar-title-text">Filters</h2>
-              <button className="sidebar-close-x-btn" onClick={() => setShowSidebar(false)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Clear All Row (Matches Image 2) */}
-            <div className="sidebar-clear-all-row">
-              <button className="clear-all-btn-left" onClick={handleClearAllFilters}>Clear All</button>
-              <button className="clear-all-btn-right" onClick={handleClearAllFilters}>Clear All</button>
-            </div>
-
-            {/* Unified Filters Card */}
-            <div className="unified-filters-card">
-              
-              {/* 1. Select Catalogue Accordion */}
-              <div className="filter-card-section catalogue-section">
-                <div className="section-title-row" onClick={() => setIsCatalogueOpen(!isCatalogueOpen)}>
-                  <h3 className="section-title-text">Select Catalogue</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isCatalogueOpen ? 'rotated' : ''}`} />
-                </div>
-                {isCatalogueOpen && (
-                  <div className="section-content">
-                    <div className="shop-catalogue-toggle">
-                      <button 
-                        className={`catalogue-btn ${catalogue === 'A' ? 'active' : ''}`}
-                        onClick={() => setCatalogue('A')}
-                      >
-                        Catalogue A
-                      </button>
-                      <button 
-                        className={`catalogue-btn ${catalogue === 'B' ? 'active' : ''}`}
-                        onClick={() => setCatalogue('B')}
-                      >
-                        Catalogue B
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 2. Categories Accordion */}
-              <div className="filter-card-section categories-section">
-                <div className="section-title-row" onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}>
-                  <h3 className="section-title-text">Categories</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isCategoriesOpen ? 'rotated' : ''}`} />
-                </div>
-                {isCategoriesOpen && (
-                  <div className="section-content">
-                    {renderDynamicCategoriesFilter()}
-                  </div>
-                )}
-              </div>
-
-              {/* 3. Price Range Accordion */}
-              <div className="filter-card-section price-section">
-                <div className="section-title-row" onClick={() => setIsPriceOpen(!isPriceOpen)}>
-                  <h3 className="section-title-text">Price Range</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isPriceOpen ? 'rotated' : ''}`} />
-                </div>
-                {isPriceOpen && (
-                  <div className="section-content price-slider-container">
-                    <input 
-                      type="range" 
-                      min="199" 
-                      max="15000" 
-                      step="100"
-                      value={priceRange} 
-                      onChange={(e) => setPriceRange(Number(e.target.value))}
-                      className="pink-price-slider"
-                    />
-                    <div className="price-labels-row">
-                      <span>₹199</span>
-                      <span>₹{priceRange.toLocaleString()}{priceRange >= 15000 ? '+' : ''}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Size Accordion */}
-              <div className="filter-card-section size-section">
-                <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
-                  <h3 className="section-title-text">Size</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
-                </div>
-                {isSizeOpen && (
-                  <div className="section-content size-buttons-grid">
-                    {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => (
-                      <button 
-                        key={size} 
-                        className={`size-btn ${selectedSize === size ? 'active' : ''}`}
-                        onClick={() => setSelectedSize(selectedSize === size ? null : size)}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Colors Accordion */}
-              <div className="filter-card-section color-section">
-                <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
-                  <h3 className="section-title-text">Colors</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
-                </div>
-                {isColorsOpen && (
-                  <div className="section-content color-circles-list">
-                    {(showMoreColors
-                      ? [
-                          { name: 'Pink', value: '#E94FA8' },
-                          { name: 'Red', value: '#FF0000' },
-                          { name: 'Yellow', value: '#FFCC00' },
-                          { name: 'Green', value: '#00CC66' },
-                          { name: 'Purple', value: '#8A2BE2' },
-                          { name: 'Black', value: '#000000' },
-                          { name: 'DarkRed', value: '#A30000' },
-                          { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                          { name: 'Blue', value: '#4A90E2' },
-                          { name: 'Orange', value: '#FF8000' },
-                          { name: 'Grey', value: '#888888' },
-                          { name: 'Brown', value: '#8B4513' },
-                          { name: 'Lavender', value: '#E6E6FA' },
-                          { name: 'Navy', value: '#000080' },
-                          { name: 'Gold', value: '#FFD700' },
-                          { name: 'Silver', value: '#C0C0C0' },
-                          { name: 'Peach', value: '#FFDAB9' }
-                        ]
-                      : [
-                          { name: 'Pink', value: '#E94FA8' },
-                          { name: 'Red', value: '#FF0000' },
-                          { name: 'Yellow', value: '#FFCC00' },
-                          { name: 'Green', value: '#00CC66' },
-                          { name: 'Purple', value: '#8A2BE2' },
-                          { name: 'Black', value: '#000000' },
-                          { name: 'DarkRed', value: '#A30000' },
-                          { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                          { name: 'Blue', value: '#4A90E2' }
-                        ]
-                    ).map(color => (
-                      <button 
-                        key={color.name}
-                        className={`color-bubble ${selectedColor === color.name ? 'active' : ''}`}
-                        style={{ backgroundColor: color.value, border: color.border || 'none' }}
-                        onClick={() => setSelectedColor(selectedColor === color.name ? null : color.name)}
-                        title={color.name}
-                      />
-                    ))}
-                    <div className="more-colors-btn" onClick={(e) => { e.stopPropagation(); setShowMoreColors(!showMoreColors); }}>
-                      <div className="gradient-color-bubble">
-                        <div className="mixer-icon"></div>
-                      </div>
-                      <span className="more-text">{showMoreColors ? 'Less' : '→ More'}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 6. Availability Accordion */}
-              <div className="filter-card-section availability-accordion">
-                <div className="section-title-row" onClick={() => setIsAvailabilityOpen(!isAvailabilityOpen)}>
-                  <h3 className="section-title-text">Availability</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isAvailabilityOpen ? 'rotated' : ''}`} />
-                </div>
-                {isAvailabilityOpen && (
-                  <div className="section-content">
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox" 
-                        checked={showInStock} 
-                        onChange={(e) => setShowInStock(e.target.checked)} 
-                      />
-                      <span>In Stock</span>
-                    </label>
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox" 
-                        checked={showOutOfStock} 
-                        onChange={(e) => setShowOutOfStock(e.target.checked)} 
-                      />
-                      <span>Out of Stock</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* 7. Rating Accordion */}
-              <div className="filter-card-section rating-accordion">
-                <div className="section-title-row" onClick={() => setIsRatingsOpen(!isRatingsOpen)}>
-                  <h3 className="section-title-text">Rating</h3>
-                  <div className="accordion-right-info">
-                    {selectedRating ? `${selectedRating} ★ & Up` : '⭐⭐⭐⭐⭐ & Up'}
-                    <ChevronDown size={14} className={`section-chevron ${isRatingsOpen ? 'rotated' : ''}`} />
-                  </div>
-                </div>
-                {isRatingsOpen && (
-                  <div className="section-content">
-                    <ul className="rating-selector-list">
-                      {[5, 4, 3, 2, 1].map(stars => (
-                        <li 
-                          key={stars} 
-                          className={`rating-item ${selectedRating === stars ? 'active' : ''}`}
-                          onClick={() => setSelectedRating(selectedRating === stars ? null : stars)}
-                        >
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <Star 
-                              key={i} 
-                              size={14} 
-                              fill={i < stars ? "#FFCC00" : "none"} 
-                              stroke={i < stars ? "#FFCC00" : "#ccc"} 
-                              style={{ marginRight: '2px' }}
-                            />
-                          ))}
-                          <span className="rating-label-text"> & Up</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* 8. New Arrivals Accordion */}
-              <div className="filter-card-section new-arrivals-accordion">
-                <div className="section-title-row" onClick={() => setIsNewArrivalsOpen(!isNewArrivalsOpen)}>
-                  <h3 className="section-title-text">New Arrivals</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isNewArrivalsOpen ? 'rotated' : ''}`} />
-                </div>
-                {isNewArrivalsOpen && (
-                  <div className="section-content">
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox" 
-                        checked={filterNewArrivals} 
-                        onChange={(e) => setFilterNewArrivals(e.target.checked)} 
-                      />
-                      <span>Show New Arrivals</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* 9. Best Sellers Accordion */}
-              <div className="filter-card-section best-sellers-accordion">
-                <div className="section-title-row" onClick={() => setIsBestSellersOpen(!isBestSellersOpen)}>
-                  <h3 className="section-title-text">Best Sellers</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isBestSellersOpen ? 'rotated' : ''}`} />
-                </div>
-                {isBestSellersOpen && (
-                  <div className="section-content">
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox" 
-                        checked={filterBestSellers} 
-                        onChange={(e) => setFilterBestSellers(e.target.checked)} 
-                      />
-                      <span>Show Best Sellers</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* 10. Offers & Discounts Accordion */}
-              <div className="filter-card-section offers-accordion">
-                <div className="section-title-row" onClick={() => setIsOffersOpen(!isOffersOpen)}>
-                  <h3 className="section-title-text">Offers & Discounts</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isOffersOpen ? 'rotated' : ''}`} />
-                </div>
-                {isOffersOpen && (
-                  <div className="section-content">
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox" 
-                        checked={filterOffers} 
-                        onChange={(e) => setFilterOffers(e.target.checked)} 
-                      />
-                      <span>Show Active Offers</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Apply Filters Button (Matches Image 2) */}
-              <button className="apply-filters-footer-btn" onClick={() => setShowSidebar(false)}>
-                Apply Filters
-              </button>
-
-            </div>
-          </aside>
-
-          {/* Right Product List Column */}
+          {/* Product List Column */}
           <div className="shop-products-column">
             
-            {/* Header controls (Showing results count + Sort box + Search Box) */}
-            <div className="shop-products-header">
-              <div className="shop-results-count" style={{ display: 'flex', alignItems: 'center' }}>
-                <button 
-                  className={`shop-filters-toggle-btn ${showSidebar ? 'active' : ''}`}
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  <Menu size={16} className="menu-icon" />
-                  <span className="filters-text">FILTERS</span>
-                  <X size={16} className="close-x-icon" />
-                </button>
-                <span className="results-count-text">
-                  Showing {totalProductsCount > 0 ? indexOfFirstProduct + 1 : 0}–{Math.min(indexOfLastProduct, totalProductsCount)} of {totalProductsCount} results
-                </span>
-              </div>
-              
-              <div className="shop-header-actions">
-                <div className="shop-search-box">
-                  <Search size={16} className="search-icon" />
-                  <input 
-                    type="text" 
-                    placeholder="Search products..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="shop-search-input"
-                  />
-                </div>
-
-                <div className="shop-sort-box">
-                  <select 
-                    value={sortBy} 
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="shop-sort-select"
-                  >
-                    <option value="DEFAULT">Sort by: Newest</option>
-                    <option value="PRICE_LOW_HIGH">Price: Low to High</option>
-                    <option value="PRICE_HIGH_LOW">Price: High to Low</option>
-                    <option value="RATING">Rating: High to Low</option>
-                  </select>
-                </div>
+            {/* Header controls simplified to centered title */}
+            <div className="shop-products-header premium-sort-bar-m2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div className="showing-products-count" style={{ fontSize: '1.6rem', fontWeight: '700', letterSpacing: '0.5px' }}>
+                EXCLUSIVE PRODUCTS
               </div>
             </div>
 
