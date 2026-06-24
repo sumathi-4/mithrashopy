@@ -15,7 +15,6 @@ import OffersView from './components/OffersView';
 import NewArrivalsView from './components/NewArrivalsView';
 import CelebrityView from './components/CelebrityView';
 import WhyChooseUs from './components/WhyChooseUs';
-import AboutPreview from './components/AboutPreview';
 import AdminDashboard from './components/AdminDashboard';
 import UserAccount from './components/UserAccount';
 import { ToastProvider } from './components/ToastProvider';
@@ -55,10 +54,6 @@ function App() {
         setCurrentView('account');
       } else if (path.includes('/shop')) {
         setCurrentView('shop');
-      } else if (path.includes('/contact')) {
-        setCurrentView('contact');
-      } else if (path.includes('/about')) {
-        setCurrentView('about');
       } else if (path.includes('/offers')) {
         setCurrentView('offers');
       } else if (path.includes('/newarrivals') || path.includes('/new-arrivals')) {
@@ -123,12 +118,9 @@ function App() {
           <PremiumCollection />
           <GiftsByOccasion />
           <WhyChooseUs />
-          <AboutPreview />
         </>
       )}
       {currentView === 'shop' && <ShopView authUser={authUser} setAuthUser={setAuthUser} />}
-      {currentView === 'contact' && <ContactView />}
-      {currentView === 'about' && <AboutView />}
       {currentView === 'offers' && <OffersView />}
       {currentView === 'new-arrivals' && <NewArrivalsView />}
       {currentView === 'celebrity' && <CelebrityView />}

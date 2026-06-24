@@ -1,197 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
-import imgClothing from '../assets/hero_clothing.jpg';
-import imgStationery from '../assets/hero_stationery.jpg';
-import imgGifts from '../assets/hero_gifts.jpg';
-import imgAccessories from '../assets/hero_accessories.jpg';
-
-const SLIDE_INTERVAL = 3000;
+import React from 'react';
+import heroBanner from '../assets/hero_main_banner.jpg';
 
 export default function Hero() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const defaultSlides = [
-    {
-      id: 1,
-      category: "Clothing",
-      title: "Fashion For Every Generation",
-      subtitle: "Traditional, Modern & Trendy Collections For Men, Women & Kids",
-      cta: "Shop Clothing",
-      image: imgClothing,
-      themeColor: "Elegant Red",
-      alt: "Fashion For Every Generation"
-    },
-    {
-      id: 2,
-      category: "Stationery",
-      title: "Create, Learn & Inspire",
-      subtitle: "Premium Notebooks, Journals, Pens & Creative Essentials",
-      cta: "Explore Stationery",
-      image: imgStationery,
-      themeColor: "Sky Blue",
-      alt: "Create, Learn & Inspire"
-    },
-    {
-      id: 3,
-      category: "Gifts",
-      title: "Gifts That Create Memories",
-      subtitle: "Birthday, Wedding, Anniversary & Return Gifts",
-      cta: "Shop Gifts",
-      image: imgGifts,
-      themeColor: "Soft Pink",
-      alt: "Gifts That Create Memories"
-    },
-    {
-      id: 4,
-      category: "Accessories & Fancy",
-      title: "Complete Your Style",
-      subtitle: "Jewelry, Fancy Items & Everyday Accessories",
-      cta: "Explore Accessories",
-      image: imgAccessories,
-      themeColor: "Brown + Gold",
-      alt: "Complete Your Style"
-    }
-  ];
-
-  const [slides, setSlides] = useState(defaultSlides);
-
-  // Load active banners from backend
-  useEffect(() => {
-    apiService.getBanners().then(data => {
-      if (data && data.length > 0) {
-        const active = data.filter(b => b.status === 'Active');
-        if (active.length > 0) {
-          const mapped = active.map(b => {
-            const imgVal = String(b.image || '').toLowerCase();
-
-            // Determine whether b.image is a real URL / file path or a keyword slug.
-            // A "real" image reference starts with http(s) or '/', or contains a
-            // known image file extension anywhere in the string.
-            const isRealImage =
-              imgVal.startsWith('http') ||
-              imgVal.startsWith('/') ||
-              /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?|$)/.test(imgVal);
-
-            let img;
-            let theme;
-
-            if (isRealImage) {
-              // Use the real URL/path directly – no override with static imports.
-              img = b.image;
-
-              // Derive a theme from the slot or image path so the text card
-              // still gets a sensible colour, falling back to the default.
-              const slotVal = String(b.slot || '').toLowerCase();
-              if (slotVal.includes('stationery') || imgVal.includes('stationery')) {
-                theme = "Sky Blue";
-              } else if (slotVal.includes('gift') || imgVal.includes('gift')) {
-                theme = "Soft Pink";
-              } else if (
-                slotVal.includes('accessories') || slotVal.includes('fancy') ||
-                imgVal.includes('accessories') || imgVal.includes('fancy')
-              ) {
-                theme = "Brown + Gold";
-              } else {
-                theme = "Elegant Red";
-              }
-            } else {
-              // Keyword / slug fallback – map to static category images.
-              if (imgVal.includes('stationery')) {
-                img = imgStationery;
-                theme = "Sky Blue";
-              } else if (imgVal.includes('gift')) {
-                img = imgGifts;
-                theme = "Soft Pink";
-              } else if (imgVal.includes('accessories') || imgVal.includes('fancy')) {
-                img = imgAccessories;
-                theme = "Brown + Gold";
-              } else {
-                // Default: clothing / anything else
-                img = imgClothing;
-                theme = "Elegant Red";
-              }
-            }
-
-            return {
-              id: b.id,
-              category: b.slot || "Promotion",
-              title: b.title,
-              subtitle: "Exclusive curated collection live on MithraShoppy",
-              cta: "Shop Collection",
-              image: img,
-              themeColor: theme,
-              alt: b.title
-            };
-          });
-          setSlides(mapped);
-        }
-      }
-    }).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, SLIDE_INTERVAL);
-
-    return () => clearInterval(timer);
-  }, [slides.length]);
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new Event('popstate'));
+  };
 
   return (
     <section id="home" className="hero-container full-width-hero">
-      {/* Background Auto-Slider (Spans full width) */}
-      <div className="hero-slider-wrapper">
-        {slides.map((slide, index) => (
-          <div
-            key={slide.id}
-            className={`slide ${index === currentSlide ? 'active' : ''}`}
-          >
-            <img
-              src={slide.image}
-              alt={slide.alt}
-              className="hero-image"
-            />
-            <div className="slide-overlay"></div>
-          </div>
-        ))}
-
-        {/* Slide Indicator Controls */}
-        <div className="slider-dots">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              className={`dot ${index === currentSlide ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-            ></button>
-          ))}
-        </div>
+      {/* ── Full-width background image ── */}
+      <div className="hero-bg-wrap">
+        <img
+          src={heroBanner}
+          alt="MithraShoppy – Fashion, Gifts & Accessories"
+          className="hero-bg-img"
+        />
+        {/* Left-side fade so text stays readable */}
+        <div className="hero-bg-overlay" />
       </div>
 
-      {/* Foreground Content Card (Left-aligned overlay) */}
+      {/* ── Left tagline content ── */}
       <div className="hero-content">
-        <div key={currentSlide} className="hero-text-card">
-          <span className="hero-tag">{slides[currentSlide].category}</span>
-          <h2 className="hero-title">{slides[currentSlide].title}</h2>
-          <p className="hero-subtitle">{slides[currentSlide].subtitle}</p>
+        <div className="hero-text-card">
+          {/* Top micro-label (like "NEW COLLECTION" in image3) */}
+          <span className="hero-micro-label">New Collection</span>
+
+          {/* Main headline — two-colour serif font matching image2 */}
+          <h1 className="hero-title">
+            Premium Lifestyle.<br />
+            <span className="hero-title-gold">Thoughtful Gifting.</span>
+          </h1>
+
+          {/* Sub copy */}
+          <p className="hero-subtitle">
+            Discover our curated collection of fine clothing, designer stationery, elegant accessories, and perfect gifts for every special occasion.
+          </p>
+
+          {/* Buttons — image3 style: dark filled + ghost */}
           <div className="hero-btn-group">
-            <button 
-              className="hero-btn primary-btn"
-              onClick={() => {
-                window.history.pushState({}, '', '/Shop');
-                window.dispatchEvent(new Event('popstate'));
-              }}
+            <button
+              className="hero-btn hero-btn-primary"
+              onClick={() => navigateTo('/Shop')}
             >
-              {slides[currentSlide].cta}
+              Shop Now
             </button>
-            <button 
-              className="hero-btn secondary-btn"
-              onClick={() => {
-                window.history.pushState({}, '', '/Shop');
-                window.dispatchEvent(new Event('popstate'));
-              }}
+            <button
+              className="hero-btn hero-btn-ghost"
+              onClick={() => navigateTo('/NewArrivals')}
             >
-              View Collection
+              <span className="hero-play-icon" aria-hidden="true">▶</span>
+              New Arrivals
             </button>
           </div>
         </div>

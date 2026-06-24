@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { useToast } from './ToastProvider';
-import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles } from 'lucide-react';
+import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles, RotateCcw } from 'lucide-react';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
 import logoImg from '../assets/logo.png';
 import pHairUpdated from '../assets/p_hair_updated.jpg';
@@ -343,9 +343,9 @@ const getProductThemedColors = (prod) => {
 const getCategoryThemeClass = (category) => {
   const cat = String(category).toUpperCase();
   if (cat.includes('CLOTHING') || cat.includes('DRESS')) return 'theme-clothing';
-  if (cat.includes('STATIONERY')) return 'theme-stationery';
-  if (cat.includes('GIFT')) return 'theme-gifts';
-  if (cat.includes('ACCESSORIES') || cat.includes('FANCY')) return 'theme-accessories';
+  if (cat.includes('STATIONERY') || cat.includes('PEN') || cat.includes('PENCIL') || cat.includes('NOTEBOOK') || cat.includes('OFFICE') || cat.includes('PAPER') || cat.includes('WRITING')) return 'theme-stationery';
+  if (cat.includes('GIFT') || cat.includes('VALENTINE')) return 'theme-gifts';
+  if (cat.includes('ACCESSORIES') || cat.includes('FANCY') || cat.includes('JEWEL') || cat.includes('WATCH')) return 'theme-accessories';
   return 'theme-clothing';
 };
 
@@ -868,21 +868,7 @@ export default function ShopView({ authUser, setAuthUser }) {
   }, []);
 
   const getGroupColor = (groupKey) => {
-    if (!groupKey) return '#D4AF37';
-    switch (groupKey.toUpperCase()) {
-      case 'CLOTHING': return '#5A2C3C';
-      case 'STATIONERY': return '#4A90E2';
-      case 'GIFTS': return '#8A2BE2';
-      case 'ACCESSORIES': return '#D4AF37';
-      default: {
-        let hash = 0;
-        for (let i = 0; i < groupKey.length; i++) {
-          hash = groupKey.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const h = Math.abs(hash % 360);
-        return `hsl(${h}, 70%, 50%)`;
-      }
-    }
+    return '#dfb743';
   };
 
   const getUnifiedCategories = () => {
@@ -918,7 +904,12 @@ export default function ShopView({ authUser, setAuthUser }) {
 
     const structure = [];
 
-    const dbRoots = categoriesList.filter(cat => (!cat.parent || cat.parent === '—') && cat.name !== '—');
+    const dbRoots = categoriesList.filter(
+      cat =>
+        (!cat.parent || cat.parent === '—') &&
+        cat.name !== '—' &&
+        cat.showInFilters !== false
+    );
 
     defaultGroups.forEach(def => {
       const dbRoot = dbRoots.find(r => {
@@ -1465,18 +1456,18 @@ export default function ShopView({ authUser, setAuthUser }) {
           if (p.category && p.category.includes('>')) {
             const parts = p.category.split('>').map(x => x.trim());
             const rootCat = parts[0].toUpperCase();
-            if (rootCat.includes('CLOTHING')) cleanCategory = 'CLOTHING';
-            else if (rootCat.includes('STATIONERY')) cleanCategory = 'STATIONERY';
-            else if (rootCat.includes('GIFT')) cleanCategory = 'GIFTS';
-            else if (rootCat.includes('ACCESSORIES')) cleanCategory = 'ACCESSORIES';
+            if (rootCat.includes('CLOTHING') || rootCat.includes('DRESS')) cleanCategory = 'CLOTHING';
+            else if (rootCat.includes('STATIONERY') || rootCat.includes('PEN') || rootCat.includes('PENCIL') || rootCat.includes('NOTEBOOK') || rootCat.includes('WRITING') || rootCat.includes('PAPER')) cleanCategory = 'STATIONERY';
+            else if (rootCat.includes('GIFT') || rootCat.includes('VALENTINE')) cleanCategory = 'GIFTS';
+            else if (rootCat.includes('ACCESSORIES') || rootCat.includes('FANCY') || rootCat.includes('JEWEL') || rootCat.includes('WATCH')) cleanCategory = 'ACCESSORIES';
             else cleanCategory = rootCat;
 
             extractedSub = parts[parts.length - 1];
           } else {
-            if (catUpper.includes('CLOTHING')) cleanCategory = 'CLOTHING';
-            else if (catUpper.includes('STATIONERY')) cleanCategory = 'STATIONERY';
-            else if (catUpper.includes('GIFT')) cleanCategory = 'GIFTS';
-            else if (catUpper.includes('ACCESSORIES')) cleanCategory = 'ACCESSORIES';
+            if (catUpper.includes('CLOTHING') || catUpper.includes('DRESS')) cleanCategory = 'CLOTHING';
+            else if (catUpper.includes('STATIONERY') || catUpper.includes('PEN') || catUpper.includes('PENCIL') || catUpper.includes('NOTEBOOK') || catUpper.includes('WRITING') || catUpper.includes('PAPER')) cleanCategory = 'STATIONERY';
+            else if (catUpper.includes('GIFT') || catUpper.includes('VALENTINE')) cleanCategory = 'GIFTS';
+            else if (catUpper.includes('ACCESSORIES') || catUpper.includes('FANCY') || catUpper.includes('JEWEL') || catUpper.includes('WATCH')) cleanCategory = 'ACCESSORIES';
             else cleanCategory = catUpper;
           }
 
@@ -1708,9 +1699,9 @@ export default function ShopView({ authUser, setAuthUser }) {
       };
     } else if (activeTab === 'STATIONERY') {
       return {
-        tagline: "Aesthetic Planners",
-        title: "Stationery & Journals",
-        subtitle: "Premium journals, gold-embellished pens, and desk accessories to inspire creativity"
+        tagline: "NEW ARRIVALS",
+        title: "Design Your Plans, Inspire Your Days",
+        subtitle: "Premium stationery to elevate your everyday."
       };
     } else if (activeTab === 'ACCESSORIES') {
       return {
@@ -1857,7 +1848,7 @@ export default function ShopView({ authUser, setAuthUser }) {
               {/* Availability Info */}
               <div className="product-detail-availability-row" style={{ margin: '12px 0 16px 0', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="product-detail-availability-label" style={{ fontWeight: 600, color: '#555' }}>Availability:</span>
-                <span className="product-detail-availability-status" style={{ color: isOutOfStock ? '#ff3333' : '#D4AF37', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#FDFBF7', fontSize: '0.82rem' }}>
+                <span className={`product-detail-availability-status ${isOutOfStock ? 'out-of-stock-status' : ''}`} style={{ color: isOutOfStock ? '#ff3333' : '#D4AF37', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', backgroundColor: isOutOfStock ? '#ffebee' : '#FDFBF7', fontSize: '0.82rem' }}>
                   {isOutOfStock ? "Out of Stock" : "In Stock"}
                 </span>
               </div>
@@ -2081,7 +2072,9 @@ export default function ShopView({ authUser, setAuthUser }) {
               {getSimilarProducts(fullDetailProduct, allProducts)
                 .slice(0, 4)
                 .map((simProd) => {
-                  const isClothing = simProd.category === 'CLOTHING';
+                  const isClothing = simProd.category === 'CLOTHING' || 
+                                     String(simProd.category || '').toUpperCase().includes('CLOTHING') || 
+                                     String(simProd.category || '').toUpperCase().includes('DRESS');
                   if (isClothing) {
                     const brandName = simProd.brand || (simProd.modelNo ? "TIKQ Kids" : "Mithira Collection");
                     const originalPrice = simProd.originalPrice || Math.round(simProd.price * 1.5);
@@ -2093,7 +2086,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                     return (
                       <div 
                         key={simProd.id} 
-                        className="clothing-product-card animate-fade-in-up"
+                        className="clothing-product-card theme-clothing animate-fade-in-up"
                         onClick={() => {
                           setFullDetailProduct(simProd);
                           setModalQty(1);
@@ -2428,6 +2421,55 @@ export default function ShopView({ authUser, setAuthUser }) {
       }
     }
 
+    if (activeTab === 'STATIONERY') {
+      const unified = getUnifiedCategories();
+      const stationeryGroup = unified.find(g => g.key === 'STATIONERY');
+      if (stationeryGroup && stationeryGroup.subcategories && stationeryGroup.subcategories.length > 0) {
+        const subItems = stationeryGroup.subcategories.map(sub => {
+          const dbCat = categoriesList.find(c => c.name.toLowerCase() === sub.dbName.toLowerCase());
+          const customImg = dbCat?.image;
+          const subKeys = getAllSubcategoryKeysUnder(sub.dbName).map(k => k.toUpperCase());
+          const count = allProducts.filter(p => {
+            const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+            if (rootCat !== 'STATIONERY') return false;
+            if (getProductCatalogue(p) !== catalogue) return false;
+            const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+            return productSubs.some(subName => subKeys.includes(subName));
+          }).length;
+
+          return {
+            key: sub.dbName.toUpperCase(),
+            label: sub.label,
+            img: customImg || imgStationery,
+            count: `${count} items`,
+            isSub: true,
+            dbName: sub.dbName
+          };
+        });
+
+        const totalStationeryCount = allProducts.filter(p => {
+          const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+          return rootCat === 'STATIONERY' && getProductCatalogue(p) === catalogue;
+        }).length;
+
+        const allCircle = {
+          key: 'ALL',
+          label: 'All Stationery',
+          img: imgStationery,
+          count: `${totalStationeryCount} items`,
+          isSub: true,
+          dbName: 'ALL'
+        };
+
+        const rootDbCat = categoriesList.find(c => c.name.toLowerCase() === 'stationery');
+        if (rootDbCat?.image) {
+          allCircle.img = rootDbCat.image;
+        }
+
+        return [allCircle, ...subItems];
+      }
+    }
+
     return getUnifiedCategories().map(group => {
       const key = group.key;
       let img = imgClothing;
@@ -2457,77 +2499,40 @@ export default function ShopView({ authUser, setAuthUser }) {
   };
 
   return (
-    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : activeTab === 'CLOTHING' ? 'clothing-wine-theme' : ''}`}>
+    <div className={`shop-view-page ${activeTab === 'ACCESSORIES' ? 'accessories-luxury-theme' : activeTab === 'GIFTS' ? 'gifts-serene-theme' : activeTab === 'CLOTHING' ? 'clothing-wine-theme' : activeTab === 'STATIONERY' ? 'stationery-lavender-theme' : ''}`}>
       
       {/* Premium Shop Header Banner */}
-      <div className="shop-banner">
-        {/* Background image on the right */}
-        <img src={activeTab === 'ACCESSORIES' ? imgAccessories : activeTab === 'GIFTS' ? imgGifts : activeTab === 'CLOTHING' ? imgClothing : shopBannerRaw} className="shop-banner-bg-image" alt="Exclusive Collection" />
-        
-        {/* Left-to-right gradient overlay to blend image and provide solid text area */}
-        <div className="shop-banner-overlay-gradient"></div>
-        
-        {/* Content positioned on the left */}
-        <div className="shop-banner-content">
-          <span className="shop-banner-tagline">{bannerContent.tagline}</span>
-          <h1 className={`shop-banner-title ${bannerContent.title === 'Exclusive Collection' ? 'shop-banner-title-exclusive' : ''}`}>
-            {bannerContent.title === 'Adorn Yourself in Royal Elegance' ? (
-              <>Adorn Yourself in <br /> Royal Elegance</>
-            ) : bannerContent.title === 'Timeless Looks, Everyday You' ? (
-              <>
-                <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Timeless Looks,</span>
-                <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Everyday You</span>
-              </>
-            ) : bannerContent.title}
-          </h1>
-          <p className="shop-banner-subtitle">{bannerContent.subtitle}</p>
-          <div className="shop-banner-divider">
-            <span className="shop-banner-divider-line"></span>
-            <span className="shop-banner-divider-motif" style={{ display: 'inline-flex', alignItems: 'center' }}>
-              ✧ <img src={`${logoImg}?v=2`} alt="Logo" style={{ width: '12px', height: '12px', objectFit: 'contain', margin: '0 4px' }} /> ✧
-            </span>
-            <span className="shop-banner-divider-line"></span>
-          </div>
-          {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS' || activeTab === 'CLOTHING') && (
-            <button className="shop-banner-explore-btn" onClick={() => {
-              const el = document.querySelector('.shop-content-container');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}>
-              {activeTab === 'CLOTHING' ? 'EXPLORE COLLECTION' : 'EXPLORE NOW'}
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Accessories Luxury Trust Bar / Gifts Trust Bar */}
-      {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS') && (
+
+      {/* Accessories Luxury Trust Bar / Gifts Trust Bar / Stationery Trust Bar */}
+      {(activeTab === 'ACCESSORIES' || activeTab === 'GIFTS' || activeTab === 'STATIONERY') && (
         <div className="accessories-trust-bar">
           <div className="accessories-trust-item">
             <span className="accessories-trust-icon"><Award size={20} /></span>
             <div className="accessories-trust-text">
               <span className="accessories-trust-title">Premium Quality</span>
-              <span className="accessories-trust-sub">Finest products</span>
+              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? 'Finest Materials' : 'Finest products'}</span>
             </div>
           </div>
           <div className="accessories-trust-item">
-            <span className="accessories-trust-icon"><Shield size={20} /></span>
+            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <Sparkles size={20} /> : <Shield size={20} />}</span>
             <div className="accessories-trust-text">
-              <span className="accessories-trust-title">Secure & Safe</span>
-              <span className="accessories-trust-sub">Protected payments</span>
+              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Trendy Designs' : 'Secure & Safe'}</span>
+              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? 'For Every Style' : 'Protected payments'}</span>
             </div>
           </div>
           <div className="accessories-trust-item">
-            <span className="accessories-trust-icon"><Globe size={20} /></span>
+            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <RotateCcw size={20} /> : <Globe size={20} />}</span>
             <div className="accessories-trust-text">
-              <span className="accessories-trust-title">World Wide Shipping</span>
-              <span className="accessories-trust-sub">Fast delivery</span>
+              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Easy Returns' : 'World Wide Shipping'}</span>
+              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? '30 Days Policy' : 'Fast delivery'}</span>
             </div>
           </div>
           <div className="accessories-trust-item">
-            <span className="accessories-trust-icon"><Crown size={20} /></span>
+            <span className="accessories-trust-icon">{activeTab === 'STATIONERY' ? <Shield size={20} /> : <Crown size={20} />}</span>
             <div className="accessories-trust-text">
-              <span className="accessories-trust-title">Exclusive Collection</span>
-              <span className="accessories-trust-sub">Limited Edition</span>
+              <span className="accessories-trust-title">{activeTab === 'STATIONERY' ? 'Secure Payments' : 'Exclusive Collection'}</span>
+              <span className="accessories-trust-sub">{activeTab === 'STATIONERY' ? '100% Safe Checkout' : 'Limited Edition'}</span>
             </div>
           </div>
         </div>
@@ -2919,7 +2924,9 @@ export default function ShopView({ authUser, setAuthUser }) {
               <>
                 <div className="shop-products-grid animate-fade-in-up">
                   {currentProducts.map((prod) => {
-                    const isClothing = prod.category === 'CLOTHING';
+                    const isClothing = prod.category === 'CLOTHING' || 
+                                       String(prod.category || '').toUpperCase().includes('CLOTHING') || 
+                                       String(prod.category || '').toUpperCase().includes('DRESS');
                     
                     if (isClothing) {
                       const brandName = prod.brand || (prod.modelNo ? "TIKQ Kids" : "Mithira Collection");
@@ -2932,7 +2939,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                       return (
                         <div 
                           key={prod.id} 
-                          className="clothing-product-card animate-fade-in-up"
+                          className="clothing-product-card theme-clothing animate-fade-in-up"
                           onClick={() => setFullDetailProduct(prod)}
                         >
                           <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); }}>
@@ -3314,7 +3321,7 @@ export default function ShopView({ authUser, setAuthUser }) {
 
                   <div className="modal-availability-row">
                     <span className="availability-label">Availability:</span>
-                    <span className="availability-status" style={{ color: isOutOfStock ? '#ff3333' : '#43a047' }}>{isOutOfStock ? "Out of Stock" : "In Stock"}</span>
+                    <span className={`availability-status ${isOutOfStock ? 'out-of-stock-status' : ''}`} style={{ color: isOutOfStock ? '#ff3333' : '#43a047' }}>{isOutOfStock ? "Out of Stock" : "In Stock"}</span>
                   </div>
 
                   <p className="modal-desc">

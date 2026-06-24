@@ -129,8 +129,6 @@ export default function Footer() {
 
             <h4>Information</h4>
             <ul>
-              <li><a href="/About" onClick={(e) => { e.preventDefault(); handleNavigation('/About'); }}>About Us</a></li>
-              <li><a href="/Contact" onClick={(e) => { e.preventDefault(); handleNavigation('/Contact'); }}>Contact Us</a></li>
               <li><a href="#privacy">Privacy Policy</a></li>
               <li><a href="#terms">Terms & Conditions</a></li>
               <li><a href="#faq">FAQ</a></li>

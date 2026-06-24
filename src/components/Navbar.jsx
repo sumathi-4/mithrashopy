@@ -83,6 +83,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   }, []);
 
   const [categoriesList, setCategoriesList] = useState([]);
+  const [hoveredSubKeys, setHoveredSubKeys] = useState({});
   
   // Load categories from backend
   useEffect(() => {
@@ -135,10 +136,21 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
     const structure = [];
 
-    const dbRoots = categoriesList.filter(cat => (!cat.parent || cat.parent === '—') && cat.name !== '—');
+    // Only root categories where showInNavbar !== false
+    const dbRoots = categoriesList.filter(
+      cat =>
+        (!cat.parent || cat.parent === '—') &&
+        cat.name !== '—' &&
+        cat.showInNavbar !== false
+    );
 
     defaultGroups.forEach(def => {
       const dbRoot = dbRoots.find(r => r.name.toLowerCase() === def.name.toLowerCase());
+      // If backend has this category with showInNavbar=false, skip it
+      const allRoots = categoriesList.filter(c => (!c.parent || c.parent === '—') && c.name !== '—');
+      const dbRootAny = allRoots.find(r => r.name.toLowerCase() === def.name.toLowerCase());
+      if (dbRootAny && dbRootAny.showInNavbar === false) return; // explicitly hidden
+
       const subcategories = dbRoot ? buildTree(dbRoot.name, def.key) : [];
       structure.push({
         name: def.name,
@@ -161,6 +173,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
     return structure;
   };
+
 
   const [guestCartCount, setGuestCartCount] = useState(0);
   const [guestWishlistCount, setGuestWishlistCount] = useState(0);
@@ -318,35 +331,11 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
   return (
     <header className={`navbar-header ${scrolled ? 'scrolled' : ''}`}>
-      {/* Top Announcement Bar */}
-      <div className="top-bar">
-        <div className="top-bar-left">
-          {announcements.length > 0 ? (
-            announcements.map((ann, idx) => (
-              <React.Fragment key={ann.id}>
-                {idx > 0 && <span className="top-bar-divider">|</span>}
-                <span>{ann.text}</span>
-              </React.Fragment>
-            ))
-          ) : (
-            <>
-              <span>🎉 Free Shipping on orders above ₹999</span>
-              <span className="top-bar-divider">|</span>
-              <span>✨ Exclusive Collection For You</span>
-            </>
-          )}
-        </div>
-        <div className="top-bar-right">
-          <a href="#track">Track Order</a>
-          <span className="top-bar-divider">|</span>
-          <a href="#support">Help &amp; Support</a>
-        </div>
-      </div>
-
       {/* Main Navbar */}
       <div className="navbar-container">
-        <nav className="navbar">
-          {/* Mobile Toggle */}
+        {/* ROW 1: Logo, Persistent Search, Right Actions */}
+        <div className="navbar-row-one">
+          {/* Mobile Menu Toggle Button */}
           <button
             className="menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -362,149 +351,83 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             </div>
           </a>
 
-          {/* Nav Links */}
-          <ul className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
-            <li className="nav-item">
-              <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
-            </li>
-            {getUnifiedCategories().map(group => {
-              const renderNavbarSubmenu = (node) => {
-                const hasChildren = node.children && node.children.length > 0;
-                return (
-                  <li key={node.key} className={hasChildren ? "dropdown-submenu" : ""}>
-                    <a
-                      href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${node.dbName.toLowerCase()}`}
-                      className="dropdown-item"
-                      onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${node.dbName.toLowerCase()}`)}
-                    >
-                      {node.label} {hasChildren && <span className="submenu-arrow">▶</span>}
-                    </a>
-                    {hasChildren && (
-                      <ul className="dropdown-submenu-menu">
-                        {node.children.map(child => renderNavbarSubmenu(child))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              };
-
-              return (
-                <li
-                  key={group.key}
-                  className="nav-item has-dropdown"
-                  onMouseEnter={() => setActiveDropdown(group.key)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  <div className="dropdown-toggle" onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}>
-                    {group.name} <ChevronDown className="dropdown-icon" />
-                  </div>
-                  <ul className={`dropdown-menu ${activeDropdown === group.key ? 'show' : ''}`}>
-                    <li key="ALL">
-                      <a
-                        href={`/Shop?category=${group.key.toLowerCase()}`}
-                        className="dropdown-item"
-                        onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}
-                      >
-                        All {group.name}
-                      </a>
-                    </li>
-                    {group.subcategories.map(sub => renderNavbarSubmenu(sub))}
-                  </ul>
-                </li>
-              );
-            })}
-            <li className="nav-item">
-              <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
-            </li>
-            <li className="nav-item">
-              <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
-            </li>
-            <li className="nav-item">
-              <a href="/About" onClick={(e) => handleLinkClick(e, '/About')}>About</a>
-            </li>
-            <li className="nav-item">
-              <a href="/Contact" onClick={(e) => handleLinkClick(e, '/Contact')}>Contact</a>
-            </li>
-          </ul>
-
-          {/* Action Icons */}
-          <div className="nav-icons">
-            {/* ── Search ── */}
-            <div className={`nav-search-wrapper ${searchOpen ? 'open' : ''}`} ref={searchRef}>
-              {searchOpen ? (
-                <div className="nav-search-bar">
-                  <Search size={16} className="nav-search-icon-inside" />
-                  <input
-                    type="text"
-                    className="nav-search-input"
-                    placeholder="Search products…"
-                    value={searchQuery}
-                    onChange={handleSearchInput}
-                    onKeyDown={handleSearchSubmit}
-                    autoFocus
-                  />
-                  <button className="nav-search-close" onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}>
-                    <X size={16} />
-                  </button>
-                  {searchResults.length > 0 && (
-                    <div className="nav-search-dropdown">
-                      {searchResults.map((prod, i) => (
-                        <div
-                          key={prod._id || prod.id || i}
-                          className="nav-search-result-item"
-                          onClick={() => handleSearchSelect(prod)}
-                        >
-                          <Search size={13} className="result-icon" />
-                          <div className="result-text">
-                            <span className="result-name">{prod.name || prod.title}</span>
-                            <span className="result-cat">{prod.category}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                    <div className="nav-search-dropdown">
-                      <div className="nav-search-no-result">No products found for "{searchQuery}"</div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button className="icon-btn search-btn" aria-label="Search" onClick={() => setSearchOpen(true)}>
-                  <Search size={20} />
+          {/* Persistent Search Bar */}
+          <div className="nav-search-wrapper persistent-search" ref={searchRef}>
+            <div className="nav-search-bar-meesho">
+              <input
+                type="text"
+                className="nav-search-input"
+                placeholder="Search for products, brands and more..."
+                value={searchQuery}
+                onChange={handleSearchInput}
+                onKeyDown={handleSearchSubmit}
+              />
+              {searchQuery && (
+                <button className="nav-search-close" onClick={() => { setSearchQuery(''); setSearchResults([]); }} style={{ marginRight: '8px' }}>
+                  <X size={16} />
                 </button>
               )}
+              <button className="nav-search-btn-meesho" onClick={handleSearchSubmit} aria-label="Search">
+                <Search size={20} />
+              </button>
             </div>
-             <button className="icon-btn wishlist-btn" aria-label="Wishlist" onClick={(e) => handleLinkClick(e, '/account?tab=wishlist')}>
-              <Heart size={20} />
-              {(authUser ? (authUser.wishlist?.length || 0) : guestWishlistCount) > 0 && (
-                <span className="icon-badge">{authUser ? authUser.wishlist.length : guestWishlistCount}</span>
-              )}
-            </button>
-            <button className="icon-btn cart-btn" aria-label="Cart" onClick={(e) => handleLinkClick(e, '/account?tab=cart')}>
-              <ShoppingBag size={20} />
-              <span className="icon-badge">{authUser ? (authUser.cart?.length || 0) : guestCartCount}</span>
-            </button>
+            {/* Live Search Dropdown */}
+            {searchResults.length > 0 && (
+              <div className="nav-search-dropdown-meesho">
+                {searchResults.map((prod, i) => (
+                  <div
+                    key={prod._id || prod.id || i}
+                    className="nav-search-result-item"
+                    onClick={() => handleSearchSelect(prod)}
+                  >
+                    <Search size={13} className="result-icon" />
+                    <div className="result-text">
+                      <span className="result-name">{prod.name || prod.title}</span>
+                      <span className="result-cat">{prod.category}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchQuery.trim().length >= 2 && searchResults.length === 0 && (
+              <div className="nav-search-dropdown-meesho">
+                <div className="nav-search-no-result">No products found for "{searchQuery}"</div>
+              </div>
+            )}
+          </div>
 
-            {/* Profile Dropdown */}
+          {/* Stacked Row 1 Right Actions */}
+          <div className="nav-actions-meesho">
+            <a href="/supplier" className="action-text-link" onClick={(e) => handleLinkClick(e, '/supplier')}>
+              Become a Supplier
+            </a>
+            <span className="action-divider">|</span>
+
+            <a href="/lucky-charms" className="action-text-link" onClick={(e) => handleLinkClick(e, '/lucky-charms')}>
+              Lucky Charms
+            </a>
+            <span className="action-divider">|</span>
+
+            {/* Profile Stacked Button */}
             <div className="profile-dropdown-wrapper" ref={profileRef}>
               <button
-                className={`icon-btn profile-btn ${authUser ? 'logged-in' : ''}`}
+                className={`action-btn-stacked ${authUser ? 'logged-in' : ''}`}
                 aria-label="Account"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               >
                 {authUser ? (
-                  <div className="nav-user-avatar">{getInitials(authUser.name)}</div>
+                  <div className="nav-user-avatar-meesho">{getInitials(authUser.name)}</div>
                 ) : (
-                  <User size={20} />
+                  <User size={28} className="action-icon-meesho" />
                 )}
+                <span className="action-label-meesho">Profile</span>
               </button>
 
               {profileDropdownOpen && (
                 <div className="profile-dropdown-menu">
                   {authUser ? (
                     <>
-                       <div className="pdm-user-header">
+                      <div className="pdm-user-header">
                         <div className="pdm-user-avatar">{getInitials(authUser.name)}</div>
                         <div className="pdm-user-info">
                           <div className="pdm-user-name">{authUser.name}</div>
@@ -558,8 +481,162 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                 </div>
               )}
             </div>
+
+            {/* Wishlist Stacked Button */}
+            <button
+              className="action-btn-stacked"
+              aria-label="Wishlist"
+              onClick={(e) => handleLinkClick(e, '/account?tab=wishlist')}
+            >
+              <div className="action-icon-wrapper-meesho">
+                <Heart size={28} className="action-icon-meesho" />
+                {(authUser ? (authUser.wishlist?.length || 0) : guestWishlistCount) > 0 && (
+                  <span className="action-badge-meesho">
+                    {authUser ? authUser.wishlist.length : guestWishlistCount}
+                  </span>
+                )}
+              </div>
+              <span className="action-label-meesho">Wishlist</span>
+            </button>
+
+            {/* Cart Stacked Button */}
+            <button
+              className="action-btn-stacked"
+              aria-label="Cart"
+              onClick={(e) => handleLinkClick(e, '/account?tab=cart')}
+            >
+              <div className="action-icon-wrapper-meesho">
+                <ShoppingBag size={28} className="action-icon-meesho" />
+                <span className="action-badge-meesho">
+                  {authUser ? (authUser.cart?.length || 0) : guestCartCount}
+                </span>
+              </div>
+              <span className="action-label-meesho">Cart</span>
+            </button>
           </div>
-        </nav>
+        </div>
+
+        {/* ROW 2: Horizontal Categories & Hover Mega Menu */}
+        <div className={`navbar-row-two ${mobileMenuOpen ? 'open' : ''}`}>
+          <ul className="nav-menu-meesho">
+            <li className="nav-item-meesho">
+              <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
+            </li>
+            {getUnifiedCategories().map((group) => {
+              return (
+                <li
+                  key={group.key}
+                  className="nav-item-meesho has-mega-menu"
+                >
+                  <a
+                    href={`/Shop?category=${group.key.toLowerCase()}`}
+                    className="category-link-meesho"
+                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}
+                  >
+                    {group.name}
+                  </a>
+
+                  {/* Mega Menu container */}
+                  {group.subcategories && group.subcategories.length > 0 && (
+                    <div 
+                      className="mega-menu-overlay"
+                      onMouseEnter={() => {
+                        if (!hoveredSubKeys[group.key]) {
+                          setHoveredSubKeys(prev => ({ ...prev, [group.key]: group.subcategories[0].key }));
+                        }
+                      }}
+                    >
+                      <div className="mega-menu-split-container">
+                        {/* Left Sidebar: Subcategories list */}
+                        <div className="mega-menu-sidebar-left">
+                          <ul className="mega-menu-sidebar-list">
+                            {group.subcategories.map((sub) => (
+                              <li 
+                                key={sub.key} 
+                                className={`mega-menu-sidebar-item ${
+                                  (hoveredSubKeys[group.key] || group.subcategories[0]?.key) === sub.key ? 'active' : ''
+                                }`}
+                                onMouseEnter={() => setHoveredSubKeys(prev => ({ ...prev, [group.key]: sub.key }))}
+                              >
+                                <a
+                                  href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${sub.dbName.toLowerCase()}`}
+                                  onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${sub.dbName.toLowerCase()}`)}
+                                >
+                                  {sub.label}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Right Content: Active subcategory's children */}
+                        <div className="mega-menu-content-right">
+                          {(() => {
+                            const activeSubKey = hoveredSubKeys[group.key] || group.subcategories[0]?.key;
+                            const activeSub = group.subcategories.find(s => s.key === activeSubKey);
+                            if (!activeSub) return null;
+
+                            return (
+                              <div className="mega-menu-right-panel">
+                                <div className="mega-menu-right-header">
+                                  <a 
+                                    href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${activeSub.dbName.toLowerCase()}`}
+                                    className="mega-menu-right-main-link"
+                                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${activeSub.dbName.toLowerCase()}`)}
+                                  >
+                                    All {activeSub.label}
+                                  </a>
+                                </div>
+                                {activeSub.children && activeSub.children.length > 0 && (
+                                  <div className="mega-menu-right-grid">
+                                    {activeSub.children.map((child) => {
+                                      const hasSubChildren = child.children && child.children.length > 0;
+                                      return (
+                                        <div className="mega-menu-right-column" key={child.key}>
+                                          <a
+                                            href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${child.dbName.toLowerCase()}`}
+                                            className="mega-menu-right-column-heading"
+                                            onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${child.dbName.toLowerCase()}`)}
+                                          >
+                                            {child.label}
+                                          </a>
+                                          {hasSubChildren && (
+                                            <ul className="mega-menu-right-column-list">
+                                              {child.children.map((subChild) => (
+                                                <li key={subChild.key} className="mega-menu-right-item">
+                                                  <a
+                                                    href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${subChild.dbName.toLowerCase()}`}
+                                                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${subChild.dbName.toLowerCase()}`)}
+                                                  >
+                                                    {subChild.label}
+                                                  </a>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+            <li className="nav-item-meesho">
+              <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
+            </li>
+            <li className="nav-item-meesho">
+              <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* ────────────────────────────────────────────

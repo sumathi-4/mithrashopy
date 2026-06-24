@@ -459,7 +459,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [editCategoryItem, setEditCategoryItem] = useState(null);
   const [viewCategoryItem, setViewCategoryItem] = useState(null);
-  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active', image: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true });
 
   const [showAddCatalogueModal, setShowAddCatalogueModal] = useState(false);
   const [editCatalogueItem, setEditCatalogueItem] = useState(null);
@@ -769,7 +769,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       parent: newCategory.parent,
       count: parseInt(newCategory.count, 10) || 0,
       status: newCategory.status,
-      image: newCategory.image || ''
+      image: newCategory.image || '',
+      showInNavbar:     newCategory.showInNavbar     !== false,
+      showInCategories: newCategory.showInCategories !== false,
+      showInFilters:    newCategory.showInFilters    !== false,
     };
 
     try {
@@ -779,7 +782,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setCategories([...categories, catToAdd]);
     }
     setShowAddCategoryModal(false);
-    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', image: '' });
+    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true });
   };
 
   const handleEditCategorySubmit = async (e) => {
@@ -2412,7 +2415,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <button 
                   className="categories-re-add-btn" 
                   onClick={() => {
-                    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active' });
+                    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', showInNavbar: true, showInCategories: true, showInFilters: true });
                     setShowAddCategoryModal(true);
                   }}
                 >
@@ -2483,7 +2486,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     parent: cat.parent,
                                     count: getCategoryProductCount(cat.name),
                                     status: cat.status,
-                                    image: cat.image || ''
+                                    image: cat.image || '',
+                                    showInNavbar:     cat.showInNavbar     !== false,
+                                    showInCategories: cat.showInCategories !== false,
+                                    showInFilters:    cat.showInFilters    !== false,
                                   })}
                                 >
                                   <Edit3 size={15} />
@@ -5535,6 +5541,40 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 </div>
               </div>
 
+              {/* ── Visibility Checkboxes ── */}
+              <div className="form-field">
+                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Show In</label>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={newCategory.showInNavbar !== false}
+                      onChange={(e) => setNewCategory({ ...newCategory, showInNavbar: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Navbar
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={newCategory.showInCategories !== false}
+                      onChange={(e) => setNewCategory({ ...newCategory, showInCategories: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Shop By Categories
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={newCategory.showInFilters !== false}
+                      onChange={(e) => setNewCategory({ ...newCategory, showInFilters: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Filters
+                  </label>
+                </div>
+              </div>
+
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCategoryModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary">Create Category</button>
@@ -5628,6 +5668,40 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       <img src={editCategoryItem.image} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* ── Visibility Checkboxes ── */}
+              <div className="form-field">
+                <label style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Show In</label>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={editCategoryItem.showInNavbar !== false}
+                      onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInNavbar: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Navbar
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={editCategoryItem.showInCategories !== false}
+                      onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInCategories: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Shop By Categories
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={editCategoryItem.showInFilters !== false}
+                      onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInFilters: e.target.checked })}
+                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                    />
+                    Filters
+                  </label>
                 </div>
               </div>
 

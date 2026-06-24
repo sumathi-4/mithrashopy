@@ -344,11 +344,15 @@ ul {
   background-color: rgba(212, 175, 55, 0.06);
 }
 
-/* FULL-WIDTH HERO SECTION */
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO BANNER — Static image, left taglines, Image-3 style
+═══════════════════════════════════════════════════════════════════════════ */
+
 .hero-container.full-width-hero {
   position: relative;
   width: 100vw;
-  height: 650px;
+  min-height: 560px;
+  height: clamp(440px, 54vw, 620px);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -356,209 +360,199 @@ ul {
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  background-color: #ffffff;
+  background: #f8f9fa;
 }
 
-.hero-slider-wrapper {
+/* ── Background image wrapper ── */
+.hero-bg-wrap {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 1;
 }
 
-.slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.slide.active {
-  opacity: 1;
-}
-
-.hero-image {
+.hero-bg-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
-  transition: transform 5s ease-in-out;
+  object-position: right center;
+  display: block;
 }
 
-.slide.active .hero-image {
-  transform: scale(1.04);
-}
-
-/* Soft transition overlay - white to transparent to protect text readability */
-.slide-overlay {
+/* Gradient overlay — smooth white fade so text is readable */
+.hero-bg-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.94) 0%,
-    rgba(255, 255, 255, 0.88) 35%,
-    rgba(255, 255, 255, 0.5) 60%,
-    rgba(255, 255, 255, 0.1) 85%,
+    rgba(255, 255, 255, 0.82) 30%,
+    rgba(255, 255, 255, 0.35) 60%,
     rgba(255, 255, 255, 0.0) 100%
   );
   pointer-events: none;
 }
 
-/* Foreground content layout containing text */
+/* ── Foreground text ── */
 .hero-content {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  align-items: center;
   position: relative;
   z-index: 10;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 5%;
-  height: 100%;
-  pointer-events: none;
+  display: flex;
+  align-items: center;
 }
 
-/* Left overlay text card */
 .hero-text-card {
-  max-width: 620px;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  pointer-events: auto;
-  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes heroFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.hero-tag {
-  font-size: 0.72rem;
+/* Pill capsule micro-label matching image2 */
+.hero-micro-label {
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #D4AF37;
-  background-color: #F7D7E8;
-  padding: 6px 18px;
-  border-radius: 50px;
+  color: #b89047;
+  border: 1px solid #e5cf9c;
+  background: #ffffff;
+  padding: 6px 16px;
+  border-radius: 20px;
   margin-bottom: 20px;
   display: inline-block;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  opacity: 0.95;
 }
 
-.hero-tag:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(212, 175, 55, 0.15);
-}
-
+/* Main headline — premium dark navy serif matching image2 */
 .hero-title {
   font-family: var(--font-serif);
-  font-size: 3.8rem;
-  font-weight: 700;
+  font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+  font-weight: 800;
   line-height: 1.15;
-  color: #2D2D2D;
-  margin-bottom: 18px;
+  color: #1b2a4a;
+  margin: 0 0 8px;
   letter-spacing: -0.01em;
 }
 
-.hero-subtitle {
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: #555555;
-  margin-bottom: 35px;
-  line-height: 1.5;
-  max-width: 520px;
+/* Gold accent line matching image2 */
+.hero-title-gold {
+  color: #b89047;
+  display: block;
+  font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+  font-weight: 800;
+  font-family: var(--font-serif);
+  margin-top: 4px;
 }
 
+/* Subtitle description */
+.hero-subtitle {
+  font-size: clamp(0.88rem, 1.3vw, 1.05rem);
+  font-weight: 450;
+  color: #4b5563;
+  margin: 18px 0 36px;
+  line-height: 1.65;
+  max-width: 480px;
+}
+
+/* ── Buttons ── */
 .hero-btn-group {
   display: flex;
-  gap: 16px;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .hero-btn {
-  border-radius: 50px;
-  font-size: 0.85rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 15px 36px;
+  padding: 13px 30px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-}
-
-.hero-btn.primary-btn {
-  background: linear-gradient(135deg, #D4AF37, #aa7c11);
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
-}
-
-.hero-btn.primary-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.35);
-}
-
-.hero-btn.secondary-btn {
-  background-color: transparent;
-  color: #2D2D2D;
-  border: 2px solid rgba(45, 45, 45, 0.15);
-}
-
-.hero-btn.secondary-btn:hover {
-  background-color: rgba(45, 45, 45, 0.04);
-  border-color: #2D2D2D;
-  transform: translateY(-3px);
-}
-
-/* Slider Controls */
-.slider-dots {
-  position: absolute;
-  bottom: 40px;
-  left: 5%;
-  display: flex;
-  align-items: center;
   gap: 8px;
-  z-index: 25;
+  border: 2px solid transparent;
+  line-height: 1;
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
+/* Navy filled button — "Shop Now" with soft glow matching image2 */
+.hero-btn-primary {
+  background: #1b2a4a;
+  color: #ffffff;
+  border-color: #1b2a4a;
+  box-shadow: 0 4px 18px rgba(27, 42, 74, 0.25);
+}
+
+.hero-btn-primary:hover {
+  background: #121d33;
+  border-color: #121d33;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(27, 42, 74, 0.4);
+}
+
+/* White filled, gold outlined button — "New Arrivals" with circular play icon matching image2 */
+.hero-btn-ghost {
+  background: #ffffff;
+  color: #b89047;
+  border-color: #b89047;
+  box-shadow: 0 4px 18px rgba(184, 144, 71, 0.1);
+}
+
+.hero-btn-ghost:hover {
+  background: #fdfbf7;
+  border-color: #a47f3b;
+  color: #a47f3b;
+  box-shadow: 0 6px 22px rgba(184, 144, 71, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Circular play icon matching image2 */
+.hero-play-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background-color: rgba(45, 45, 45, 0.2);
-  border: none;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 0;
+  border: 1px solid currentColor;
+  font-size: 0.55rem;
+  margin-right: 4px;
+  padding-left: 2px;
 }
 
-.dot.active {
-  width: 28px;
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #D4AF37, #aa7c11);
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .hero-container.full-width-hero { height: 420px; min-height: unset; }
+  .hero-bg-img { object-position: 70% center; }
+  .hero-bg-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(8,20,70,0.88) 0%,
+      rgba(8,20,70,0.70) 40%,
+      rgba(8,20,70,0.30) 70%,
+      rgba(8,20,70,0.0) 100%
+    );
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-container.full-width-hero { height: 360px; }
+  .hero-text-card { max-width: 90vw; }
+  .hero-subtitle  { display: none; }
 }
 
 
@@ -801,6 +795,284 @@ ul {
   100% {
     left: 150%;
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHOP BY CATEGORY — 3D Card Design (sbc-*)
+   Cream background · premium 3D cards · royal blue title · no count text
+═══════════════════════════════════════════════════════════════════════════ */
+
+.sbc-section {
+  width: 100%;
+  background: #fdfcf8;
+  padding: 60px 0 56px;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid #ede8d8;
+  border-bottom: 1px solid #ede8d8;
+}
+
+/* ── Header ── */
+.sbc-header {
+  text-align: center;
+  margin-bottom: 48px;
+  padding: 0 5%;
+}
+
+.sbc-title {
+  font-family: var(--font-serif, 'Playfair Display', serif);
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #C8A44A;          /* rich gold */
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(200, 164, 74, 0.15);
+}
+
+.sbc-subtitle {
+  font-size: 1rem;
+  color: #5a6a8a;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* ── Scroll Strip Wrapper ── */
+.sbc-strip-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.sbc-strip {
+  display: flex;
+  gap: 32px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 20px 16px 36px;
+  flex: 1;
+  justify-content: center;
+  scrollbar-width: none;
+}
+.sbc-strip::-webkit-scrollbar { display: none; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   3D CARD
+────────────────────────────────────────────────────────────────────────── */
+
+.sbc-card {
+  /* layout */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  /* appearance */
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+  /* 3D context */
+  perspective: 900px;
+  /* sizing */
+  width: 200px;
+  /* animation */
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+/* ── Card face (image + label overlay) ── */
+.sbc-card-face {
+  width: 200px;
+  height: 230px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  /* gold border */
+  border: 2.5px solid #c8a64a;
+  /* 3D lift shadow */
+  box-shadow:
+    0  4px  0  0   rgba(180, 140, 30, 0.55),   /* hard bottom edge → 3D lip */
+    0  6px 18px -4px rgba(180, 140, 30, 0.35),   /* warm glow */
+    0 12px 36px -8px rgba(0, 0, 0, 0.18);         /* ambient */
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.35s ease;
+  transform-style: preserve-3d;
+  background: #f8f4ea;
+  /* tilt the face slightly forward for 3D look */
+  transform: perspective(900px) rotateX(4deg);
+}
+
+.sbc-card:hover .sbc-card-face {
+  transform: perspective(900px) rotateX(0deg) translateY(-10px) scale(1.03);
+  box-shadow:
+    0  8px  0  0   rgba(180, 140, 30, 0.6),
+    0 12px 30px -4px rgba(180, 140, 30, 0.4),
+    0 24px 50px -8px rgba(0, 0, 0, 0.22);
+}
+
+/* card image */
+.sbc-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.45s ease;
+}
+
+.sbc-card:hover .sbc-card-img {
+  transform: scale(1.08);
+}
+
+/* bottom label gradient overlay */
+.sbc-card-label-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 10px 12px;
+  background: linear-gradient(
+    to top,
+    rgba(10, 25, 75, 0.82) 0%,
+    rgba(10, 25, 75, 0.1) 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sbc-card-label {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* shine sweep on hover */
+.sbc-card-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0)   30%,
+    rgba(255,255,255,0.22) 50%,
+    rgba(255,255,255,0)   70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.55s ease;
+  pointer-events: none;
+}
+
+.sbc-card:hover .sbc-card-shine {
+  transform: translateX(100%);
+}
+
+/* ── 3D depth edge (bottom lip) ── */
+.sbc-card-edge {
+  width: 200px;
+  height: 8px;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(180deg, #b8920a 0%, #8b6900 100%);
+  transform: perspective(900px) rotateX(-80deg) translateY(-1px);
+  transform-origin: top center;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sbc-card:hover .sbc-card-edge {
+  transform: perspective(900px) rotateX(-75deg) translateY(-2px);
+}
+
+/* ── Drop shadow beneath whole card ── */
+.sbc-card-shadow {
+  width: 160px;
+  height: 14px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  margin-top: 6px;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  opacity: 0.7;
+}
+
+.sbc-card:hover .sbc-card-shadow {
+  transform: scaleX(0.85);
+  opacity: 0.45;
+}
+
+/* ── Scroll Arrows ── */
+.sbc-arrow {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #c8a64a;
+  background: #ffffff;
+  color: #7a5c00;
+  font-size: 2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.25s ease, box-shadow 0.2s ease;
+  z-index: 2;
+  padding: 0;
+  outline: none;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.09);
+}
+
+.sbc-arrow:hover {
+  background: linear-gradient(135deg, #d4a520, #b8860b);
+  color: #ffffff;
+  border-color: #9a6e00;
+  transform: scale(1.1);
+  box-shadow: 0 5px 16px rgba(200, 166, 74, 0.4);
+}
+
+.sbc-arrow-left  { margin-right: 12px; }
+.sbc-arrow-right { margin-left:  12px; }
+
+/* ── Skeleton Loader ── */
+.sbc-skeleton {
+  width: 200px;
+  height: 258px;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #ede8d8 25%, #fdfcf8 50%, #ede8d8 75%);
+  background-size: 200% 100%;
+  animation: sbc-shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes sbc-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .sbc-strip { justify-content: flex-start; gap: 24px; }
+}
+
+@media (max-width: 600px) {
+  .sbc-title         { font-size: 1.8rem; }
+  .sbc-card          { width: 155px; }
+  .sbc-card-face     { width: 155px; height: 178px; border-radius: 14px; }
+  .sbc-card-edge     { width: 155px; }
+  .sbc-card-shadow   { width: 120px; }
+  .sbc-card-label    { font-size: 0.85rem; }
+  .sbc-strip         { gap: 18px; }
+  .sbc-arrow         { display: none; }
 }
 
 
@@ -2271,10 +2543,10 @@ ul {
 
 /* GIFTS BY OCCASION SECTION (Blue and White Theme with Bright Pastel Blue Background) */
 .gifts-occasion-section {
-  background: linear-gradient(135deg, #D4AF37 0%, #B38F2D 100%); /* Brand green gradient */
+  background: transparent;
   padding: 80px 5%;
-  border-top: 1px solid #B38F2D;
-  color: #ffffff; /* White text for section */
+  border-top: none;
+  color: #3e3a36;
 }
 
 .gifts-occasion-container {
@@ -2288,7 +2560,7 @@ ul {
   justify-content: center;
   gap: 10px;
   margin-bottom: 40px;
-  color: #ffffff; /* White icon and header */
+  color: #3e3a36;
 }
 
 .gifts-header-icon {
@@ -2312,7 +2584,7 @@ ul {
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #ffffff;
+  color: #3e3a36;
 }
 
 /* 5-Column Occasions Grid */
@@ -2323,8 +2595,8 @@ ul {
 }
 
 .occasion-card {
-  background-color: #ffffff; /* White card background to contrast with blue background */
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   overflow: hidden;
   position: relative;
@@ -2334,8 +2606,8 @@ ul {
 
 .occasion-card:hover {
   transform: translateY(-5px);
-  border-color: #ffffff;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  border-color: #D4AF37;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 .occasion-img-wrapper {
@@ -8016,12 +8288,12 @@ ul {
 /* DYNAMIC CATEGORY VARIABLES FOR MODALS & DETAIL VIEW */
 /* ---------------------------------------------------- */
 .theme-clothing {
-  --theme-primary: #5A2C3C;
-  --theme-primary-rgb: 90, 44, 60;
+  --theme-primary: #4E1A29;
+  --theme-primary-rgb: 78, 26, 41;
   --theme-accent: #7D4D5E;
-  --theme-btn-bg: #5A2C3C;
+  --theme-btn-bg: #4E1A29;
   --theme-btn-text: #ffffff;
-  --theme-glow: 0 8px 25px rgba(90, 44, 60, 0.35);
+  --theme-glow: 0 8px 25px rgba(78, 26, 41, 0.35);
 }
 .theme-gifts {
   --theme-primary: #aa7c11;
@@ -16767,78 +17039,72 @@ ul {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .trust-bar-section {
-  background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
-  overflow: hidden;
-  padding: 0;
-  height: 44px;
-  display: flex;
-  align-items: center;
+  width: 94vw !important;
+  max-width: 1200px !important;
+  margin: 30px auto 10px auto !important;
+  background: #ffffff !important;
+  border: 1px solid #f1f5f9 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02), 0 1px 4px rgba(0, 0, 0, 0.01) !important;
+  padding: 16px 20px !important;
+  overflow: hidden !important;
   position: relative;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.trust-bar-ticker {
-  width: 100%;
-  overflow: hidden;
-}
-
-.trust-bar-track {
-  display: flex;
-  align-items: center;
-  width: max-content;
-  animation: trust-ticker 30s linear infinite;
-  gap: 0;
-}
-
-.trust-bar-track:hover {
-  animation-play-state: paused;
-}
-
-@keyframes trust-ticker {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+.trust-bar-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 15px !important;
 }
 
 .trust-bar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 28px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex: 1 !important;
+  justify-content: center !important;
+  min-width: 0 !important;
 }
 
 .trust-bar-icon {
-  color: #D4AF37;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+  color: #dfb743 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 .trust-bar-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
+  display: flex !important;
+  flex-direction: column !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
 }
 
 .trust-bar-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  color: #051838 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
 }
 
 .trust-bar-sub {
-  font-size: 0.68rem;
-  color: rgba(255,255,255,0.55);
-  font-weight: 400;
+  font-size: 0.76rem !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
 }
 
-.trust-bar-sep {
-  color: #D4AF37;
-  font-size: 0.65rem;
-  margin-left: 20px;
-  opacity: 0.6;
+.trust-bar-divider {
+  width: 1.5px !important;
+  height: 32px !important;
+  background-color: #f1f5f9 !important;
+  flex-shrink: 0 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -17145,10 +17411,36 @@ ul {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-  .trust-bar-section { height: 38px; }
-  .trust-bar-title { font-size: 0.72rem; }
-  .trust-bar-sub { display: none; }
-  .trust-bar-item { padding: 0 18px; gap: 7px; }
+  .trust-bar-section {
+    margin: 15px auto !important;
+    padding: 12px 10px !important;
+    border-radius: 8px !important;
+    height: auto !important;
+  }
+  .trust-bar-container {
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    gap: 20px !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+  .trust-bar-container::-webkit-scrollbar {
+    display: none !important;
+  }
+  .trust-bar-item {
+    flex: 0 0 auto !important;
+    padding: 0 10px !important;
+  }
+  .trust-bar-title {
+    font-size: 0.8rem !important;
+  }
+  .trust-bar-sub {
+    font-size: 0.68rem !important;
+    display: block !important;
+  }
+  .trust-bar-divider {
+    height: 24px !important;
+  }
 
   .toast-container { left: 12px; right: 12px; bottom: 16px; }
   .toast-item { min-width: auto; max-width: 100%; }
@@ -18233,14 +18525,30 @@ ul {
   border-bottom: 2px solid #5a738e !important;
 }
 
-.shop-view-page.gifts-serene-theme .shop-banner-bg-image {
-  width: 55% !important;
-  height: 100% !important;
-  object-fit: cover !important;
+@media (min-width: 769px) {
+  .shop-view-page.gifts-serene-theme .shop-banner-bg-image {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    z-index: 1 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .shop-view-page.gifts-serene-theme .shop-banner-bg-image {
+    position: relative !important;
+    width: 100% !important;
+    height: 220px !important;
+    object-fit: cover !important;
+    z-index: 1 !important;
+  }
 }
 
 .shop-view-page.gifts-serene-theme .shop-banner-overlay-gradient {
-  background: linear-gradient(to right, #7d93a7 0%, #7d93a7 45%, rgba(125, 147, 167, 0.95) 55%, rgba(125, 147, 167, 0) 90%) !important;
+  display: none !important;
 }
 
 .shop-view-page.gifts-serene-theme .shop-banner-tagline {
@@ -19282,18 +19590,103 @@ ul {
    CLOTHING WINE/MAUVE PALETTE THEME (IMAGE 1 & 2)
    ========================================================================== */
 
-/* Outer Page Background */
+/* Outer Page Background (Matches Image 3) */
 .shop-view-page.clothing-wine-theme {
-  background-color: #FAF2F0 !important; /* Soft pale blush */
+  background-color: #E5CAC9 !important; /* Soft rose-blush from image3 */
+}
+
+/* Search Toolbar / Header Controls in Clothing Theme */
+.shop-view-page.clothing-wine-theme .shop-products-header {
+  border: 1.5px solid #dfb743 !important; /* Golden shimmer border */
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.15) !important;
+  background-color: #faf6f5 !important;
+}
+
+/* Filters toggle button: dark wine banner bg (#4E1A29) with golden text/icon */
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn {
+  background-color: #4E1A29 !important;
+  color: #dfb743 !important;
+  border: 1px solid #dfb743 !important;
+  box-shadow: 0 4px 10px rgba(78, 26, 41, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn:hover {
+  background-color: #652336 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(78, 26, 41, 0.45) !important;
+}
+
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn .menu-icon,
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn .close-x-icon {
+  color: inherit !important;
+}
+
+/* Showing results count text styled to golden shimmer color */
+.shop-view-page.clothing-wine-theme .results-count-text,
+.shop-view-page.clothing-wine-theme .shop-results-count {
+  color: #dfb743 !important;
+}
+
+/* Search input container and input fields styling */
+.shop-view-page.clothing-wine-theme .shop-search-box {
+  border: 1px solid #dfb743 !important;
+  background-color: #ffffff !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-input {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-input::placeholder,
+.shop-view-page.clothing-wine-theme input.shop-search-input::placeholder {
+  color: rgba(223, 183, 67, 0.7) !important;
+  opacity: 1 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-box .search-icon {
+  color: #dfb743 !important;
+}
+
+/* Sort dropdown select and options styled to gold */
+.shop-view-page.clothing-wine-theme .shop-sort-select {
+  color: #dfb743 !important;
+  border: 1px solid #dfb743 !important;
+  background-color: #ffffff !important;
+  font-weight: 600 !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23dfb743' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-sort-select option {
+  color: #dfb743 !important;
+  background-color: #ffffff !important;
 }
 
 /* Sidebar filter cards (Matches Image 2 with Dark Banner Background #4E1A29) */
 .shop-view-page.clothing-wine-theme .shop-sidebar-filters {
   background-color: #4E1A29 !important; /* Dark wine sidebar bg */
-  border: 1px solid rgba(223, 183, 67, 0.2) !important;
+  border: 2px solid #dfb743 !important; /* Golden shimmer border */
   border-radius: 16px !important;
   padding: 20px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 0 20px rgba(223, 183, 67, 0.4) !important; /* Shimmer gold glow */
+}
+
+/* Sidebar header container overrides to prevent collision with base styling white background */
+.shop-view-page.clothing-wine-theme .sidebar-header-row {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(223, 183, 67, 0.15) !important;
+}
+
+/* Categories section background & container overrides to prevent collision with landing page styling */
+.shop-view-page.clothing-wine-theme .categories-section {
+  background-color: transparent !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+.shop-view-page.clothing-wine-theme .filter-card-section.categories-section .section-content {
+  background-color: transparent !important;
 }
 
 /* Sidebar header styling */
@@ -19460,55 +19853,181 @@ ul {
   color: #7D4D5E !important;
 }
 
-/* Product Cards */
-.shop-view-page.clothing-wine-theme .clothing-product-card {
-  background-color: #ffffff !important;
-  border: 1px solid rgba(90, 44, 60, 0.1) !important;
+/* Product Cards (Matches Image 3 background color, applied dynamically to storefront and similar cards) */
+.shop-view-page.clothing-wine-theme .clothing-product-card,
+.shop-product-detail-page-view.theme-clothing .clothing-product-card,
+.theme-clothing .clothing-product-card,
+.clothing-product-card.theme-clothing {
+  background-color: #E5CAC9 !important; /* Rose-blush card background */
+  border: 2px solid #4E1A29 !important; /* Product card border is theme/banner color */
   border-radius: 12px !important;
   box-shadow: 0 4px 15px rgba(90, 44, 60, 0.04) !important;
   transition: all 0.3s ease !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-brand-name {
+.shop-view-page.clothing-wine-theme .clothing-product-card:hover,
+.shop-product-detail-page-view.theme-clothing .clothing-product-card:hover,
+.theme-clothing .clothing-product-card:hover,
+.clothing-product-card.theme-clothing:hover {
+  border-color: #4E1A29 !important;
+  box-shadow: 0 8px 25px rgba(78, 26, 41, 0.25) !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-brand-name,
+.shop-product-detail-page-view.theme-clothing .clothing-brand-name,
+.theme-clothing .clothing-brand-name,
+.clothing-product-card.theme-clothing .clothing-brand-name {
   color: #7D4D5E !important; /* Brand label */
   font-weight: 600 !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-product-title {
+.shop-view-page.clothing-wine-theme .clothing-product-title,
+.shop-product-detail-page-view.theme-clothing .clothing-product-title,
+.theme-clothing .clothing-product-title,
+.clothing-product-card.theme-clothing .clothing-product-title {
   color: #3E232B !important;
   font-weight: 700 !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-selling-price {
-  color: #5A2C3C !important; /* Selling price */
+.shop-view-page.clothing-wine-theme .clothing-selling-price,
+.shop-product-detail-page-view.theme-clothing .clothing-selling-price,
+.theme-clothing .clothing-selling-price,
+.clothing-product-card.theme-clothing .clothing-selling-price {
+  color: #4E1A29 !important; /* Selling price */
   font-weight: 800 !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-original-price {
-  color: #8c787d !important;
+.shop-view-page.clothing-wine-theme .clothing-original-price,
+.shop-product-detail-page-view.theme-clothing .clothing-original-price,
+.theme-clothing .clothing-original-price,
+.clothing-product-card.theme-clothing .clothing-original-price {
+  color: #ff3333 !important; /* Old price to red */
+  text-decoration: line-through !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-discount-badge {
-  background: #5A2C3C !important;
+.shop-view-page.clothing-wine-theme .clothing-discount-badge,
+.shop-product-detail-page-view.theme-clothing .clothing-discount-badge,
+.theme-clothing .clothing-discount-badge,
+.clothing-product-card.theme-clothing .clothing-discount-badge {
+  background: #2e7d32 !important; /* Offer badge to green */
   color: #ffffff !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn {
-  background-color: #5A2C3C !important;
+.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn,
+.shop-product-detail-page-view.theme-clothing .clothing-card-add-cart-btn,
+.theme-clothing .clothing-card-add-cart-btn,
+.clothing-product-card.theme-clothing .clothing-card-add-cart-btn {
+  background: #4E1A29 !important; /* Banner background color */
   color: #ffffff !important;
+  border: 2px solid #dfb743 !important; /* Golden shimmer border */
   font-weight: 700 !important;
-  border: none !important;
   border-radius: 6px !important;
+  transition: all 0.3s ease !important;
 }
 
-.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn:hover {
-  background-color: #7D4D5E !important;
+.shop-view-page.clothing-wine-theme .clothing-card-add-cart-btn:hover,
+.shop-product-detail-page-view.theme-clothing .clothing-card-add-cart-btn:hover,
+.theme-clothing .clothing-card-add-cart-btn:hover,
+.clothing-product-card.theme-clothing .clothing-card-add-cart-btn:hover {
+  background: #dfb743 !important; /* Golden background on hover */
+  color: #4E1A29 !important; /* Dark wine text on hover */
+  border-color: #dfb743 !important;
+}
+
+/* Hover Action Overlay Icons (Eye / Wishlist / Cart hover changes from pink to banner color) */
+.shop-view-page.clothing-wine-theme .clothing-hover-action-btn:hover,
+.shop-product-detail-page-view.theme-clothing .clothing-hover-action-btn:hover,
+.theme-clothing .clothing-hover-action-btn:hover,
+.clothing-product-card.theme-clothing .clothing-hover-action-btn:hover {
+  background: #4E1A29 !important; /* Banner color background on hover */
+  color: #ffffff !important; /* White icon color on hover */
+  box-shadow: 0 6px 20px rgba(78, 26, 41, 0.35) !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-hover-action-btn.hover-cart-btn.in-cart,
+.shop-product-detail-page-view.theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart,
+.theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart,
+.clothing-product-card.theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart {
+  background: #4E1A29 !important;
   color: #ffffff !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-wishlist-float-btn:hover,
+.shop-view-page.clothing-wine-theme .clothing-wishlist-float-btn.active,
+.shop-product-detail-page-view.theme-clothing .clothing-wishlist-float-btn:hover,
+.shop-product-detail-page-view.theme-clothing .clothing-wishlist-float-btn.active,
+.theme-clothing .clothing-wishlist-float-btn:hover,
+.theme-clothing .clothing-wishlist-float-btn.active,
+.clothing-product-card.theme-clothing .clothing-wishlist-float-btn:hover,
+.clothing-product-card.theme-clothing .clothing-wishlist-float-btn.active {
+  color: #4E1A29 !important;
+}
+
+.shop-view-page.clothing-wine-theme .clothing-product-title:hover,
+.shop-product-detail-page-view.theme-clothing .clothing-product-title:hover,
+.theme-clothing .clothing-product-title:hover,
+.clothing-product-card.theme-clothing .clothing-product-title:hover {
+  color: #4E1A29 !important;
+}
+
+/* Category-specific card styles for new admin items & similar products dynamically */
+.clothing-product-card.cat-card-stationery {
+  background: linear-gradient(180deg, #12161a 0%, #090c0f 100%) !important;
+  border: 1px solid rgba(107, 129, 149, 0.4) !important;
+}
+.clothing-product-card.cat-card-stationery .clothing-brand-name {
+  color: #6b8195 !important;
+}
+.clothing-product-card.cat-card-stationery .clothing-product-title {
+  color: #ffffff !important;
+}
+.clothing-product-card.cat-card-stationery .clothing-selling-price {
+  color: #90caf9 !important;
+}
+.clothing-product-card.cat-card-stationery .clothing-original-price {
+  color: #6b8195 !important;
+  text-decoration: line-through !important;
+}
+
+.clothing-product-card.cat-card-gifts {
+  background: #f5eedc !important;
+  border: 1px solid rgba(125, 147, 167, 0.15) !important;
+}
+.clothing-product-card.cat-card-gifts .clothing-brand-name {
+  color: #7d93a7 !important;
+}
+.clothing-product-card.cat-card-gifts .clothing-product-title {
+  color: #4a148c !important;
+}
+.clothing-product-card.cat-card-gifts .clothing-selling-price {
+  color: #6a1b9a !important;
+}
+.clothing-product-card.cat-card-gifts .clothing-original-price {
+  color: #7d93a7 !important;
+  text-decoration: line-through !important;
+}
+
+.clothing-product-card.cat-card-accessories {
+  background: #17120e !important;
+  border: 1px solid rgba(212, 175, 55, 0.2) !important;
+}
+.clothing-product-card.cat-card-accessories .clothing-brand-name {
+  color: #D4AF37 !important;
+}
+.clothing-product-card.cat-card-accessories .clothing-product-title {
+  color: #ffffff !important;
+}
+.clothing-product-card.cat-card-accessories .clothing-selling-price {
+  color: #D4AF37 !important;
+}
+.clothing-product-card.cat-card-accessories .clothing-original-price {
+  color: #a1887f !important;
+  text-decoration: line-through !important;
 }
 
 /* Quick View Overlay (Clothing Wine Theme) */
 .quickview-split-overlay.theme-clothing .quickview-split-card {
-  background-color: #F9ECEB !important;
+  background-color: #FAF5EE !important; /* Premium soft cream background */
   border-color: rgba(90, 44, 60, 0.2) !important;
 }
 
@@ -19519,37 +20038,56 @@ ul {
 .quickview-split-overlay.theme-clothing .modal-section-title,
 .quickview-split-overlay.theme-clothing .qty-label,
 .quickview-split-overlay.theme-clothing .qty-value,
-.quickview-split-overlay.theme-clothing span,
+.quickview-split-overlay.theme-clothing span:not(.availability-status):not(.modal-discount-badge):not(.modal-original-price),
 .quickview-split-overlay.theme-clothing p,
 .quickview-split-overlay.theme-clothing label,
-.quickview-split-overlay.theme-clothing div {
+.quickview-split-overlay.theme-clothing div:not(.modal-discount-badge) {
   color: #3E232B !important;
 }
 
+/* In Stock text status visibility in quick view modal */
+.quickview-split-overlay.theme-clothing .availability-status {
+  color: #2e7d32 !important;
+  background: rgba(46, 125, 50, 0.08) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+}
+
+/* Offer badge inside quick view modal is green with white text */
+.quickview-split-overlay.theme-clothing .modal-discount-badge {
+  background: #2e7d32 !important;
+  color: #ffffff !important;
+}
+
 .quickview-split-overlay.theme-clothing .modal-original-price {
-  color: #8c787d !important;
+  color: #ff3333 !important; /* Red original price */
   text-decoration: line-through !important;
 }
 
+/* Add to Cart button inside Quick View modal (dark wine bg + golden border) */
 .quickview-split-overlay.theme-clothing .modal-primary-action-btn {
-  background: #5A2C3C !important;
-  border: none !important;
-  color: #ffffff !important;
+  background: #4E1A29 !important;
+  border: 2px solid #dfb743 !important; /* Golden border */
+  color: #ffffff !important; /* White text for visibility */
   font-weight: 700 !important;
-  box-shadow: 0 4px 12px rgba(90, 44, 60, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(78, 26, 41, 0.25) !important;
   border-radius: 6px !important;
   text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
 }
 
 .quickview-split-overlay.theme-clothing .modal-primary-action-btn:hover {
-  background: #7D4D5E !important;
-  color: #ffffff !important;
+  background: #dfb743 !important; /* Golden background on hover */
+  color: #4E1A29 !important; /* Dark wine text on hover */
+  border-color: #dfb743 !important;
 }
 
 .quickview-split-overlay.theme-clothing .modal-secondary-action-btn {
   background: transparent !important;
-  border: 2px solid #5A2C3C !important;
-  color: #5A2C3C !important;
+  border: 2px solid #4E1A29 !important;
+  color: #4E1A29 !important;
   font-weight: 700 !important;
   border-radius: 6px !important;
   box-shadow: none !important;
@@ -19558,26 +20096,53 @@ ul {
 }
 
 .quickview-split-overlay.theme-clothing .modal-secondary-action-btn:hover {
-  background: rgba(90, 44, 60, 0.08) !important;
-  color: #7D4D5E !important;
-  border-color: #7D4D5E !important;
+  background: rgba(78, 26, 41, 0.08) !important;
+  color: #4E1A29 !important;
+  border-color: #4E1A29 !important;
+}
+
+/* Added to wishlist button inside Quick View modal */
+.quickview-split-overlay.theme-clothing .modal-extra-link-btn {
+  background-color: rgba(78, 26, 41, 0.06) !important;
+  border: 1px solid rgba(78, 26, 41, 0.2) !important;
+  color: #4E1A29 !important;
+  transition: all 0.3s ease !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-extra-link-btn:hover {
+  background-color: rgba(78, 26, 41, 0.12) !important;
+  color: #4E1A29 !important;
+}
+
+.quickview-split-overlay.theme-clothing .modal-extra-link-btn.active {
+  background-color: #4E1A29 !important;
+  color: #ffffff !important; /* White text for visibility */
+  border-color: #dfb743 !important; /* Golden border */
+  box-shadow: 0 4px 10px rgba(78, 26, 41, 0.3) !important;
 }
 
 .quickview-split-overlay.theme-clothing .modal-close-btn-split {
-  color: #5A2C3C !important;
+  color: #4E1A29 !important;
 }
 
 /* Product Detail Page View overrides */
 .shop-product-detail-page-view.theme-clothing {
-  background-color: #FAF2F0 !important;
+  background-color: #FAF5EE !important; /* Premium soft cream background */
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout {
-  background-color: #F9ECEB !important;
-  border: 1px solid rgba(90, 44, 60, 0.15) !important;
+  background-color: #E5CAC9 !important; /* Swatch rose-blush background */
+  border: 2px solid #dfb743 !important; /* Golden shimmer border */
+  box-shadow: 0 0 25px rgba(223, 183, 67, 0.35) !important; /* Golden shimmer glow */
   border-radius: 20px !important;
   padding: 35px !important;
   color: #3E232B !important;
+}
+
+/* Floating badge text and background above image */
+.shop-product-detail-page-view.theme-clothing .product-detail-badge-pill {
+  color: #ffffff !important;
+  background-color: #4E1A29 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-title {
@@ -19595,15 +20160,15 @@ ul {
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .review-comment-text,
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .specs-key,
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout .specs-val,
-.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout div:not(.product-detail-category-tag),
-.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status),
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout div:not(.product-detail-category-tag):not(.product-detail-badge-pill):not(.product-detail-discount-badge),
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status):not(.product-detail-discount-badge):not(.product-detail-original-price),
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout p,
 .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout label {
   color: #3E232B !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-category-tag {
-  color: #5A2C3C !important;
+  color: #4E1A29 !important;
   font-weight: 600 !important;
 }
 
@@ -19618,51 +20183,57 @@ ul {
 .shop-product-detail-page-view.theme-clothing .back-to-shop-btn span,
 .shop-product-detail-page-view.theme-clothing .back-to-shop-btn svg,
 .shop-product-detail-page-view.theme-clothing .product-detail-nav svg {
-  color: #5A2C3C !important;
+  color: #4E1A29 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .detail-tab-btn.active {
-  color: #5A2C3C !important;
-  border-bottom-color: #5A2C3C !important;
+  color: #4E1A29 !important;
+  border-bottom-color: #4E1A29 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-price-value {
-  color: #5A2C3C !important;
+  color: #4E1A29 !important;
   font-weight: 800 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-original-price {
-  color: #8c787d !important;
+  color: #ff3333 !important; /* Red original price */
   text-decoration: line-through !important;
 }
 
+/* Offer / discount badge on details page is green with white text */
 .shop-product-detail-page-view.theme-clothing .product-detail-discount-badge {
-  background-color: #5A2C3C !important;
+  background-color: #2e7d32 !important;
   color: #ffffff !important;
 }
 
+/* Add to Cart button inside Page Details (dark wine bg + golden border) */
 .shop-product-detail-page-view.theme-clothing .product-detail-cart-btn {
-  background-color: #5A2C3C !important;
-  color: #ffffff !important;
+  background: #4E1A29 !important;
+  color: #ffffff !important; /* White text for visibility */
+  border: 2px solid #dfb743 !important; /* Golden border */
   font-weight: 700 !important;
-  border: none !important;
+  transition: all 0.3s ease !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-cart-btn:hover {
-  background-color: #7D4D5E !important;
+  background: #dfb743 !important; /* Golden background on hover */
+  color: #4E1A29 !important; /* Dark wine text on hover */
+  border-color: #dfb743 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-buy-btn {
   background-color: #ffffff !important;
-  border: 2px solid #5A2C3C !important;
-  color: #5A2C3C !important;
+  border: 2px solid #4E1A29 !important;
+  color: #4E1A29 !important;
   font-weight: 700 !important;
+  transition: all 0.3s ease !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-buy-btn:hover {
-  background-color: rgba(90, 44, 60, 0.08) !important;
-  color: #7D4D5E !important;
-  border-color: #7D4D5E !important;
+  background-color: rgba(78, 26, 41, 0.08) !important;
+  color: #4E1A29 !important;
+  border-color: #4E1A29 !important;
 }
 
 .shop-product-detail-page-view.theme-clothing .product-detail-availability-label {
@@ -19673,17 +20244,21 @@ ul {
   border-radius: 4px !important;
 }
 
+/* In Stock text status visibility in details page layout */
 .shop-product-detail-page-view.theme-clothing .product-detail-availability-status {
-  color: #3E232B !important;
-  background: transparent !important;
+  color: #2e7d32 !important;
+  background: rgba(46, 125, 50, 0.08) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
   font-weight: 700 !important;
+  display: inline-block !important;
 }
 
 /* Similar products title */
 .shop-product-detail-page-view.theme-clothing .product-detail-similar-section .similar-title,
 .shop-product-detail-page-view.theme-clothing .similar-products-section .similar-title,
 .shop-product-detail-page-view.theme-clothing h2.similar-title {
-  color: #5A2C3C !important; /* Shimmer golden title */
+  color: #4E1A29 !important; /* Theme banner title */
   font-size: 1.8rem !important;
   font-weight: 700 !important;
 }
@@ -19809,4 +20384,2621 @@ ul {
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 20px rgba(142, 89, 107, 0.4) !important;
 }
+
+/* ==========================================================================
+   STATIONERY LAVENDER THEME
+   ========================================================================== */
+
+/* Outer Page Background */
+.shop-view-page.stationery-lavender-theme {
+  background-color: #F8F8FC !important;
+}
+
+/* Search Toolbar / Header Controls - styled to golden shimmer border */
+.stationery-lavender-theme .shop-products-header,
+.shop-view-page.stationery-lavender-theme .shop-products-header {
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.25) !important;
+  background-color: #ffffff !important;
+}
+
+/* Filters toggle button: primary lavender (#6254a6) with white text */
+.stationery-lavender-theme button.shop-filters-toggle-btn,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn {
+  background-color: #6254a6 !important;
+  color: #ffffff !important;
+  border: 1px solid #6254a6 !important;
+  box-shadow: 0 4px 10px rgba(98, 84, 166, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme button.shop-filters-toggle-btn:hover,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn:hover {
+  background-color: #504294 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(98, 84, 166, 0.35) !important;
+}
+
+.stationery-lavender-theme button.shop-filters-toggle-btn .menu-icon,
+.stationery-lavender-theme button.shop-filters-toggle-btn .close-x-icon,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn .menu-icon,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn .close-x-icon {
+  color: inherit !important;
+}
+
+/* Showing results count text styled to golden shimmer */
+.stationery-lavender-theme .results-count-text,
+.stationery-lavender-theme .shop-results-count,
+.shop-view-page.stationery-lavender-theme .results-count-text,
+.shop-view-page.stationery-lavender-theme .shop-results-count {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+/* Search input container and input fields styling - styled to golden shimmer border and text */
+.stationery-lavender-theme .shop-search-box,
+.shop-view-page.stationery-lavender-theme .shop-search-box {
+  border: 2px solid #dfb743 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(223, 183, 67, 0.1) !important;
+}
+
+.stationery-lavender-theme .shop-search-input,
+.shop-view-page.stationery-lavender-theme .shop-search-input {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.stationery-lavender-theme .shop-search-input::placeholder,
+.stationery-lavender-theme input.shop-search-input::placeholder,
+.shop-view-page.stationery-lavender-theme .shop-search-input::placeholder,
+.shop-view-page.stationery-lavender-theme input.shop-search-input::placeholder {
+  color: rgba(223, 183, 67, 0.65) !important;
+  opacity: 1 !important;
+}
+
+.stationery-lavender-theme .shop-search-box .search-icon,
+.shop-view-page.stationery-lavender-theme .shop-search-box .search-icon {
+  color: #dfb743 !important;
+}
+
+/* Sort dropdown select and options styled to golden shimmer */
+.stationery-lavender-theme .shop-sort-select,
+.shop-view-page.stationery-lavender-theme .shop-sort-select {
+  color: #dfb743 !important;
+  border: 2px solid #dfb743 !important;
+  background-color: #ffffff !important;
+  font-weight: 600 !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23dfb743' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+}
+
+.stationery-lavender-theme .shop-sort-select option,
+.shop-view-page.stationery-lavender-theme .shop-sort-select option {
+  color: #dfb743 !important;
+  background-color: #ffffff !important;
+}
+
+/* Sidebar filter cards styled with Gradient Lavender and Golden Shimmer Border */
+.stationery-lavender-theme .shop-sidebar-filters,
+.shop-view-page.stationery-lavender-theme .shop-sidebar-filters {
+  background: linear-gradient(135deg, #4D3F8E 0%, #6254a6 50%, #7A69C4 100%) !important;
+  border: 2px solid #dfb743 !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 0 20px rgba(223, 183, 67, 0.4) !important;
+}
+
+/* Sidebar header container overrides */
+.shop-view-page.stationery-lavender-theme .sidebar-header-row {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Categories section background & container overrides */
+.shop-view-page.stationery-lavender-theme .categories-section {
+  background-color: transparent !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+.shop-view-page.stationery-lavender-theme .filter-card-section.categories-section .section-content {
+  background-color: transparent !important;
+}
+
+/* Sidebar header styling */
+.shop-view-page.stationery-lavender-theme .sidebar-title-text {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
+  letter-spacing: 0.5px !important;
+}
+
+.shop-view-page.stationery-lavender-theme .sidebar-close-x-btn {
+  color: #ffffff !important;
+  opacity: 0.8 !important;
+}
+.shop-view-page.stationery-lavender-theme .sidebar-close-x-btn:hover {
+  opacity: 1 !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .clear-all-btn-left,
+.shop-view-page.stationery-lavender-theme .clear-all-btn-right {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .clear-all-btn-left:hover,
+.shop-view-page.stationery-lavender-theme .clear-all-btn-right:hover {
+  color: #ffffff !important;
+}
+
+/* Unified inner card section list container */
+.shop-view-page.stationery-lavender-theme .unified-filters-card {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 10px 15px !important;
+  box-shadow: none !important;
+}
+
+/* Ensure all text inside the filters is white for contrast against the gradient background */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section h3,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .section-title-text,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-header h3 {
+  color: #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .section-chevron {
+  color: #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section span,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section label,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section p,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section li {
+  color: #ffffff !important;
+}
+
+/* Active and hover states for category items */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .category-sub-item-header-wrapper {
+  color: #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .category-sub-item-header-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .category-sub-item-header-wrapper.active {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-left: 3px solid #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .category-sub-item-header-wrapper .sub-label {
+  color: #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .category-sub-item-header-wrapper .sub-count {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Clear buttons text color inside card */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .clear-all-btn-left,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .clear-all-btn-right {
+  color: #dfb743 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .clear-all-btn-left:hover,
+.shop-view-page.stationery-lavender-theme .unified-filters-card .clear-all-btn-right:hover {
+  color: #ffffff !important;
+}
+
+/* Checkbox accent */
+.shop-view-page.stationery-lavender-theme .unified-filters-card input[type="checkbox"] {
+  accent-color: #dfb743 !important;
+}
+
+/* Size buttons */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .size-btn {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .size-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .unified-filters-card .size-btn.active {
+  background-color: #dfb743 !important;
+  border-color: #dfb743 !important;
+  color: #6254a6 !important;
+}
+
+/* Price range slider track */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .pink-price-slider {
+  accent-color: #dfb743 !important;
+}
+.shop-view-page.stationery-lavender-theme .unified-filters-card .pink-price-slider::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+.shop-view-page.stationery-lavender-theme .unified-filters-card .pink-price-slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Divider lines inside card */
+.shop-view-page.stationery-lavender-theme .unified-filters-card .filter-card-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Divider border lines inside unified filter section list container */
+.shop-view-page.stationery-lavender-theme .filter-card-section {
+  border-bottom: 1px solid rgba(98, 84, 166, 0.08) !important;
+  margin-bottom: 0 !important;
+  padding: 16px 0 !important;
+}
+.shop-view-page.stationery-lavender-theme .filter-card-section:last-child {
+  border-bottom: none !important;
+}
+
+/* Header inside filter sections */
+.shop-view-page.stationery-lavender-theme .filter-card-section h3,
+.shop-view-page.stationery-lavender-theme .section-title-text,
+.shop-view-page.stationery-lavender-theme .filter-header h3 {
+  color: #3D3363 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+/* Expand Chevrons */
+.shop-view-page.stationery-lavender-theme .section-chevron {
+  color: #6254a6 !important;
+}
+
+/* Text labels / span text inside filters */
+.shop-view-page.stationery-lavender-theme .filter-card-section span,
+.shop-view-page.stationery-lavender-theme .filter-card-section label,
+.shop-view-page.stationery-lavender-theme .filter-card-section p,
+.shop-view-page.stationery-lavender-theme .filter-card-section li {
+  color: #554D6C !important;
+  font-size: 0.9rem !important;
+}
+
+/* Dynamic category tree items text colors inside list */
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper {
+  color: #554D6C !important;
+  transition: all 0.2s ease !important;
+}
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper:hover {
+  background-color: rgba(98, 84, 166, 0.05) !important;
+}
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper.active {
+  background-color: rgba(98, 84, 166, 0.08) !important;
+  border-left: 3px solid #6254a6 !important;
+  border-radius: 4px !important;
+}
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper .sub-label {
+  color: #6254a6 !important;
+}
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper .sub-count {
+  color: rgba(98, 84, 166, 0.6) !important;
+}
+
+/* Checkboxes style */
+.shop-view-page.stationery-lavender-theme .filter-card-section input[type="checkbox"] {
+  accent-color: #6254a6 !important;
+}
+
+/* Size buttons style */
+.shop-view-page.stationery-lavender-theme .size-btn {
+  background-color: #ffffff !important;
+  border: 1px solid #e1ddec !important;
+  color: #554D6C !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  transition: all 0.25s ease !important;
+}
+
+.shop-view-page.stationery-lavender-theme .size-btn:hover {
+  background-color: rgba(98, 84, 166, 0.05) !important;
+  border-color: #6254a6 !important;
+  color: #6254a6 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .size-btn.active {
+  background-color: #6254a6 !important;
+  border-color: #6254a6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(98, 84, 166, 0.25) !important;
+}
+
+/* Price Range Slider */
+.shop-view-page.stationery-lavender-theme .pink-price-slider {
+  accent-color: #6254a6 !important;
+}
+.shop-view-page.stationery-lavender-theme .pink-price-slider::-webkit-slider-runnable-track {
+  background: rgba(98, 84, 166, 0.15) !important;
+}
+.shop-view-page.stationery-lavender-theme .pink-price-slider::-moz-range-track {
+  background: rgba(98, 84, 166, 0.15) !important;
+}
+
+/* Color bubbles active outline */
+.shop-view-page.stationery-lavender-theme .color-bubble.active {
+  outline: 2px solid #6254a6 !important;
+  outline-offset: 2px !important;
+}
+
+.shop-view-page.stationery-lavender-theme .more-colors-btn .more-text {
+  color: #6254a6 !important;
+}
+
+/* Category Sub-circle Cards */
+.shop-view-page.stationery-lavender-theme .subcategory-circle-card {
+  background-color: #ffffff !important;
+  border: 2px solid transparent !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.25s ease !important;
+}
+
+.shop-view-page.stationery-lavender-theme .subcategory-circle-card.active {
+  border-color: #6254a6 !important;
+  box-shadow: 0 0 12px rgba(98, 84, 166, 0.2) !important;
+}
+
+.shop-view-page.stationery-lavender-theme .subcategory-label {
+  color: #3D3363 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .subcategory-count {
+  color: #7c6bb5 !important;
+}
+
+/* --------------------------------------------------------------------------
+   STATIONERY PRODUCT CARDS (Clean White BG & Soft Lavender Accents)
+   -------------------------------------------------------------------------- */
+
+.stationery-lavender-theme .clothing-product-card,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery,
+.shop-view-page.stationery-lavender-theme .clothing-product-card,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card,
+.theme-stationery .cat-card-stationery,
+.theme-stationery .clothing-product-card,
+.clothing-product-card.cat-card-stationery {
+  background: #6254a6 !important;
+  border: 2px solid #dfb743 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(98, 84, 166, 0.03) !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme .clothing-product-card:hover,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery:hover,
+.shop-view-page.stationery-lavender-theme .clothing-product-card:hover,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery:hover,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card:hover,
+.theme-stationery .cat-card-stationery:hover,
+.theme-stationery .clothing-product-card:hover,
+.clothing-product-card.cat-card-stationery:hover {
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 25px rgba(223, 183, 67, 0.25) !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-brand-name,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-brand-name,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-brand-name,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-brand-name,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-brand-name,
+.theme-stationery .cat-card-stationery .clothing-brand-name,
+.theme-stationery .clothing-product-card .clothing-brand-name,
+.clothing-product-card.cat-card-stationery .clothing-brand-name {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-product-title,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-product-title,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-product-title,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-product-title,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-product-title,
+.theme-stationery .cat-card-stationery .clothing-product-title,
+.theme-stationery .clothing-product-card .clothing-product-title,
+.clothing-product-card.cat-card-stationery .clothing-product-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-selling-price,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-selling-price,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-selling-price,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-selling-price,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-selling-price,
+.theme-stationery .cat-card-stationery .clothing-selling-price,
+.theme-stationery .clothing-product-card .clothing-selling-price,
+.clothing-product-card.cat-card-stationery .clothing-selling-price {
+  color: #dfb743 !important;
+  font-weight: 800 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-original-price,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-original-price,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-original-price,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-original-price,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-original-price,
+.theme-stationery .cat-card-stationery .clothing-original-price,
+.theme-stationery .clothing-product-card .clothing-original-price,
+.clothing-product-card.cat-card-stationery .clothing-original-price {
+  color: rgba(255, 255, 255, 0.5) !important;
+  text-decoration: line-through !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-discount-badge,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-discount-badge,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-discount-badge,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-discount-badge,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-discount-badge,
+.theme-stationery .cat-card-stationery .clothing-discount-badge,
+.theme-stationery .clothing-product-card .clothing-discount-badge,
+.clothing-product-card.cat-card-stationery .clothing-discount-badge {
+  background: #2e7d32 !important;
+  color: #ffffff !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-card-add-cart-btn,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-card-add-cart-btn,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-card-add-cart-btn,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-card-add-cart-btn,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-card-add-cart-btn,
+.theme-stationery .cat-card-stationery .clothing-card-add-cart-btn,
+.theme-stationery .clothing-product-card .clothing-card-add-cart-btn,
+.clothing-product-card.cat-card-stationery .clothing-card-add-cart-btn {
+  background: #dfb743 !important;
+  color: #6254a6 !important;
+  border: 2px solid #dfb743 !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-card-add-cart-btn:hover,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-card-add-cart-btn:hover,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-card-add-cart-btn:hover,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-card-add-cart-btn:hover,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-card-add-cart-btn:hover,
+.theme-stationery .cat-card-stationery .clothing-card-add-cart-btn:hover,
+.theme-stationery .clothing-product-card .clothing-card-add-cart-btn:hover,
+.clothing-product-card.cat-card-stationery .clothing-card-add-cart-btn:hover {
+  background: #6254a6 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-hover-action-btn:hover,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-hover-action-btn:hover,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-hover-action-btn:hover,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-hover-action-btn:hover,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-hover-action-btn:hover,
+.theme-stationery .cat-card-stationery .clothing-hover-action-btn:hover,
+.theme-stationery .clothing-product-card .clothing-hover-action-btn:hover,
+.clothing-product-card.cat-card-stationery .clothing-hover-action-btn:hover {
+  background: #dfb743 !important;
+  color: #6254a6 !important;
+  box-shadow: 0 6px 20px rgba(223, 183, 67, 0.35) !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-wishlist-float-btn:hover,
+.stationery-lavender-theme .clothing-product-card .clothing-wishlist-float-btn.active,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-wishlist-float-btn:hover,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-wishlist-float-btn.active,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-wishlist-float-btn:hover,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-wishlist-float-btn.active,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-wishlist-float-btn:hover,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-wishlist-float-btn.active,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-wishlist-float-btn:hover,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-wishlist-float-btn.active,
+.theme-stationery .cat-card-stationery .clothing-wishlist-float-btn:hover,
+.theme-stationery .cat-card-stationery .clothing-wishlist-float-btn.active,
+.theme-stationery .clothing-product-card .clothing-wishlist-float-btn:hover,
+.theme-stationery .clothing-product-card .clothing-wishlist-float-btn.active,
+.clothing-product-card.cat-card-stationery .clothing-wishlist-float-btn:hover,
+.clothing-product-card.cat-card-stationery .clothing-wishlist-float-btn.active {
+  color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-product-title:hover,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery .clothing-product-title:hover,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-product-title:hover,
+.shop-product-detail-page-view.theme-stationery .cat-card-stationery .clothing-product-title:hover,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-product-title:hover,
+.theme-stationery .cat-card-stationery .clothing-product-title:hover,
+.theme-stationery .clothing-product-card .clothing-product-title:hover,
+.clothing-product-card.cat-card-stationery .clothing-product-title:hover {
+  color: #dfb743 !important;
+}
+
+/* Rating Pill on dark card */
+.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-rating-pill-green,
+.theme-stationery .clothing-product-card .clothing-rating-pill-green {
+  background: #388e3c !important;
+  color: #ffffff !important;
+  border: 1px solid #388e3c !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green span,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green span,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-rating-pill-green span,
+.theme-stationery .clothing-product-card .clothing-rating-pill-green span {
+  color: #ffffff !important;
+}
+.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green .rating-star-icon,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .clothing-rating-pill-green .rating-star-icon,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .clothing-rating-pill-green .rating-star-icon,
+.theme-stationery .clothing-product-card .clothing-rating-pill-green .rating-star-icon {
+  color: #ffffff !important;
+}
+
+/* Stock statuses on dark card */
+.stationery-lavender-theme .clothing-product-card .stock-status-in,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .stock-status-in,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .stock-status-in,
+.theme-stationery .clothing-product-card .stock-status-in {
+  color: #4caf50 !important;
+  font-weight: 700 !important;
+}
+
+.stationery-lavender-theme .clothing-product-card .stock-status-out,
+.shop-view-page.stationery-lavender-theme .clothing-product-card .stock-status-out,
+.shop-product-detail-page-view.theme-stationery .clothing-product-card .stock-status-out,
+.theme-stationery .clothing-product-card .stock-status-out,
+.stationery-lavender-theme .quickview-split-overlay .availability-status.out-of-stock-status,
+.quickview-split-overlay.theme-stationery .availability-status.out-of-stock-status,
+.shop-product-detail-page-view.theme-stationery .product-detail-availability-status.out-of-stock-status {
+  background-color: #d32f2f !important;
+  color: #ffffff !important;
+  border: 1px solid #d32f2f !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+}
+
+/* ── Stationery Quick View Modal ── */
+.stationery-lavender-theme .quickview-split-overlay .quickview-split-card,
+.quickview-split-overlay.theme-stationery .quickview-split-card {
+  background: #6254a6 !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 10px 40px rgba(98, 84, 166, 0.4) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .quickview-modal-header,
+.quickview-split-overlay.theme-stationery .quickview-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .quickview-modal-title-top,
+.quickview-split-overlay.theme-stationery .quickview-modal-title-top {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-close-btn,
+.quickview-split-overlay.theme-stationery .modal-close-btn {
+  color: #ffffff !important;
+}
+.stationery-lavender-theme .quickview-split-overlay .modal-close-btn:hover,
+.quickview-split-overlay.theme-stationery .modal-close-btn:hover {
+  color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .quickview-split-gallery-pane,
+.quickview-split-overlay.theme-stationery .quickview-split-gallery-pane {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .quickview-thumbnail-wrapper,
+.quickview-split-overlay.theme-stationery .quickview-thumbnail-wrapper {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .quickview-thumbnail-wrapper.active,
+.quickview-split-overlay.theme-stationery .quickview-thumbnail-wrapper.active {
+  border-color: #dfb743 !important;
+  box-shadow: 0 0 8px rgba(223, 183, 67, 0.3) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .thumbnail-nav-arrow,
+.quickview-split-overlay.theme-stationery .thumbnail-nav-arrow {
+  color: #ffffff !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .thumbnail-nav-arrow:hover,
+.quickview-split-overlay.theme-stationery .thumbnail-nav-arrow:hover {
+  color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-title,
+.stationery-lavender-theme .quickview-split-overlay .modal-reviews-count,
+.stationery-lavender-theme .quickview-split-overlay .modal-desc,
+.stationery-lavender-theme .quickview-split-overlay .modal-section-title,
+.stationery-lavender-theme .quickview-split-overlay .qty-label,
+.stationery-lavender-theme .quickview-split-overlay .qty-value,
+.stationery-lavender-theme .quickview-split-overlay span:not(.availability-status):not(.modal-discount-badge):not(.modal-original-price),
+.stationery-lavender-theme .quickview-split-overlay p,
+.stationery-lavender-theme .quickview-split-overlay label,
+.stationery-lavender-theme .quickview-split-overlay div:not(.modal-discount-badge):not(.quickview-thumbnail-wrapper):not(.quickview-gallery-thumbnails),
+.quickview-split-overlay.theme-stationery .modal-title,
+.quickview-split-overlay.theme-stationery .modal-reviews-count,
+.quickview-split-overlay.theme-stationery .modal-desc,
+.quickview-split-overlay.theme-stationery .modal-section-title,
+.quickview-split-overlay.theme-stationery .qty-label,
+.quickview-split-overlay.theme-stationery .qty-value,
+.quickview-split-overlay.theme-stationery span:not(.availability-status):not(.modal-discount-badge):not(.modal-original-price),
+.quickview-split-overlay.theme-stationery p,
+.quickview-split-overlay.theme-stationery label,
+.quickview-split-overlay.theme-stationery div:not(.modal-discount-badge):not(.quickview-thumbnail-wrapper):not(.quickview-gallery-thumbnails) {
+  color: #ffffff !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-price,
+.quickview-split-overlay.theme-stationery .modal-price {
+  color: #dfb743 !important;
+  font-weight: 800 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .qty-btn,
+.quickview-split-overlay.theme-stationery .qty-btn {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .qty-btn:hover,
+.quickview-split-overlay.theme-stationery .qty-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .availability-status,
+.quickview-split-overlay.theme-stationery .availability-status {
+  color: #4caf50 !important;
+  background: rgba(76, 175, 80, 0.15) !important;
+  border: 1px solid rgba(76, 175, 80, 0.25) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-discount-badge,
+.quickview-split-overlay.theme-stationery .modal-discount-badge {
+  background: #2e7d32 !important;
+  color: #ffffff !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-original-price,
+.quickview-split-overlay.theme-stationery .modal-original-price {
+  color: rgba(255, 255, 255, 0.5) !important;
+  text-decoration: line-through !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-primary-action-btn,
+.quickview-split-overlay.theme-stationery .modal-primary-action-btn {
+  background: #dfb743 !important;
+  border: 2px solid #dfb743 !important;
+  color: #6254a6 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(98, 84, 166, 0.2) !important;
+  border-radius: 6px !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-primary-action-btn:hover,
+.quickview-split-overlay.theme-stationery .modal-primary-action-btn:hover {
+  background: #6254a6 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-secondary-action-btn,
+.quickview-split-overlay.theme-stationery .modal-secondary-action-btn {
+  background: transparent !important;
+  border: 2px solid #dfb743 !important;
+  color: #dfb743 !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-secondary-action-btn:hover,
+.quickview-split-overlay.theme-stationery .modal-secondary-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-extra-link-btn,
+.quickview-split-overlay.theme-stationery .modal-extra-link-btn {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transition: all 0.3s ease !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-extra-link-btn:hover,
+.quickview-split-overlay.theme-stationery .modal-extra-link-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-extra-link-btn.active,
+.quickview-split-overlay.theme-stationery .modal-extra-link-btn.active {
+  background-color: #dfb743 !important;
+  color: #6254a6 !important;
+  border-color: #dfb743 !important;
+  box-shadow: 0 4px 10px rgba(98, 84, 166, 0.25) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-close-btn-split,
+.quickview-split-overlay.theme-stationery .modal-close-btn-split {
+  color: #ffffff !important;
+}
+
+/* ── Stationery Product Detail Page View ── */
+.shop-product-detail-page-view.theme-stationery {
+  background-color: #FAF5EE !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout {
+  background: #6254a6 !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 0 25px rgba(223, 183, 67, 0.4) !important;
+  border-radius: 20px !important;
+  padding: 35px !important;
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-badge-pill {
+  color: #6254a6 !important;
+  background-color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-title {
+  color: #ffffff !important;
+  font-size: 2.2rem !important;
+  font-weight: 700 !important;
+  margin-top: 10px !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .product-detail-tagline,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .product-detail-section-title,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .product-detail-qty-control span,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .detail-tab-btn,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .detail-tab-content,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .review-comment-text,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .specs-key,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout .specs-val,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout div:not(.product-detail-category-tag):not(.product-detail-badge-pill):not(.product-detail-discount-badge),
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status):not(.product-detail-discount-badge):not(.product-detail-original-price),
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout p,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout label {
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-category-tag {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-reviews {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 1.05rem !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .breadcrumb-category,
+.shop-product-detail-page-view.theme-stationery .breadcrumb-divider,
+.shop-product-detail-page-view.theme-stationery .back-to-shop-btn,
+.shop-product-detail-page-view.theme-stationery .back-to-shop-btn span,
+.shop-product-detail-page-view.theme-stationery .back-to-shop-btn svg,
+.shop-product-detail-page-view.theme-stationery .product-detail-nav svg {
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .detail-tab-btn {
+  border-bottom: 2px solid transparent !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .detail-tab-btn.active {
+  color: #dfb743 !important;
+  border-bottom-color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-price-value {
+  color: #dfb743 !important;
+  font-weight: 800 !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-original-price {
+  color: rgba(255, 255, 255, 0.5) !important;
+  text-decoration: line-through !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-discount-badge {
+  background-color: #2e7d32 !important;
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-cart-btn {
+  background: #dfb743 !important;
+  color: #6254a6 !important;
+  border: 2px solid #dfb743 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-cart-btn:hover {
+  background: #6254a6 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-buy-btn {
+  background-color: transparent !important;
+  border: 2px solid #dfb743 !important;
+  color: #dfb743 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-buy-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-availability-label {
+  color: #ffffff !important;
+  background-color: #2e7d32 !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-availability-status {
+  color: #4caf50 !important;
+  background: rgba(76, 175, 80, 0.15) !important;
+  border: 1px solid rgba(76, 175, 80, 0.25) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-similar-section .similar-title,
+.shop-product-detail-page-view.theme-stationery .similar-products-section .similar-title,
+.shop-product-detail-page-view.theme-stationery h2.similar-title {
+  color: #6254a6 !important;
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+}
+
+/* Quantity selector styling under Stationery Theme (Quick View & Details Page) */
+.stationery-lavender-theme .quickview-split-overlay .modal-quantity-selector,
+.quickview-split-overlay.theme-stationery .modal-quantity-selector {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 6px !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-quantity-selector button.qty-btn,
+.quickview-split-overlay.theme-stationery .modal-quantity-selector button.qty-btn {
+  color: #ffffff !important;
+  background: transparent !important;
+  border: none !important;
+  width: 32px !important;
+  height: 30px !important;
+  transition: all 0.2s ease !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-quantity-selector button.qty-btn:hover,
+.quickview-split-overlay.theme-stationery .modal-quantity-selector button.qty-btn:hover {
+  color: #dfb743 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.stationery-lavender-theme .quickview-split-overlay .modal-quantity-selector .qty-value,
+.quickview-split-overlay.theme-stationery .modal-quantity-selector .qty-value {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-qty-control {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-qty-control button {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.shop-product-detail-page-view.theme-stationery .product-detail-qty-control button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #dfb743 !important;
+}
+
+/* Stationery theme banner styling */
+.shop-view-page.stationery-lavender-theme .shop-banner {
+  height: 520px !important;
+  background-color: #6254a6 !important;
+  border-bottom: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+/* Below banner shimmer golden border glow */
+.shop-view-page.stationery-lavender-theme .shop-banner::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 4px !important;
+  background: linear-gradient(to right, #dfb743 0%, #f7df8f 35%, #ffffff 50%, #f7df8f 65%, #b28e20 100%) !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.8) !important;
+  z-index: 5 !important;
+}
+
+/* Media query for desktop screens to position and size the banner image, preserving full background glow and sparkles */
+@media (min-width: 769px) {
+  .shop-view-page.stationery-lavender-theme .shop-banner-bg-image {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: right center !important;
+    z-index: 1 !important;
+  }
+}
+
+/* Media query for mobile screens to let the image cover the container responsively */
+@media (max-width: 768px) {
+  .shop-view-page.stationery-lavender-theme .shop-banner-bg-image {
+    position: relative !important;
+    width: 100% !important;
+    height: 220px !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    z-index: 1 !important;
+  }
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-overlay-gradient {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  /* Extremely soft gradient overlay so that the sparkle glowy effects are fully visible */
+  background: linear-gradient(to right, rgba(98, 84, 166, 0.25) 0%, rgba(98, 84, 166, 0.08) 40%, rgba(98, 84, 166, 0) 70%) !important;
+  z-index: 2 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-content {
+  position: relative !important;
+  z-index: 3 !important;
+  padding: 40px 6% !important;
+  max-width: 600px !important;
+  text-align: left !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-tagline {
+  font-family: var(--font-sans) !important;
+  font-size: 0.9rem !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-title {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  color: #ffffff !important;
+  font-size: 3.2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  margin: 10px 0 20px 0 !important;
+  display: block !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-subtitle {
+  font-family: var(--font-sans) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #b28e20 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  display: inline-block !important;
+  margin-top: 10px !important;
+  margin-bottom: 30px !important;
+  max-width: 500px !important;
+  line-height: 1.4 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-divider {
+  display: none !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-explore-btn {
+  background: #7c6bb5 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 28px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  margin-top: 0 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 1.2px !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shop-view-page.stationery-lavender-theme .shop-banner-explore-btn:hover {
+  background: #8e7ec8 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(98, 84, 166, 0.4) !important;
+}
+
+/* Trust Bar under banner */
+.shop-view-page.stationery-lavender-theme .accessories-trust-bar {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  background-color: #ffffff !important;
+  border-bottom: 1.5px solid #e1ddec !important;
+  padding: 15px 6% !important;
+  gap: 20px !important;
+}
+
+.shop-view-page.stationery-lavender-theme .accessories-trust-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .accessories-trust-icon {
+  color: #dfb743 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.shop-view-page.stationery-lavender-theme .accessories-trust-title {
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  display: block !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.stationery-lavender-theme .accessories-trust-sub {
+  font-size: 0.8rem !important;
+  color: #b28e20 !important;
+  display: block !important;
+}
+
+/* ==========================================================================
+   UNIFIED PREMIUM ROYAL BLUE & GLITTER GOLD THEME OVERRIDES
+   ========================================================================== */
+
+/* 1. Global Page Backgrounds (Cream/Champagne) */
+.shop-view-page.clothing-wine-theme,
+.shop-view-page.gifts-serene-theme,
+.shop-view-page.accessories-luxury-theme,
+.shop-view-page.stationery-lavender-theme {
+  background-color: #FAF5EE !important;
+}
+
+/* 2. Unified Banners (Glossy Blue with Shimmer Gold Bottom Border) */
+.shop-view-page.clothing-wine-theme .shop-banner,
+.shop-view-page.gifts-serene-theme .shop-banner,
+.shop-view-page.accessories-luxury-theme .shop-banner,
+.shop-view-page.stationery-lavender-theme .shop-banner {
+  background: linear-gradient(135deg, #051838 0%, #0c3570 30%, #002254 70%, #0c3570 100%) !important;
+  height: 520px !important;
+  border-bottom: none !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner::after,
+.shop-view-page.gifts-serene-theme .shop-banner::after,
+.shop-view-page.accessories-luxury-theme .shop-banner::after,
+.shop-view-page.stationery-lavender-theme .shop-banner::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 4px !important;
+  background: linear-gradient(to right, #dfb743 0%, #f7df8f 35%, #ffffff 50%, #f7df8f 65%, #dfb743 100%) !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.85) !important;
+  z-index: 5 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-title,
+.shop-view-page.gifts-serene-theme .shop-banner-title,
+.shop-view-page.accessories-luxury-theme .shop-banner-title,
+.shop-view-page.stationery-lavender-theme .shop-banner-title {
+  color: #ffffff !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-subtitle,
+.shop-view-page.gifts-serene-theme .shop-banner-subtitle,
+.shop-view-page.accessories-luxury-theme .shop-banner-subtitle,
+.shop-view-page.stationery-lavender-theme .shop-banner-subtitle {
+  background: linear-gradient(135deg, #dfb743 0%, #f7df8f 50%, #ffffff 75%, #dfb743 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-explore-btn,
+.shop-view-page.gifts-serene-theme .shop-banner-explore-btn,
+.shop-view-page.accessories-luxury-theme .shop-banner-explore-btn,
+.shop-view-page.stationery-lavender-theme .shop-banner-explore-btn {
+  background: #dfb743 !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+  border: 2px solid #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-banner-explore-btn:hover,
+.shop-view-page.gifts-serene-theme .shop-banner-explore-btn:hover,
+.shop-view-page.accessories-luxury-theme .shop-banner-explore-btn:hover,
+.shop-view-page.stationery-lavender-theme .shop-banner-explore-btn:hover {
+  background: #051838 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.45) !important;
+}
+
+/* 3. Search Toolbar & Header Controls (Glossy Blue with Gold Borders) */
+.shop-view-page.clothing-wine-theme .shop-products-header,
+.shop-view-page.gifts-serene-theme .shop-products-header,
+.shop-view-page.accessories-luxury-theme .shop-products-header,
+.shop-view-page.stationery-lavender-theme .shop-products-header {
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 0 15px rgba(223, 183, 67, 0.4) !important;
+  background: linear-gradient(135deg, #051838 0%, #0c3570 30%, #002254 70%, #0c3570 100%) !important;
+}
+
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn,
+.shop-view-page.gifts-serene-theme button.shop-filters-toggle-btn,
+.shop-view-page.accessories-luxury-theme button.shop-filters-toggle-btn,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn {
+  background-color: #0c3570 !important;
+  color: #dfb743 !important;
+  border: 1px solid #dfb743 !important;
+  box-shadow: 0 4px 10px rgba(0, 34, 84, 0.3) !important;
+}
+
+.shop-view-page.clothing-wine-theme button.shop-filters-toggle-btn:hover,
+.shop-view-page.gifts-serene-theme button.shop-filters-toggle-btn:hover,
+.shop-view-page.accessories-luxury-theme button.shop-filters-toggle-btn:hover,
+.shop-view-page.stationery-lavender-theme button.shop-filters-toggle-btn:hover {
+  background-color: #dfb743 !important;
+  color: #051838 !important;
+  border-color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .results-count-text,
+.shop-view-page.clothing-wine-theme .shop-results-count,
+.shop-view-page.gifts-serene-theme .results-count-text,
+.shop-view-page.gifts-serene-theme .shop-results-count,
+.shop-view-page.accessories-luxury-theme .results-count-text,
+.shop-view-page.accessories-luxury-theme .shop-results-count,
+.shop-view-page.stationery-lavender-theme .results-count-text,
+.shop-view-page.stationery-lavender-theme .shop-results-count {
+  color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-box,
+.shop-view-page.gifts-serene-theme .shop-search-box,
+.shop-view-page.accessories-luxury-theme .shop-search-box,
+.shop-view-page.stationery-lavender-theme .shop-search-box {
+  border: 1px solid #dfb743 !important;
+  background-color: #ffffff !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-input,
+.shop-view-page.gifts-serene-theme .shop-search-input,
+.shop-view-page.accessories-luxury-theme .shop-search-input,
+.shop-view-page.stationery-lavender-theme .shop-search-input {
+  color: #051838 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-search-box .search-icon,
+.shop-view-page.gifts-serene-theme .shop-search-box .search-icon,
+.shop-view-page.accessories-luxury-theme .shop-search-box .search-icon,
+.shop-view-page.stationery-lavender-theme .shop-search-box .search-icon {
+  color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-sort-select,
+.shop-view-page.gifts-serene-theme .shop-sort-select,
+.shop-view-page.accessories-luxury-theme .shop-sort-select,
+.shop-view-page.stationery-lavender-theme .shop-sort-select {
+  border: 1px solid #dfb743 !important;
+  background-color: #ffffff !important;
+  color: #051838 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .shop-sort-select option,
+.shop-view-page.gifts-serene-theme .shop-sort-select option,
+.shop-view-page.accessories-luxury-theme .shop-sort-select option,
+.shop-view-page.stationery-lavender-theme .shop-sort-select option {
+  color: #051838 !important;
+}
+
+/* 4. Sidebar Filters Overrides (Clean White BG & Gold Accents) */
+.shop-view-page.clothing-wine-theme .shop-sidebar-filters,
+.shop-view-page.gifts-serene-theme .shop-sidebar-filters,
+.shop-view-page.accessories-luxury-theme .shop-sidebar-filters,
+.shop-view-page.stationery-lavender-theme .shop-sidebar-filters {
+  background-color: #ffffff !important;
+  border-right: 1.5px solid rgba(11, 34, 64, 0.1) !important;
+}
+
+.shop-view-page.clothing-wine-theme .unified-filters-card,
+.shop-view-page.gifts-serene-theme .unified-filters-card,
+.shop-view-page.accessories-luxury-theme .unified-filters-card,
+.shop-view-page.stationery-lavender-theme .unified-filters-card {
+  background-color: #ffffff !important;
+  border: 1.5px solid #dfb743 !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.08) !important;
+}
+
+.shop-view-page.clothing-wine-theme .sidebar-title-text,
+.shop-view-page.gifts-serene-theme .sidebar-title-text,
+.shop-view-page.accessories-luxury-theme .sidebar-title-text,
+.shop-view-page.stationery-lavender-theme .sidebar-title-text {
+  color: #051838 !important;
+}
+
+.shop-view-page.clothing-wine-theme .filter-card-section h3,
+.shop-view-page.clothing-wine-theme .section-title-text,
+.shop-view-page.clothing-wine-theme .filter-header h3,
+.shop-view-page.gifts-serene-theme .filter-card-section h3,
+.shop-view-page.gifts-serene-theme .section-title-text,
+.shop-view-page.gifts-serene-theme .filter-header h3,
+.shop-view-page.accessories-luxury-theme .filter-card-section h3,
+.shop-view-page.accessories-luxury-theme .section-title-text,
+.shop-view-page.accessories-luxury-theme .filter-header h3,
+.shop-view-page.stationery-lavender-theme .filter-card-section h3,
+.shop-view-page.stationery-lavender-theme .section-title-text,
+.shop-view-page.stationery-lavender-theme .filter-header h3 {
+  color: #051838 !important;
+}
+
+.shop-view-page.clothing-wine-theme .filter-card-section span,
+.shop-view-page.clothing-wine-theme .filter-card-section label,
+.shop-view-page.clothing-wine-theme .filter-card-section p,
+.shop-view-page.clothing-wine-theme .filter-card-section li,
+.shop-view-page.gifts-serene-theme .filter-card-section span,
+.shop-view-page.gifts-serene-theme .filter-card-section label,
+.shop-view-page.gifts-serene-theme .filter-card-section p,
+.shop-view-page.gifts-serene-theme .filter-card-section li,
+.shop-view-page.accessories-luxury-theme .filter-card-section span,
+.shop-view-page.accessories-luxury-theme .filter-card-section label,
+.shop-view-page.accessories-luxury-theme .filter-card-section p,
+.shop-view-page.accessories-luxury-theme .filter-card-section li,
+.shop-view-page.stationery-lavender-theme .filter-card-section span,
+.shop-view-page.stationery-lavender-theme .filter-card-section label,
+.shop-view-page.stationery-lavender-theme .filter-card-section p,
+.shop-view-page.stationery-lavender-theme .filter-card-section li {
+  color: #051838 !important;
+  font-weight: 600 !important;
+}
+
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper:hover,
+.shop-view-page.clothing-wine-theme .category-sub-item-header-wrapper.active,
+.shop-view-page.gifts-serene-theme .category-sub-item-header-wrapper:hover,
+.shop-view-page.gifts-serene-theme .category-sub-item-header-wrapper.active,
+.shop-view-page.accessories-luxury-theme .category-sub-item-header-wrapper:hover,
+.shop-view-page.accessories-luxury-theme .category-sub-item-header-wrapper.active,
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper:hover,
+.shop-view-page.stationery-lavender-theme .category-sub-item-header-wrapper.active {
+  color: #dfb743 !important;
+  background-color: rgba(223, 183, 67, 0.08) !important;
+}
+
+.shop-view-page.clothing-wine-theme .filter-card-section input[type="checkbox"]:checked,
+.shop-view-page.gifts-serene-theme .filter-card-section input[type="checkbox"]:checked,
+.shop-view-page.accessories-luxury-theme .filter-card-section input[type="checkbox"]:checked,
+.shop-view-page.stationery-lavender-theme .filter-card-section input[type="checkbox"]:checked {
+  background-color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .size-btn,
+.shop-view-page.gifts-serene-theme .size-btn,
+.shop-view-page.accessories-luxury-theme .size-btn,
+.shop-view-page.stationery-lavender-theme .size-btn {
+  border: 1px solid rgba(11, 34, 64, 0.2) !important;
+  color: #051838 !important;
+}
+
+.shop-view-page.clothing-wine-theme .size-btn:hover,
+.shop-view-page.gifts-serene-theme .size-btn:hover,
+.shop-view-page.accessories-luxury-theme .size-btn:hover,
+.shop-view-page.stationery-lavender-theme .size-btn:hover {
+  border-color: #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .size-btn.active,
+.shop-view-page.gifts-serene-theme .size-btn.active,
+.shop-view-page.accessories-luxury-theme .size-btn.active,
+.shop-view-page.stationery-lavender-theme .size-btn.active {
+  background-color: #dfb743 !important;
+  border-color: #dfb743 !important;
+  color: #051838 !important;
+}
+
+.shop-view-page.clothing-wine-theme .pink-price-slider::-webkit-slider-thumb,
+.shop-view-page.gifts-serene-theme .pink-price-slider::-webkit-slider-thumb,
+.shop-view-page.accessories-luxury-theme .pink-price-slider::-webkit-slider-thumb,
+.shop-view-page.stationery-lavender-theme .pink-price-slider::-webkit-slider-thumb {
+  background: #dfb743 !important;
+}
+
+.shop-view-page.clothing-wine-theme .pink-price-slider::-webkit-slider-runnable-track,
+.shop-view-page.gifts-serene-theme .pink-price-slider::-webkit-slider-runnable-track,
+.shop-view-page.accessories-luxury-theme .pink-price-slider::-webkit-slider-runnable-track,
+.shop-view-page.stationery-lavender-theme .pink-price-slider::-webkit-slider-runnable-track {
+  background: rgba(11, 34, 64, 0.1) !important;
+}
+
+/* 5. Product Cards Overrides (Glossy Blue & Glitter Gold) */
+.clothing-product-card,
+.cat-card-stationery,
+.cat-card-gifts,
+.cat-card-accessories,
+.clothing-product-card.cat-card-stationery,
+.clothing-product-card.cat-card-gifts,
+.clothing-product-card.cat-card-accessories,
+.clothing-product-card.theme-clothing,
+.clothing-product-card.theme-stationery,
+.clothing-product-card.theme-gifts,
+.clothing-product-card.theme-accessories,
+.shop-view-page .clothing-product-card,
+.shop-view-page .clothing-product-card.cat-card-stationery,
+.shop-view-page .clothing-product-card.cat-card-gifts,
+.shop-view-page .clothing-product-card.cat-card-accessories,
+.shop-view-page.stationery-lavender-theme .clothing-product-card,
+.shop-view-page.gifts-serene-theme .clothing-product-card,
+.shop-view-page.accessories-luxury-theme .clothing-product-card,
+.shop-view-page.clothing-wine-theme .clothing-product-card,
+.shop-view-page.stationery-lavender-theme .cat-card-stationery,
+.shop-view-page.gifts-serene-theme .cat-card-gifts,
+.shop-view-page.accessories-luxury-theme .cat-card-accessories,
+.theme-clothing .clothing-product-card,
+.theme-stationery .clothing-product-card,
+.theme-gifts .clothing-product-card,
+.theme-accessories .clothing-product-card,
+.prod-theme-clothing,
+.prod-theme-stationery,
+.prod-theme-gifts,
+.prod-theme-accessories {
+  background: linear-gradient(135deg, #051838 0%, #0c3570 50%, #002254 100%) !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+.clothing-product-card:hover,
+.cat-card-stationery:hover,
+.cat-card-gifts:hover,
+.cat-card-accessories:hover,
+.clothing-product-card.cat-card-stationery:hover,
+.clothing-product-card.cat-card-gifts:hover,
+.clothing-product-card.cat-card-accessories:hover {
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 25px rgba(223, 183, 67, 0.35) !important;
+}
+
+.clothing-product-card .clothing-brand-name,
+.cat-card-stationery .clothing-brand-name,
+.cat-card-gifts .clothing-brand-name,
+.cat-card-accessories .clothing-brand-name,
+.clothing-product-card.cat-card-stationery .clothing-brand-name,
+.clothing-product-card.cat-card-gifts .clothing-brand-name,
+.clothing-product-card.cat-card-accessories .clothing-brand-name {
+  color: #dfb743 !important;
+  font-weight: 600 !important;
+}
+
+.clothing-product-card .clothing-product-title,
+.cat-card-stationery .clothing-product-title,
+.cat-card-gifts .clothing-product-title,
+.cat-card-accessories .clothing-product-title,
+.clothing-product-card.cat-card-stationery .clothing-product-title,
+.clothing-product-card.cat-card-gifts .clothing-product-title,
+.clothing-product-card.cat-card-accessories .clothing-product-title {
+  color: #ffffff !important;
+}
+
+.clothing-product-card .clothing-selling-price,
+.cat-card-stationery .clothing-selling-price,
+.cat-card-gifts .clothing-selling-price,
+.cat-card-accessories .clothing-selling-price,
+.clothing-product-card.cat-card-stationery .clothing-selling-price,
+.clothing-product-card.cat-card-gifts .clothing-selling-price,
+.clothing-product-card.cat-card-accessories .clothing-selling-price {
+  color: #dfb743 !important;
+  font-weight: 800 !important;
+}
+
+.clothing-product-card .clothing-original-price,
+.cat-card-stationery .clothing-original-price,
+.cat-card-gifts .clothing-original-price,
+.cat-card-accessories .clothing-original-price,
+.clothing-product-card.cat-card-stationery .clothing-original-price,
+.clothing-product-card.cat-card-gifts .clothing-original-price,
+.clothing-product-card.cat-card-accessories .clothing-original-price {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.clothing-product-card .clothing-card-add-cart-btn,
+.cat-card-stationery .clothing-card-add-cart-btn,
+.cat-card-gifts .clothing-card-add-cart-btn,
+.cat-card-accessories .clothing-card-add-cart-btn {
+  background: #dfb743 !important;
+  color: #051838 !important;
+  border: 2px solid #dfb743 !important;
+  font-weight: 700 !important;
+}
+
+.clothing-product-card .clothing-card-add-cart-btn:hover,
+.cat-card-stationery .clothing-card-add-cart-btn:hover,
+.cat-card-gifts .clothing-card-add-cart-btn:hover,
+.cat-card-accessories .clothing-card-add-cart-btn:hover {
+  background: #051838 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.clothing-product-card .clothing-hover-action-btn:hover,
+.cat-card-stationery .clothing-hover-action-btn:hover,
+.cat-card-gifts .clothing-hover-action-btn:hover,
+.cat-card-accessories .clothing-hover-action-btn:hover {
+  background: #dfb743 !important;
+  color: #051838 !important;
+}
+
+/* Rating Pill on dark card */
+.clothing-product-card .clothing-rating-pill-green,
+.cat-card-stationery .clothing-rating-pill-green,
+.cat-card-gifts .clothing-rating-pill-green,
+.cat-card-accessories .clothing-rating-pill-green {
+  background: #388e3c !important;
+  color: #ffffff !important;
+  border: 1px solid #388e3c !important;
+}
+
+.clothing-product-card .clothing-rating-pill-green span,
+.cat-card-stationery .clothing-rating-pill-green span,
+.cat-card-gifts .clothing-rating-pill-green span,
+.cat-card-accessories .clothing-rating-pill-green span {
+  color: #ffffff !important;
+}
+
+.clothing-product-card .clothing-rating-pill-green .rating-star-icon,
+.cat-card-stationery .clothing-rating-pill-green .rating-star-icon,
+.cat-card-gifts .clothing-rating-pill-green .rating-star-icon,
+.cat-card-accessories .clothing-rating-pill-green .rating-star-icon {
+  color: #ffffff !important;
+}
+
+/* Out of Stock Badges */
+.clothing-product-card .stock-status-out,
+.cat-card-stationery .stock-status-out,
+.cat-card-gifts .stock-status-out,
+.cat-card-accessories .stock-status-out {
+  background-color: #d32f2f !important;
+  color: #ffffff !important;
+  border: 1px solid #d32f2f !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+}
+
+/* 6. Quick View Modal Overrides */
+.quickview-split-card,
+.quickview-split-overlay .quickview-split-card,
+.quickview-split-overlay.theme-clothing .quickview-split-card,
+.quickview-split-overlay.theme-stationery .quickview-split-card,
+.quickview-split-overlay.theme-gifts .quickview-split-card,
+.quickview-split-overlay.theme-accessories .quickview-split-card,
+.clothing-wine-theme .quickview-split-overlay .quickview-split-card,
+.stationery-lavender-theme .quickview-split-overlay .quickview-split-card,
+.gifts-serene-theme .quickview-split-overlay .quickview-split-card,
+.accessories-luxury-theme .quickview-split-overlay .quickview-split-card {
+  background: linear-gradient(135deg, #051838 0%, #0c3570 50%, #002254 100%) !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 10px 40px rgba(223, 183, 67, 0.4) !important;
+}
+
+.quickview-split-overlay .modal-title,
+.quickview-split-overlay .modal-reviews-count,
+.quickview-split-overlay .modal-desc,
+.quickview-split-overlay .modal-section-title,
+.quickview-split-overlay .qty-label,
+.quickview-split-overlay .qty-value,
+.quickview-split-overlay span:not(.availability-status):not(.modal-discount-badge):not(.modal-original-price),
+.quickview-split-overlay p,
+.quickview-split-overlay label,
+.quickview-split-overlay div:not(.modal-discount-badge):not(.quickview-thumbnail-wrapper):not(.quickview-gallery-thumbnails) {
+  color: #ffffff !important;
+}
+
+.quickview-split-overlay .modal-price {
+  color: #dfb743 !important;
+}
+
+.quickview-split-overlay .modal-primary-action-btn {
+  background: #dfb743 !important;
+  color: #051838 !important;
+  border: 2px solid #dfb743 !important;
+}
+
+.quickview-split-overlay .modal-primary-action-btn:hover {
+  background: #051838 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.quickview-split-overlay .modal-secondary-action-btn {
+  background: transparent !important;
+  border: 2px solid #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.quickview-split-overlay .modal-secondary-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.quickview-split-overlay .modal-quantity-selector {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.quickview-split-overlay .modal-quantity-selector button.qty-btn {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.quickview-split-overlay .modal-quantity-selector button.qty-btn:hover {
+  color: #dfb743 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.quickview-split-overlay .modal-quantity-selector .qty-value {
+  color: #ffffff !important;
+}
+
+.quickview-split-overlay .availability-status.out-of-stock-status {
+  background-color: #d32f2f !important;
+  color: #ffffff !important;
+  border: 1px solid #d32f2f !important;
+}
+
+/* 7. Product Detail Page Overrides */
+.shop-product-detail-page-view {
+  background-color: #FAF5EE !important;
+}
+
+.shop-product-detail-page-view .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-clothing .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-stationery .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-gifts .product-detail-grid-layout,
+.shop-product-detail-page-view.theme-accessories .product-detail-grid-layout,
+.shop-product-detail-page-view.clothing-wine-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.stationery-lavender-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.gifts-serene-theme .product-detail-grid-layout,
+.shop-product-detail-page-view.accessories-luxury-theme .product-detail-grid-layout {
+  background: linear-gradient(135deg, #051838 0%, #0c3570 50%, #002254 100%) !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 0 25px rgba(223, 183, 67, 0.4) !important;
+  border-radius: 20px !important;
+}
+
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-tagline,
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-section-title,
+.shop-product-detail-page-view .product-detail-grid-layout .product-detail-qty-control span,
+.shop-product-detail-page-view .product-detail-grid-layout .detail-tab-btn,
+.shop-product-detail-page-view .product-detail-grid-layout .detail-tab-content,
+.shop-product-detail-page-view .product-detail-grid-layout .review-comment-text,
+.shop-product-detail-page-view .product-detail-grid-layout .specs-key,
+.shop-product-detail-page-view .product-detail-grid-layout .specs-val,
+.shop-product-detail-page-view .product-detail-grid-layout div:not(.product-detail-category-tag):not(.product-detail-badge-pill):not(.product-detail-discount-badge),
+.shop-product-detail-page-view .product-detail-grid-layout span:not(.product-detail-category-tag):not(.product-detail-availability-label):not(.product-detail-availability-status):not(.product-detail-discount-badge):not(.product-detail-original-price),
+.shop-product-detail-page-view .product-detail-grid-layout p,
+.shop-product-detail-page-view .product-detail-grid-layout label {
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view .product-detail-title {
+  color: #ffffff !important;
+}
+
+.shop-product-detail-page-view .product-detail-category-tag {
+  color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-price-value {
+  color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-cart-btn {
+  background: #dfb743 !important;
+  color: #051838 !important;
+  border: 2px solid #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-cart-btn:hover {
+  background: #051838 !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-buy-btn {
+  background: transparent !important;
+  border: 2px solid #dfb743 !important;
+  color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-buy-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.shop-product-detail-page-view .product-detail-qty-control {
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+}
+
+.shop-product-detail-page-view .product-detail-qty-control button {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.shop-product-detail-page-view .product-detail-qty-control button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #dfb743 !important;
+}
+
+.shop-product-detail-page-view .product-detail-availability-status.out-of-stock-status {
+  background-color: #d32f2f !important;
+  color: #ffffff !important;
+  border: 1px solid #d32f2f !important;
+}
+
+/* ==========================================================================
+   MEESHO REDESIGN STYLES (FULL-WIDTH ENLARGED & ANIMATED)
+   ========================================================================== */
+
+/* Navbar Layout */
+.navbar-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.navbar-row-one {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 2%; /* Aligned to screen edges with minimal corner gap */
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  gap: 24px;
+}
+
+.navbar-row-two {
+  border-top: 1px solid #f1f5f9;
+  background-color: #ffffff;
+  position: relative; /* Crucial: mega menu aligns to this row container for full-width stretch */
+  padding: 0 2%; /* Matches Row 1 horizontal padding */
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Row 1: Logo */
+.navbar-row-one .logo-link {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-row-one .logo-img {
+  height: 75px; /* Enlarged logo for clear visibility */
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navbar-row-one .logo-link:hover .logo-img {
+  transform: scale(1.06);
+}
+
+/* Row 1: Persistent Search */
+.nav-search-wrapper.persistent-search {
+  flex: 1;
+  max-width: 750px; /* Wider search column */
+  margin: 0 24px;
+  position: relative;
+}
+
+.nav-search-bar-meesho {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 14px 20px; /* Taller search bar */
+  gap: 12px;
+  width: 100%;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-search-bar-meesho:focus-within {
+  border-color: #dfb743;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(223, 183, 67, 0.15);
+}
+
+.nav-search-bar-meesho .nav-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1.05rem; /* Larger search input font */
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.nav-search-bar-meesho .nav-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.nav-search-dropdown-meesho {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* Row 1: Right Actions */
+.nav-actions-meesho {
+  display: flex;
+  align-items: center;
+  gap: 28px; /* Wider spacing */
+  flex-shrink: 0;
+}
+
+.action-text-link {
+  color: #1e293b;
+  font-size: 1.05rem; /* Larger supplier / lucky charms links */
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.action-text-link:hover {
+  color: #dfb743;
+}
+
+.action-divider {
+  color: #cbd5e1;
+  font-weight: 300;
+}
+
+/* Stacked action buttons */
+.action-btn-stacked {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  padding: 10px 16px; /* Larger action button padding */
+  gap: 8px;
+  font-family: inherit;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.action-btn-stacked:hover {
+  color: #dfb743;
+}
+
+.action-icon-meesho {
+  transition: transform 0.2s ease;
+}
+
+.action-btn-stacked:hover .action-icon-meesho {
+  transform: translateY(-2px);
+}
+
+.action-label-meesho {
+  font-size: 0.95rem; /* Larger action icon label */
+  font-weight: 600;
+}
+
+/* User avatar initials inside Profile button */
+.nav-user-avatar-meesho {
+  width: 30px; /* Larger user avatar */
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dfb743, #c59b27);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon-wrapper-meesho {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-badge-meesho {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 50%;
+  min-width: 20px; /* Larger badge */
+  height: 20px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+}
+
+/* Row 2: Categories Menu styling */
+.nav-menu-meesho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Spreads categories out across the full header width */
+  width: 100%;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+}
+
+.nav-item-meesho {
+  /* position: relative; REMOVED so that child mega-menu aligns to the full-width navbar-row-two container */
+  padding: 18px 0; /* Taller row 2 spacing */
+}
+
+.category-link-meesho,
+.nav-item-meesho > a {
+  color: #334155;
+  font-size: 1.1rem; /* Larger navbar menu items */
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  position: relative; /* For the hover underline indicator */
+}
+
+.nav-item-meesho:hover > a,
+.category-link-meesho:hover {
+  color: #dfb743;
+}
+
+/* Underline indicator on hover (bound to category link for proper alignment) */
+.category-link-meesho::after,
+.nav-item-meesho > a::after {
+  content: '';
+  position: absolute;
+  bottom: -18px; /* Align precisely at the bottom edge of Row 2 */
+  left: 0;
+  width: 0;
+  height: 3px; /* Slightly thicker underline */
+  background: #dfb743;
+  transition: width 0.25s ease;
+}
+
+.nav-item-meesho:hover > a::after,
+.category-link-meesho:hover::after {
+  width: 100%;
+}
+
+/* Row 2: Mega Menu Dropdown overlay */
+.mega-menu-overlay {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%; /* Cover full width of the parent row-two */
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 3px solid #dfb743; /* Elegant bottom accent line */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.04);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+}
+
+.nav-item-meesho.has-mega-menu:hover .mega-menu-overlay {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.mega-menu-content-wrapper {
+  width: 100%;
+  padding: 36px 2%; /* Aligns horizontal padding with the navbar container */
+  display: grid; /* Grid system to spread columns evenly across the container */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 40px;
+}
+
+/* Mega Menu Columns */
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+}
+
+/* Stagger column entrances when hovering */
+.nav-item-meesho:hover .mega-menu-column {
+  animation: megaMenuColumnFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.nav-item-meesho:hover .mega-menu-column:nth-child(1) { animation-delay: 0.04s; }
+.nav-item-meesho:hover .mega-menu-column:nth-child(2) { animation-delay: 0.08s; }
+.nav-item-meesho:hover .mega-menu-column:nth-child(3) { animation-delay: 0.12s; }
+.nav-item-meesho:hover .mega-menu-column:nth-child(4) { animation-delay: 0.16s; }
+.nav-item-meesho:hover .mega-menu-column:nth-child(5) { animation-delay: 0.2s; }
+.nav-item-meesho:hover .mega-menu-column:nth-child(6) { animation-delay: 0.24s; }
+
+@keyframes megaMenuColumnFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mega-menu-column-heading {
+  font-size: 1.05rem; /* Larger heading font size */
+  font-weight: 750;
+  color: #dfb743 !important;
+  text-transform: uppercase;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  border-bottom: 1.5px solid rgba(223, 183, 67, 0.15);
+  padding-bottom: 6px;
+  transition: color 0.2s ease;
+}
+
+.mega-menu-column-heading:hover {
+  color: #0f2954 !important;
+}
+
+.mega-menu-column-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+}
+
+.mega-menu-item {
+  display: block;
+}
+
+.mega-menu-item a {
+  font-size: 0.98rem; /* Larger items font size */
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+  position: relative;
+}
+
+/* Slide in bullet and color shift on touch/hover */
+.mega-menu-item a::before {
+  content: '✦';
+  position: absolute;
+  left: -12px;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #dfb743;
+  font-size: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.mega-menu-item a:hover {
+  color: #dfb743 !important;
+  padding-left: 12px;
+  font-weight: 500;
+}
+
+.mega-menu-item a:hover::before {
+  opacity: 1;
+  left: 0;
+}
+
+/* Nested depth styling in mega menu subtree */
+.mega-menu-item.depth-1 {
+  padding-left: 12px;
+}
+.mega-menu-item.depth-1 a {
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.mega-menu-item.depth-2 {
+  padding-left: 24px;
+}
+.mega-menu-item.depth-2 a {
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+
+/* Responsive Menu styling */
+@media (max-width: 1024px) {
+  .navbar-row-one {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .navbar-row-one .logo-img {
+    height: 48px;
+  }
+
+  .nav-search-wrapper.persistent-search {
+    margin: 0 10px;
+  }
+
+  .nav-actions-meesho {
+    gap: 8px;
+  }
+
+  .action-text-link, 
+  .action-divider {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  /* Convert Row 2 into a mobile drawer */
+  .navbar-row-two {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: 10px 0 25px rgba(0, 0, 0, 0.08);
+    transition: left 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
+    padding-top: 60px;
+  }
+
+  .navbar-row-two.open {
+    left: 0;
+  }
+
+  .nav-menu-meesho {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .nav-item-meesho {
+    width: 100%;
+    padding: 8px 0;
+  }
+
+  .category-link-meesho::after,
+  .nav-item-meesho > a::after {
+    display: none;
+  }
+
+  .nav-item-meesho.has-mega-menu:hover .mega-menu-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transform: none;
+  }
+
+  .mega-menu-overlay {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border-top: none;
+    border-bottom: none;
+    display: none;
+    padding-left: 12px;
+  }
+
+  .nav-item-meesho:focus-within .mega-menu-overlay,
+  .nav-item-meesho:active .mega-menu-overlay {
+    display: block;
+  }
+
+  .mega-menu-content-wrapper {
+    padding: 10px 0;
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mega-menu-column {
+    min-width: 100%;
+    opacity: 1 !important;
+  }
+
+  .nav-item-meesho:hover .mega-menu-column {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar-row-one {
+    flex-wrap: wrap;
+  }
+
+  .nav-search-wrapper.persistent-search {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    margin: 10px 0 0 0;
+  }
+
+  .navbar-row-one .logo-img {
+    height: 38px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UNIFIED TRUST BAR OVERRIDES (GOLDEN SHIMMER & ROYAL BLUE)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.shop-view-page .accessories-trust-bar {
+  background: linear-gradient(90deg, #b28e20 0%, #dfb743 25%, #ffe699 50%, #dfb743 75%, #b28e20 100%) !important;
+  background-size: 200% auto !important;
+  animation: gold-shimmer-bg 6s linear infinite !important;
+  border-bottom: 2px solid #b28e20 !important;
+  border-top: 1px solid #ffe699 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  padding: 15px 6% !important;
+  gap: 20px !important;
+}
+
+.shop-view-page .accessories-trust-item {
+  color: #051838 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.shop-view-page .accessories-trust-icon {
+  color: #051838 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.shop-view-page .accessories-trust-title {
+  color: #051838 !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  display: block !important;
+}
+
+.shop-view-page .accessories-trust-sub {
+  color: rgba(5, 24, 56, 0.8) !important;
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  display: block !important;
+}
+
+@media (max-width: 768px) {
+  .shop-view-page .accessories-trust-bar {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+    padding: 15px 4% !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROYAL BLUE & GOLD NAVBAR ROW ONE THEME OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.navbar-row-one {
+  background-color: #051838 !important;
+  border-bottom: 2px solid #dfb743 !important;
+}
+
+/* Search bar styling */
+.navbar-row-one .nav-search-bar-meesho {
+  display: flex !important;
+  align-items: center !important;
+  background: #081d3f !important;
+  border: 1.5px solid #dfb743 !important;
+  border-radius: 8px !important;
+  padding: 0 0 0 16px !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: 48px !important;
+  overflow: hidden !important;
+}
+
+.navbar-row-one .nav-search-bar-meesho .nav-search-input {
+  flex: 1 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 1rem !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+}
+
+.navbar-row-one .nav-search-bar-meesho .nav-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.navbar-row-one .nav-search-close {
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.navbar-row-one .nav-search-btn-meesho {
+  background-color: #dfb743 !important;
+  border: none !important;
+  height: 100% !important;
+  padding: 0 20px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #051838 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.navbar-row-one .nav-search-btn-meesho:hover {
+  background-color: #f7df8f !important;
+}
+
+/* Actions styling */
+.navbar-row-one .action-text-link {
+  color: #dfb743 !important;
+}
+
+.navbar-row-one .action-text-link:hover {
+  color: #ffffff !important;
+}
+
+.navbar-row-one .action-divider {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.navbar-row-one .action-btn-stacked {
+  color: #dfb743 !important;
+}
+
+.navbar-row-one .action-btn-stacked:hover {
+  color: #ffffff !important;
+}
+
+.navbar-row-one .action-icon-meesho {
+  color: #dfb743 !important;
+}
+
+.navbar-row-one .action-btn-stacked:hover .action-icon-meesho {
+  color: #ffffff !important;
+}
+
+.navbar-row-one .action-label-meesho {
+  color: #dfb743 !important;
+}
+
+.navbar-row-one .action-btn-stacked:hover .action-label-meesho {
+  color: #ffffff !important;
+}
+
+.navbar-row-one .action-badge-meesho {
+  background-color: #dfb743 !important;
+  color: #051838 !important;
+  border: 1.5px solid #051838 !important;
+  font-weight: 700 !important;
+}
+
+.navbar-row-one .nav-user-avatar-meesho {
+  background-color: #dfb743 !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+  border: 1.5px solid #dfb743 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CATEGORIES MENU SPACING & MEESHO-STYLE TABBED SPLIT DROP DOWN OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Center Category Links & Spacing gap (removes the extreme space-between gaps) */
+.nav-menu-meesho {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 36px !important; /* Premium spacing gap between categories */
+}
+
+/* Mega Menu container alignment: centers dropdown layout and leaves corner gaps on the sides */
+.mega-menu-overlay {
+  position: absolute !important;
+  top: calc(100% + 2px) !important;
+  left: 50% !important;
+  width: 94vw !important;
+  max-width: 1200px !important;
+  transform: translateX(-50%) translateY(12px) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-bottom: 3px solid #dfb743 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 1000 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.nav-item-meesho.has-mega-menu:hover .mega-menu-overlay {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Split vertical mega menu structure */
+.mega-menu-split-container {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 280px !important;
+}
+
+/* Left Sidebar - lists subcategories vertically */
+.mega-menu-sidebar-left {
+  width: 260px !important;
+  background-color: #f8fafc !important;
+  border-right: 1px solid #e2e8f0 !important;
+  padding: 24px 0 !important;
+  flex-shrink: 0 !important;
+  text-align: left !important;
+}
+
+.mega-menu-sidebar-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.mega-menu-sidebar-item {
+  display: block !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+}
+
+.mega-menu-sidebar-item a {
+  display: block !important;
+  padding: 12px 24px !important;
+  font-size: 0.98rem !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  text-decoration: none !important;
+  border-left: 3px solid transparent !important;
+  transition: all 0.2s ease !important;
+  text-align: left !important;
+}
+
+.mega-menu-sidebar-item:hover a,
+.mega-menu-sidebar-item.active a {
+  background-color: #ffffff !important;
+  color: #dfb743 !important; /* Gold active text */
+  border-left-color: #dfb743 !important; /* Gold active indicator bar */
+}
+
+/* Right Content panel - displays active subcategory children list columns */
+.mega-menu-content-right {
+  flex: 1 !important;
+  background-color: #ffffff !important;
+  padding: 30px 40px !important;
+  text-align: left !important;
+}
+
+.mega-menu-right-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+}
+
+.mega-menu-right-header {
+  border-bottom: 1.5px solid rgba(223, 183, 67, 0.15) !important;
+  padding-bottom: 10px !important;
+  text-align: left !important;
+}
+
+.mega-menu-right-main-link {
+  font-size: 1.1rem !important;
+  font-weight: 750 !important;
+  color: #051838 !important; /* Deep blue header link */
+  text-decoration: none !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.mega-menu-right-main-link:hover {
+  color: #dfb743 !important;
+}
+
+.mega-menu-right-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  gap: 30px !important;
+}
+
+.mega-menu-right-column {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  text-align: left !important;
+  opacity: 1 !important; /* Force visible */
+  transform: none !important; /* Disable hover translation shifts */
+}
+
+.mega-menu-right-column-heading {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #051838 !important; /* Deep blue column heading */
+  text-transform: uppercase !important;
+  text-decoration: none !important;
+  letter-spacing: 0.04em !important;
+  margin-bottom: 6px !important;
+  border: none !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.mega-menu-right-column-heading:hover {
+  color: #dfb743 !important;
+}
+
+.mega-menu-right-column-list {
+  display: flex !important;
+  flex-direction: column !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 8px !important;
+}
+
+.mega-menu-right-item {
+  display: block !important;
+  text-align: left !important;
+}
+
+.mega-menu-right-item a {
+  font-size: 0.92rem !important;
+  color: #475569 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  display: inline-block !important;
+}
+
+.mega-menu-right-item a:hover {
+  color: #dfb743 !important;
+  padding-left: 6px !important;
+}
+
+/* Disable old slide animations that break split design alignment */
+.nav-item-meesho:hover .mega-menu-right-column {
+  animation: none !important;
+}
+.mega-menu-right-item a::before {
+  display: none !important;
+}
+.mega-menu-right-item a:hover::before {
+  display: none !important;
+}
+
+
 
