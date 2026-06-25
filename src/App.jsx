@@ -6,8 +6,6 @@ import CategoryCards from './components/CategoryCards';
 import VideoShowcase from './components/VideoShowcase';
 import ProductsSection from './components/ProductsSection';
 import CelebrityCollection from './components/CelebrityCollection';
-import PremiumCollection from './components/PremiumCollection';
-import GiftsByOccasion from './components/GiftsByOccasion';
 import Footer from './components/Footer';
 import ShopView from './components/ShopView';
 import ContactView from './components/ContactView';
@@ -117,8 +115,6 @@ function App() {
           <VideoShowcase />
           <ProductsSection authUser={authUser} setAuthUser={setAuthUser} />
           <CelebrityCollection />
-          <PremiumCollection />
-          <GiftsByOccasion />
           <WhyChooseUs />
         </>
       )}

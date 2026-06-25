@@ -9,4 +9,8 @@
 - [x] Redesign Category accordion in `ProductsSection.jsx` to render flat categories checklist with a search bar and "Show More" truncation toggle.
 - [x] Redesign Category accordion in `ShopView.jsx` to render flat categories checklist with search and "Show More", dynamically filtered by the active top tab category.
 - [x] Fix reset filter buttons in both components to clear all filter arrays and states.
-- [x] Verify project compilation succeeds without any errors.
+- [x] Modify `src/components/Footer.jsx` to remove category menu markup and clean up imports.
+- [x] Implement split-screen structure in [WhyChooseUs.jsx](file:///c:/Users/ELCOT/OneDrive/Desktop/job%20tasks/project2/src/components/WhyChooseUs.jsx)
+- [x] Add new layout and typographic styles in [index.css](file:///c:/Users/ELCOT/OneDrive/Desktop/job%20tasks/project2/src/index.css)
+- [x] Verify build with `npm run build`
+- [x] Verify manually.

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Shirt, ShoppingBag, Gift, Star, Tag, Award, Percent, 
-  Mail, MapPin, Phone, MessageSquare, Compass 
+  Gift, Tag, Mail, MapPin, Phone, MessageSquare 
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
+import newsletterGiftsImg from '../assets/newsletter_gifts.png';
+import newsletterPerfumeImg from '../assets/newsletter_perfume.png';
 
 export default function Footer() {
   const [settings, setSettings] = useState({
@@ -32,70 +33,50 @@ export default function Footer() {
     alert("Thank you for subscribing to our newsletter!");
   };
 
-  const quickCategories = [
-    { name: "Clothing", icon: <Shirt size={28} />, path: "/Shop?category=clothing" },
-    { name: "Fancy Items", icon: <ShoppingBag size={28} />, path: "/Shop?category=accessories" },
-    { name: "Gifts", icon: <Gift size={28} />, path: "/Shop?category=gifts" },
-    { name: "Celebrity", icon: <Star size={28} />, path: "/Celebrity" },
-    { name: "New Arrivals", icon: <Award size={28} />, path: "/NewArrivals" },
-    { name: "Premium", icon: <Compass size={28} />, path: "/Shop?type=premium" },
-    { name: "Offers", icon: <Percent size={28} />, path: "/Offers" }
-  ];
-
   return (
     <footer className="footer-area">
       
-      {/* 1. Circle Category Menu */}
-      <div className="quick-category-menu">
-        <div className="quick-menu-container">
-          {quickCategories.map((item, index) => (
-            <div 
-              key={index} 
-              className="quick-menu-item"
-              onClick={() => handleNavigation(item.path)}
-            >
-              <div className="quick-circle-icon">
-                {item.icon}
-              </div>
-              <span className="quick-circle-label">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* 2. Dusty Rose Newsletter Banner */}
+      {/* 2. Premium Gold Newsletter Banner */}
       <div className="newsletter-banner">
-        <div className="newsletter-container">
+        <div className="newsletter-content-wrapper">
           
-          {/* Left: Headline & Mail Icon */}
-          <div className="newsletter-left">
-            <Mail size={36} className="newsletter-icon" />
-            <div className="newsletter-text">
-              <h3>Join Our Newsletter</h3>
-              <p>Get updates on new arrivals, offers & more</p>
-            </div>
+          {/* Left Decorative Image */}
+          <div className="newsletter-side-img-container left-side">
+            <img 
+              src={newsletterGiftsImg} 
+              alt="Gifts and offers" 
+              className="newsletter-side-img"
+            />
           </div>
 
-          {/* Center: Subscribe Form */}
-          <form className="newsletter-form" onSubmit={handleSubscribe}>
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
-              required 
-              className="newsletter-input"
-            />
-            <button type="submit" className="newsletter-btn">
-              Subscribe
-            </button>
-          </form>
+          {/* Center Content Section */}
+          <div className="newsletter-center-content">
+            <h3 className="newsletter-title">Stay Updated</h3>
+            <p className="newsletter-subtitle">Subscribe to get special offers, new arrivals & more</p>
+            
+            <form className="newsletter-form" onSubmit={handleSubscribe}>
+              <div className="newsletter-input-group">
+                <input 
+                  type="email" 
+                  placeholder="Enter your email address" 
+                  required 
+                  className="newsletter-input"
+                />
+                <button type="submit" className="newsletter-btn">
+                  SUBSCRIBE
+                </button>
+              </div>
+            </form>
+          </div>
 
-          {/* Right: Promotion Info */}
-          <div className="newsletter-right">
-            <Gift size={36} className="newsletter-promo-icon" />
-            <div className="newsletter-text">
-              <h3>Get Extra 10% OFF</h3>
-              <p>On your first order</p>
-            </div>
+          {/* Right Decorative Image */}
+          <div className="newsletter-side-img-container right-side">
+            <img 
+              src={newsletterPerfumeImg} 
+              alt="Premium products" 
+              className="newsletter-side-img"
+            />
           </div>
 
         </div>

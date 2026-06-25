@@ -1,49 +1,66 @@
-import { Award, Tag, ShieldCheck, Truck } from 'lucide-react';
+import React from 'react';
+import whyChooseModelImg from '../assets/fashion_model_sunglasses.png';
 
 export default function WhyChooseUs() {
-  const features = [
-    {
-      icon: <Award size={32} className="why-icon" />,
-      title: "Premium Quality",
-      description: "Handpicked collections crafted with authentic fabrics & materials."
-    },
-    {
-      icon: <Tag size={32} className="why-icon" />,
-      title: "Affordable Pricing",
-      description: "Direct-from-weaver boutique items that guarantee true value."
-    },
-    {
-      icon: <ShieldCheck size={32} className="why-icon" />,
-      title: "Trusted Products",
-      description: "100% genuine products with secure payments and customer trust."
-    },
-    {
-      icon: <Truck size={32} className="why-icon" />,
-      title: "Fast Delivery",
-      description: "Express shipping with real-time tracking across India."
-    }
-  ];
+  const handleNavigation = (path) => {
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new Event('popstate'));
+  };
 
   return (
     <section className="why-choose-section">
-      <div className="section-container">
-        <div className="section-header text-center" style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <span className="section-tag-mini" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#E94FA8', letterSpacing: '0.15em', textTransform: 'uppercase' }}>OUR COMMITMENT</span>
-          <h2 className="section-title" style={{ fontFamily: 'var(--font-serif)', fontSize: '2.5rem', fontWeight: 700, color: '#2D2D2D', marginTop: '8px', marginBottom: '12px' }}>Why Choose Mithra Shopy</h2>
-          <p className="section-subtitle" style={{ fontSize: '1.05rem', color: '#666', maxWidth: '600px', margin: '0 auto' }}>Delivering elegance and quality at your doorstep</p>
+      <div className="why-choose-container">
+        
+        {/* Left Side: Image with Overlapping Card */}
+        <div className="why-choose-left">
+          <div className="why-image-wrapper">
+            <img 
+              src={whyChooseModelImg} 
+              alt="Mithra Shopy Premium Collection" 
+              className="why-main-image"
+            />
+            {/* Overlapping Badge Card */}
+            <div className="why-overlapping-card">
+              <span className="why-card-badge">PREMIUM</span>
+              <h3 className="why-card-title">Luxury Boutique Fashion</h3>
+              <p className="why-card-desc">
+                Elegant premium collections designed for modern fashion lovers.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="why-grid">
-          {features.map((feat, index) => (
-            <div key={index} className="why-card">
-              <div className="why-icon-box">
-                {feat.icon}
-              </div>
-              <h3 className="why-title">{feat.title}</h3>
-              <p className="why-desc">{feat.description}</p>
+        {/* Right Side: Text details, metrics, button */}
+        <div className="why-choose-right">
+          <span className="why-commitment-tag">OUR COMMITMENT</span>
+          <h2 className="why-main-title">Why Choose Mithra Shopy</h2>
+          <p className="why-main-desc">
+            Explore our handpicked premium fashion, boutique accessories, luxury gifts, and celebrity-inspired collections crafted with timeless elegance. We bring you direct-from-weaver boutique items that guarantee true value, authentic fabrics, and absolute customer trust.
+          </p>
+
+          <div className="why-metrics-grid">
+            <div className="why-metric-item">
+              <span className="why-metric-value">5K+</span>
+              <span className="why-metric-label">Happy Customers</span>
             </div>
-          ))}
+            <div className="why-metric-item">
+              <span className="why-metric-value">500+</span>
+              <span className="why-metric-label">Premium Products</span>
+            </div>
+            <div className="why-metric-item">
+              <span className="why-metric-value">4.9</span>
+              <span className="why-metric-label">Customer Rating</span>
+            </div>
+          </div>
+
+          <button 
+            className="why-explore-btn"
+            onClick={() => handleNavigation('/Shop')}
+          >
+            Explore Premium
+          </button>
         </div>
+
       </div>
     </section>
   );

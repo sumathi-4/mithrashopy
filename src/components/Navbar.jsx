@@ -522,6 +522,9 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             <li className="nav-item-meesho">
               <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
             </li>
+            <li className="nav-item-meesho">
+              <a href="/Shop" onClick={(e) => handleLinkClick(e, '/Shop')}>Shop</a>
+            </li>
             {getUnifiedCategories().map((group) => {
               return (
                 <li
