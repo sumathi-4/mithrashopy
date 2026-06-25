@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/apiService';
 import { 
   User, 
@@ -10,7 +10,11 @@ import {
   AlertTriangle, 
   LogOut, 
   Sparkles,
-  Camera
+  Camera,
+  Star,
+  Trophy,
+  X,
+  CheckCircle
 } from 'lucide-react';
 import { resolveProductImage } from '../utils/imageHelper';
 
@@ -29,6 +33,20 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const [paymentMethod, setPaymentMethod] = useState('Razorpay');
   const [userOrders, setUserOrders] = useState([]);
 
+  // Dynamic States for Claims & Reviews
+  const [myClaims, setMyClaims] = useState([]);
+  const [myReviews, setMyReviews] = useState([]);
+  const [reviewSubTab, setReviewSubTab] = useState('pending');
+  
+  // Review Submission Modal States
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedReviewProduct, setSelectedReviewProduct] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+
+  // Hidden File Input for Avatar Uploads
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     const handleLocationChange = () => {
       const params = new URLSearchParams(window.location.search);
@@ -41,7 +59,21 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  useEffect(() => {
+    const restrictedTabs = ['orders', 'addresses', 'profile', 'security', 'help', 'rewards', 'reviews'];
+    if (restrictedTabs.includes(activeTab) && !authUser) {
+      setActiveTab('cart');
+      window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+    }
+  }, [activeTab, authUser]);
+
   const handleTabChange = (tabName) => {
+    const restrictedTabs = ['orders', 'addresses', 'profile', 'security', 'help', 'rewards', 'reviews'];
+    if (restrictedTabs.includes(tabName) && !authUser) {
+      alert(`Please log in to access ${tabName === 'help' ? 'account deletion' : tabName === 'profile' ? 'profile settings' : tabName === 'rewards' ? 'rewards and claims' : tabName === 'reviews' ? 'reviews and ratings' : tabName}.`);
+      window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+      return;
+    }
     setActiveTab(tabName);
     const params = new URLSearchParams(window.location.search);
     params.set('tab', tabName);
@@ -184,8 +216,36 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
+  const completeOrderCheckout = (order) => {
+    apiService.syncCart([], []).then(res => {
+      if (res && setAuthUser) {
+        setAuthUser(prev => {
+          const newUser = { ...prev, cart: res.cart, cartItems: res.cartItems };
+          localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+          return newUser;
+        });
+      }
+    });
+    setUserOrders(prev => [order, ...prev]);
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    
+    // Dispatch order success event for all orders to display the beautiful success screen
+    window.dispatchEvent(new CustomEvent('mithira_order_success', { 
+      detail: { 
+        orderId: order.id, 
+        isLuckyCharm: !!order.isLuckyCharmOrder 
+      } 
+    }));
+  };
+
   const handlePlaceOrder = () => {
     if (cartItemsDetailed.length === 0) return;
+    if (!authUser) {
+      alert('Please log in to place your order.');
+      window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+      return;
+    }
     if (!selectedAddressId) {
       alert('Please select a delivery address.');
       return;
@@ -219,107 +279,110 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       catalogueDetails: catDetails
     };
 
-    apiService.createOrder(orderPayload).then(newOrder => {
-      if (newOrder) {
-        alert('Order placed successfully! Thank you for shopping with us.');
-        apiService.syncCart([], []).then(res => {
-          if (res && setAuthUser) {
-            setAuthUser(prev => {
-              const newUser = { ...prev, cart: res.cart, cartItems: res.cartItems };
-              localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
-              return newUser;
-            });
-          }
-        });
-        setUserOrders(prev => [newOrder, ...prev]);
-        setAppliedCoupon(null);
-        setCouponCodeInput('');
-        handleTabChange('orders');
-      } else {
+    apiService.createOrder(orderPayload).then(async (res) => {
+      if (!res || !res.success) {
         alert('Failed to place order. Please try again.');
+        return;
       }
+
+      // If COD or direct flow
+      if (!res.requiresRazorpay) {
+        alert('Order placed successfully! Thank you for shopping with us.');
+        completeOrderCheckout(res.order);
+        return;
+      }
+
+      // Handle Mock Mode
+      if (res.mock) {
+        const confirmPayment = window.confirm(
+          `[MOCK PAYMENT GATEWAY]\n\nOrder ID: ${res.orderId}\nAmount: ₹${orderPayload.amount}\n\nClick OK to simulate successful payment, or Cancel to simulate failure.`
+        );
+        if (confirmPayment) {
+          const verifyPayload = {
+            razorpay_order_id: res.razorpayOrderId,
+            razorpay_payment_id: 'mock_pay_' + Math.floor(100000 + Math.random() * 900000),
+            razorpay_signature: 'mock_signature',
+            orderId: res.orderId
+          };
+          apiService.verifyPayment(verifyPayload).then(verifyRes => {
+            if (verifyRes && verifyRes.success) {
+              alert('Mock payment successful! Order placed.');
+              completeOrderCheckout(verifyRes.order);
+            } else {
+              alert('Mock payment verification failed.');
+            }
+          });
+        } else {
+          alert('Payment cancelled.');
+        }
+        return;
+      }
+
+      // Handle Real Razorpay Flow
+      const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+          if (window.Razorpay) {
+            resolve(true);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        alert('Failed to load Razorpay SDK. Please check your internet connection.');
+        return;
+      }
+
+      const options = {
+        key: res.razorpayKeyId,
+        amount: res.amount,
+        currency: res.currency,
+        name: 'Mithira Shopy',
+        description: orderPayload.product,
+        order_id: res.razorpayOrderId,
+        handler: async function (paymentRes) {
+          try {
+            const verifyPayload = {
+              razorpay_order_id: paymentRes.razorpay_order_id,
+              razorpay_payment_id: paymentRes.razorpay_payment_id,
+              razorpay_signature: paymentRes.razorpay_signature,
+              orderId: res.orderId
+            };
+            const verifyRes = await apiService.verifyPayment(verifyPayload);
+            if (verifyRes && verifyRes.success) {
+              alert('Payment successful and verified! Order placed.');
+              completeOrderCheckout(verifyRes.order);
+            } else {
+              alert('Payment verification failed.');
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Error verifying payment.');
+          }
+        },
+        prefill: {
+          name: res.user.name,
+          email: res.user.email,
+          contact: res.user.phone
+        },
+        theme: {
+          color: '#051838'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     });
   };
 
-  // Dummy full orders with actual details & status styling to replicate image exactly
-  const allOrdersList = [
-    {
-      id: '1001',
-      date: '12 May, 2025',
-      itemsCount: 3,
-      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80',
-      title: 'Floral Printed Anarkali Suit',
-      price: '₹4,698',
-      status: 'Delivered',
-      statusDate: '16 May, 2025',
-      statusColorClass: 'ua-status-delivered',
-      category: 'delivered'
-    },
-    {
-      id: '1002',
-      date: '09 May, 2025',
-      itemsCount: 2,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=150&q=80',
-      title: 'Premium Silk Saree',
-      price: '₹3,499',
-      status: 'Shipped',
-      statusDate: '11 May, 2025',
-      statusColorClass: 'ua-status-shipped',
-      category: 'shipped'
-    },
-    {
-      id: '1003',
-      date: '05 May, 2025',
-      itemsCount: 1,
-      image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=150&q=80',
-      title: 'Designer Party Gown',
-      price: '₹2,999',
-      status: 'Processing',
-      statusDate: 'Expected by 18 May, 2025',
-      statusColorClass: 'ua-status-processing',
-      category: 'processing'
-    },
-    {
-      id: '1004',
-      date: '01 May, 2025',
-      itemsCount: 1,
-      image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=150&q=80',
-      title: 'Cotton Printed Kurtis',
-      price: '₹1,299',
-      status: 'Cancelled',
-      statusDate: 'Cancelled on 02 May, 2025',
-      statusColorClass: 'ua-status-cancelled',
-      category: 'cancelled'
-    }
-  ];
-
   // Wishlist Items State
-  const [wishlistItems, setWishlistItems] = useState([
-    {
-      id: 'w1',
-      title: 'Floral Printed Anarkali Suit',
-      price: '₹2,199',
-      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80'
-    },
-    {
-      id: 'w2',
-      title: 'Premium Silk Saree',
-      price: '₹3,499',
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80'
-    },
-    {
-      id: 'w3',
-      title: 'Designer Party Gown',
-      price: '₹2,999',
-      image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=300&q=80'
-    },
-    {
-      id: 'w4',
-      title: 'Embroidered Lehenga',
-      price: '₹4,799',
-      image: 'https://images.unsplash.com/photo-1610030470217-48f86bb98330?auto=format&fit=crop&w=300&q=80'
-    }
-  ]);
+  const [wishlistItems, setWishlistItems] = useState([]);
 
   const handleRemoveFromWishlist = (itemId) => {
     setWishlistItems(prev => prev.filter(item => item.id !== itemId));
@@ -348,47 +411,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   };
 
   // Addresses List State
-  const [addresses, setAddresses] = useState([
-    {
-      id: 'a1',
-      type: 'Home',
-      isDefault: true,
-      name: 'Sumati Reddy',
-      phone: '+91 98765 43210',
-      street: '12-5-31/1, Street No. 5',
-      locality: 'Madhapur',
-      city: 'Hyderabad',
-      pincode: '500081',
-      state: 'Telangana',
-      country: 'India'
-    },
-    {
-      id: 'a2',
-      type: 'Office',
-      isDefault: false,
-      name: 'Sumati Reddy',
-      phone: '+91 98765 43210',
-      street: 'Mithra Shopy Office, HiTech City Road',
-      locality: 'Kondapur',
-      city: 'Hyderabad',
-      pincode: '500084',
-      state: 'Telangana',
-      country: 'India'
-    },
-    {
-      id: 'a3',
-      type: 'Other',
-      isDefault: false,
-      name: 'Sumati Reddy',
-      phone: '+91 98765 43210',
-      street: '8-2-293/82, Road No. 10',
-      locality: 'Banjara Hills',
-      city: 'Hyderabad',
-      pincode: '500034',
-      state: 'Telangana',
-      country: 'India'
-    }
-  ]);
+  const [addresses, setAddresses] = useState([]);
 
   // Modal and Form Address State
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -413,7 +436,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     { label: 'Total Orders', value: String(userOrders.length), linkText: 'View all orders', tab: 'orders', color: '#8A72F6', icon: <ShoppingBag size={20} className="ua-card-icon-purple" /> },
     { label: 'Wishlist', value: String(wishlistItems.length), linkText: 'View wishlist', tab: 'wishlist', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-pink" /> },
     { label: 'Saved Addresses', value: String(addresses.length), linkText: 'Manage addresses', tab: 'addresses', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-red" /> },
-    { label: 'Reward Points', value: '250', linkText: 'View rewards', tab: 'rewards', color: '#F2994A', icon: <Sparkles size={20} className="ua-card-icon-orange" /> }
+    { label: 'Reward Points', value: String(250 + myClaims.filter(c => c.status === 'Claimed').length * 100), linkText: 'View rewards', tab: 'rewards', color: '#F2994A', icon: <Sparkles size={20} className="ua-card-icon-orange" /> }
   ];
 
   useEffect(() => {
@@ -432,7 +455,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   useEffect(() => {
     if (authUser) {
       apiService.getAddresses().then(data => {
-        if (data && data.length > 0) {
+        if (data) {
           setAddresses(data);
         }
       });
@@ -441,8 +464,29 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           setUserOrders(list);
         }
       });
+      apiService.getMyClaims().then(claims => {
+        if (claims) {
+          setMyClaims(claims);
+        }
+      });
+      apiService.getMyReviews().then(reviews => {
+        if (reviews) {
+          setMyReviews(reviews);
+        }
+      });
+      apiService.getMe().then(user => {
+        if (user && setAuthUser) {
+          setAuthUser(user);
+          localStorage.setItem('mithira_auth_user', JSON.stringify(user));
+        }
+      });
+    } else {
+      setAddresses([]);
+      setUserOrders([]);
+      setMyClaims([]);
+      setMyReviews([]);
     }
-  }, [authUser]);
+  }, [authUser?.id]);
 
   useEffect(() => {
     if (addresses.length > 0) {
@@ -477,6 +521,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             String(p._id) === String(item.productId)
           );
           if (prod) {
+            const isLucky = item.variant?.isLuckyCharm === true;
             const color = item.variant?.color;
             const size = item.variant?.size;
             let matchedVar = null;
@@ -490,18 +535,31 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
               }
             }
             
-            const variantPrice = (matchedVar && matchedVar.price !== null && matchedVar.price !== undefined) 
+            let variantPrice = (matchedVar && matchedVar.price !== null && matchedVar.price !== undefined) 
               ? matchedVar.price 
               : prod.price;
 
-            const variantImage = (matchedVar && matchedVar.image) 
+            let variantImage = (matchedVar && matchedVar.image) 
               ? resolveProductImage({ ...prod, image: matchedVar.image }) 
               : resolveProductImage(prod);
+
+            let variantTitle = prod.title || prod.name;
+
+            if (isLucky) {
+              variantPrice = item.variant.rewardPrice;
+              variantTitle = item.variant.rewardName;
+              if (item.variant.rewardImage) {
+                variantImage = item.variant.rewardImage.startsWith('http') 
+                  ? item.variant.rewardImage 
+                  : resolveProductImage({ ...prod, image: item.variant.rewardImage });
+              }
+            }
 
             return {
               ...prod,
               id: prod.id || prod._id,
-              title: prod.title || prod.name,
+              title: variantTitle,
+              name: variantTitle,
               price: variantPrice,
               image: variantImage,
               quantity: item.quantity || 1,
@@ -559,7 +617,8 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         email: authUser.email || '',
         phone: authUser.phone || '',
         dob: authUser.dob || '15/08/1995',
-        gender: authUser.gender || 'Female'
+        gender: authUser.gender || 'Female',
+        avatar: authUser.profileImage || authUser.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80'
       }));
     }
   }, [authUser]);
@@ -684,7 +743,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     };
   });
 
-  const activeOrdersList = resolvedUserOrders.length > 0 ? resolvedUserOrders : allOrdersList;
+  const activeOrdersList = resolvedUserOrders;
 
   const filteredOrders = activeOrdersList.filter(order => {
     if (ordersFilter === 'all') return true;
@@ -703,9 +762,9 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     name: authUser?.name || 'Sumati Reddy',
     email: authUser?.email || 'sumati.reddy@gmail.com',
     phone: authUser?.phone || '+91 98765 43210',
-    dob: '15/08/1995',
-    gender: 'Female',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80'
+    dob: authUser?.dob || '15/08/1995',
+    gender: authUser?.gender || 'Female',
+    avatar: authUser?.profileImage || authUser?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80'
   });
 
   const handleSaveProfile = (e) => {
@@ -714,7 +773,8 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       name: profileForm.name,
       phone: profileForm.phone,
       dob: profileForm.dob,
-      gender: profileForm.gender
+      gender: profileForm.gender,
+      profileImage: profileForm.avatar
     }).then(updatedUser => {
       if (updatedUser) {
         setAuthUser(updatedUser);
@@ -723,7 +783,8 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         setAuthUser(prev => ({
           ...prev,
           name: profileForm.name,
-          phone: profileForm.phone
+          phone: profileForm.phone,
+          profileImage: profileForm.avatar
         }));
       }
       alert('Profile updated successfully!');
@@ -770,20 +831,176 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
+  const getReviewableProducts = () => {
+    const purchased = [];
+    userOrders.forEach(o => {
+      if (o.status && o.status.toLowerCase() !== 'cancelled' && o.status.toLowerCase() !== 'pending payment') {
+        o.items?.forEach(item => {
+          if (!purchased.some(p => String(p.productId) === String(item.productId))) {
+            purchased.push(item);
+          }
+        });
+      }
+    });
+    return purchased.filter(p => 
+      !myReviews.some(r => String(r.productName).toLowerCase().trim() === String(p.name).toLowerCase().trim())
+    );
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedReviewProduct) return;
+    try {
+      const res = await apiService.submitReview({
+        productName: selectedReviewProduct.name,
+        rating: reviewRating,
+        comment: reviewComment,
+        productImage: selectedReviewProduct.image || 'Kids',
+        productId: selectedReviewProduct.productId
+      });
+      if (res) {
+        alert('Review submitted successfully! It will appear once approved by Admin.');
+        setIsReviewModalOpen(false);
+        setReviewComment('');
+        setReviewRating(5);
+        apiService.getMyReviews().then(reviews => {
+          if (reviews) setMyReviews(reviews);
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit review.');
+    }
+  };
+
+  const triggerPhotoUpload = (immediate = false) => {
+    if (fileInputRef.current) {
+      fileInputRef.current.dataset.immediate = String(immediate);
+      fileInputRef.current.click();
+    }
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File is too large. Maximum size is 2MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const url = await apiService.uploadImage(file.name, reader.result);
+        setProfileForm(prev => ({ ...prev, avatar: url }));
+        
+        const isImmediate = e.target.dataset.immediate === 'true';
+        if (isImmediate) {
+          const res = await apiService.updateProfile({
+            name: authUser.name,
+            phone: authUser.phone,
+            dob: authUser.dob,
+            gender: authUser.gender,
+            profileImage: url
+          });
+          if (res) {
+            setAuthUser(res);
+            localStorage.setItem('mithira_auth_user', JSON.stringify(res));
+            alert('Profile picture updated successfully!');
+          }
+        } else {
+          alert('Photo uploaded. Click "Save Changes" on the form to save permanently.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to upload image.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClaimReward = (claim) => {
+    if (claim.rewardType === 'coupon') {
+      setCouponCodeInput(claim.couponCode);
+      const match = coupons.find(c => c.code === claim.couponCode);
+      if (match) {
+        applyCouponObject(match);
+      } else {
+        setAppliedCoupon({
+          code: claim.couponCode,
+          discount: `${claim.rewardValue}% OFF`,
+          minCart: '₹0'
+        });
+        alert(`Coupon ${claim.couponCode} applied!`);
+      }
+      return;
+    }
+    
+    if (claim.rewardType === 'product') {
+      const itemInCart = cartItemsDetailed.some(item => 
+        item.id === claim.productId && item.selectedVariant?.isLuckyCharm === true
+      );
+      if (itemInCart) {
+        alert('This reward item is already in your cart.');
+        return;
+      }
+      
+      const updatedCartItems = [...(authUser?.cartItems || [])];
+      const newCartItem = {
+        productId: claim.productId,
+        quantity: 1,
+        variant: {
+          size: null,
+          color: null,
+          isLuckyCharm: true,
+          rewardPrice: claim.rewardValue || 0,
+          rewardName: claim.rewardName,
+          rewardImage: claim.image
+        }
+      };
+      updatedCartItems.push(newCartItem);
+      
+      const updatedCartIds = [...(authUser?.cart || []), String(claim.productId)];
+      
+      apiService.syncCart(updatedCartIds, updatedCartItems).then(res => {
+        if (res && setAuthUser) {
+          setAuthUser(prev => {
+            const newUser = { ...prev, cart: res.cart || updatedCartIds, cartItems: res.cartItems || updatedCartItems };
+            localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+            return newUser;
+          });
+          alert(`${claim.rewardName} added to cart as a reward! Go to cart to checkout.`);
+          setActiveTab('cart');
+        }
+      });
+    }
+  };
+
   return (
     <div className="ua-account-page">
       <div className="ua-container">
         
         {/* Left Profile Sidebar */}
         <aside className="ua-sidebar">
+          {/* Hidden File Input for Image Upload */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handlePhotoUpload} 
+            accept="image/*" 
+            style={{ display: 'none' }} 
+          />
           <div className="ua-profile-card">
             <div className="ua-avatar-wrapper">
               <img 
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80" 
+                src={authUser?.profileImage || authUser?.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80"} 
                 alt="Profile Avatar" 
                 className="ua-avatar"
               />
-              <button className="ua-camera-btn" aria-label="Upload photo">
+              <button 
+                className="ua-camera-btn" 
+                aria-label="Upload photo" 
+                onClick={() => triggerPhotoUpload(true)}
+              >
                 <Camera size={14} />
               </button>
             </div>
@@ -826,6 +1043,20 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             >
               <MapPin size={18} />
               <span>Addresses</span>
+            </button>
+            <button 
+              className={`ua-nav-item ${activeTab === 'rewards' ? 'active' : ''}`}
+              onClick={() => handleTabChange('rewards')}
+            >
+              <Sparkles size={18} />
+              <span>My Rewards</span>
+            </button>
+            <button 
+              className={`ua-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => handleTabChange('reviews')}
+            >
+              <Star size={18} />
+              <span>My Reviews</span>
             </button>
             <button 
               className={`ua-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
@@ -879,6 +1110,11 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                             <img src={item.image || 'Kids'} alt={item.name} className="ua-cart-item-img" />
                             <div className="ua-cart-item-info">
                               <h4 className="ua-cart-item-name">{item.name}</h4>
+                              {item.selectedVariant?.isLuckyCharm && (
+                                <div style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', margin: '4px 0' }}>
+                                  <span>⭐ Lucky Charm Reward</span>
+                                </div>
+                              )}
                               <p className="ua-cart-item-catalogue">{item.catalogue || 'Catalogue A'}</p>
                               
                               {/* Variant selectors */}
@@ -1049,6 +1285,24 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                         <span>₹{calculateTotal()}</span>
                       </div>
 
+                      {cartItemsDetailed.some(item => item.selectedVariant?.isLuckyCharm === true) && (
+                        <div style={{
+                          backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                          border: '1px solid #D4AF37',
+                          color: '#051838',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          marginTop: '15px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <span>⭐ This item is a Lucky Charm Reward</span>
+                        </div>
+                      )}
+
                       {/* Payment Method Selector */}
                       <div className="ua-payment-method-selector">
                         <h4>Payment Method</h4>
@@ -1182,11 +1436,11 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
                       <div className="ua-order-actions">
                         {order.status === 'Shipped' ? (
-                          <button className="ua-btn-secondary tracking-btn">
+                          <button className="ua-btn-secondary tracking-btn" onClick={() => handleTabChange('orders')}>
                             Track Order
                           </button>
                         ) : (
-                          <button className="ua-btn-secondary">
+                          <button className="ua-btn-secondary" onClick={() => handleTabChange('orders')}>
                             View Details
                           </button>
                         )}
@@ -1234,7 +1488,26 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                       <div className="ua-od-left">
                         <img src={order.image} alt={order.title} className="ua-od-img" />
                         <div className="ua-od-info">
-                          <h4 className="ua-od-number">Order #{order.id}</h4>
+                          <h4 className="ua-od-number">
+                            Order #{order.id}
+                            {order.rawOrder?.isLuckyCharmOrder && (
+                              <span style={{
+                                marginLeft: '10px',
+                                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                                border: '1px solid #D4AF37',
+                                color: '#051838',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}>
+                                ⭐ Lucky Charm Order
+                              </span>
+                            )}
+                          </h4>
                           <span className="ua-od-meta">{order.date}  •  {order.itemsCount} {order.itemsCount > 1 ? 'items' : 'item'}</span>
                           <span className="ua-od-price">{order.price}</span>
                         </div>
@@ -1280,8 +1553,23 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                           </>
                         )}
 
-                        {order.status === 'Processing' && (
-                          <button className="ua-od-action-btn btn-cancel-order">
+                        {(order.status === 'Processing' || order.status === 'Pending' || order.status === 'Pending Payment') && (
+                          <button 
+                            className="ua-od-action-btn btn-cancel-order"
+                            onClick={() => {
+                              const confirmCancel = window.confirm(`Are you sure you want to cancel order #${order.id}?`);
+                              if (confirmCancel) {
+                                apiService.cancelOrder(order.id).then(() => {
+                                  alert('Order cancelled successfully!');
+                                  apiService.getOrders().then(list => {
+                                    if (list) setUserOrders(list);
+                                  });
+                                }).catch(err => {
+                                  alert(err.message || 'Failed to cancel order.');
+                                });
+                              }
+                            }}
+                          >
                             Cancel Order
                           </button>
                         )}
@@ -1576,7 +1864,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                 {/* Left Profile Picture Upload Column */}
                 <div className="ua-ps-left-col">
                   <span className="ua-ps-label-title">Profile Picture</span>
-                  <div className="ua-ps-avatar-container">
+                  <div className="ua-ps-avatar-container" onClick={() => triggerPhotoUpload(false)} style={{ cursor: 'pointer' }}>
                     <img 
                       src={profileForm.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80"}
                       alt="Avatar Preview" 
@@ -1586,7 +1874,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                       <Camera size={12} />
                     </div>
                   </div>
-                  <button className="ua-ps-btn-change-photo">
+                  <button type="button" className="ua-ps-btn-change-photo" onClick={() => triggerPhotoUpload(false)}>
                     Change Photo
                   </button>
                   <span className="ua-ps-file-rules">JPG, PNG (Max. 2MB)</span>
@@ -1857,8 +2145,756 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
               </div>
             </div>
           )}
+
+          {activeTab === 'rewards' && (
+            <div className="ua-rewards-view">
+              <div className="ua-rewards-header">
+                <h2 className="ua-rewards-title">My Rewards</h2>
+                <p className="ua-rewards-sub">Manage and claim your Lucky Charm spin rewards</p>
+              </div>
+
+              <div className="ua-rewards-points-card">
+                <div className="ua-rewards-points-left">
+                  <Trophy className="ua-trophy-icon" size={48} />
+                  <div>
+                    <h3 className="ua-points-title">Mithira Rewards Balance</h3>
+                    <p className="ua-points-sub">Earn 100 points for every claim, and bonus points on register!</p>
+                  </div>
+                </div>
+                <div className="ua-rewards-points-right">
+                  <span className="ua-points-number">{250 + myClaims.filter(c => c.status === 'Claimed').length * 100}</span>
+                  <span className="ua-points-lbl">Points</span>
+                </div>
+              </div>
+
+              <h3 className="ua-claims-section-title">Lucky Charm Rewards History</h3>
+              {myClaims.length > 0 ? (
+                <div className="ua-claims-grid">
+                  {myClaims.map(claim => {
+                    const isProduct = claim.rewardType === 'product';
+                    const isPending = claim.status === 'Pending';
+                    const claimDate = new Date(claim.claimedAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: '2-digit',
+                      year: 'numeric'
+                    });
+
+                    let resolvedImg = 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=300&q=80';
+                    if (claim.image) {
+                      if (claim.image.startsWith('http')) {
+                        resolvedImg = claim.image;
+                      } else {
+                        resolvedImg = resolveProductImage({ image: claim.image });
+                      }
+                    }
+
+                    return (
+                      <div key={claim._id || claim.id} className={`ua-claim-card ${claim.status.toLowerCase()}`}>
+                        <div className="ua-claim-img-wrapper">
+                          <img src={resolvedImg} alt={claim.rewardName} className="ua-claim-img" />
+                          <span className={`ua-claim-status-badge ${claim.status.toLowerCase()}`}>
+                            {claim.status}
+                          </span>
+                        </div>
+                        <div className="ua-claim-info">
+                          <h4 className="ua-claim-name">{claim.rewardName}</h4>
+                          <p className="ua-claim-meta">
+                            Won on {claimDate}
+                          </p>
+                          <p className="ua-claim-value">
+                            {isProduct ? `Value: ₹${claim.rewardValue}` : `Discount: ${claim.rewardValue}% OFF`}
+                          </p>
+                        </div>
+                        <div className="ua-claim-actions">
+                          {isPending ? (
+                            <button
+                              className="ua-claim-btn-action claim-pending-btn"
+                              onClick={() => handleClaimReward(claim)}
+                            >
+                              {isProduct ? 'Claim Product' : 'Apply Coupon'}
+                            </button>
+                          ) : (
+                            <button className="ua-claim-btn-action claim-done-btn" disabled>
+                              <CheckCircle size={14} style={{ marginRight: '4px' }} />
+                              Claimed
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="ua-claims-empty-state">
+                  <Sparkles size={48} className="empty-sparkles-icon" />
+                  <p>You haven't won any Lucky Charm rewards yet.</p>
+                  <button onClick={() => onNavigate('/')} className="ua-cart-btn-primary">Spin the Wheel</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className="ua-reviews-view">
+              <div className="ua-reviews-header">
+                <h2 className="ua-reviews-title">My Reviews &amp; Ratings</h2>
+                <p className="ua-reviews-sub">Share your feedback on purchased products</p>
+              </div>
+
+              <div className="ua-reviews-tabs">
+                <button
+                  className={`ua-review-tab-btn ${reviewSubTab === 'pending' ? 'active' : ''}`}
+                  onClick={() => setReviewSubTab('pending')}
+                >
+                  Pending Reviews ({getReviewableProducts().length})
+                </button>
+                <button
+                  className={`ua-review-tab-btn ${reviewSubTab === 'submitted' ? 'active' : ''}`}
+                  onClick={() => setReviewSubTab('submitted')}
+                >
+                  My Submitted Reviews ({myReviews.length})
+                </button>
+              </div>
+
+              {reviewSubTab === 'pending' ? (
+                <div className="ua-reviews-pending-section">
+                  {getReviewableProducts().length > 0 ? (
+                    <div className="ua-reviews-product-grid">
+                      {getReviewableProducts().map(prod => {
+                        let resolvedImg = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
+                        if (prod.image) {
+                          resolvedImg = prod.image.startsWith('http') ? prod.image : resolveProductImage({ image: prod.image });
+                        } else {
+                          const matchedProduct = allProducts.find(p => p.id === prod.productId);
+                          if (matchedProduct?.image) {
+                            resolvedImg = matchedProduct.image.startsWith('http') ? matchedProduct.image : resolveProductImage({ image: matchedProduct.image });
+                          }
+                        }
+
+                        return (
+                          <div key={prod.productId} className="ua-review-pending-card">
+                            <img src={resolvedImg} alt={prod.name} className="ua-rp-img" />
+                            <div className="ua-rp-info">
+                              <h4 className="ua-rp-name">{prod.name}</h4>
+                              <p className="ua-rp-meta">Purchased item</p>
+                              <button
+                                className="ua-rp-btn-review"
+                                onClick={() => {
+                                  setSelectedReviewProduct({
+                                    productId: prod.productId,
+                                    name: prod.name,
+                                    image: prod.image || 'Kids'
+                                  });
+                                  setReviewRating(5);
+                                  setReviewComment('');
+                                  setIsReviewModalOpen(true);
+                                }}
+                              >
+                                Write a Review
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="ua-reviews-empty-state">
+                      <CheckCircle size={48} className="empty-reviews-icon" />
+                      <p>You have reviewed all your purchased items. Thank you!</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="ua-reviews-submitted-section">
+                  {myReviews.length > 0 ? (
+                    <div className="ua-submitted-reviews-list">
+                      {myReviews.map(rev => {
+                        let resolvedImg = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
+                        if (rev.productImage) {
+                          resolvedImg = rev.productImage.startsWith('http') ? rev.productImage : resolveProductImage({ image: rev.productImage });
+                        }
+
+                        return (
+                          <div key={rev.id} className="ua-review-item-card">
+                            <div className="ua-rev-header">
+                              <img src={resolvedImg} alt={rev.productName} className="ua-rev-img" />
+                              <div className="ua-rev-meta">
+                                <h4 className="ua-rev-product-name">{rev.productName}</h4>
+                                <div className="ua-rev-stars-row">
+                                  {[1, 2, 3, 4, 5].map(star => (
+                                    <Star
+                                      key={star}
+                                      size={14}
+                                      fill={star <= rev.rating ? "#F2C94C" : "none"}
+                                      stroke={star <= rev.rating ? "#F2C94C" : "#BDBDBD"}
+                                    />
+                                  ))}
+                                  <span className="ua-rev-date">on {rev.date}</span>
+                                </div>
+                              </div>
+                              <span className={`ua-rev-status-badge ${rev.status.toLowerCase()}`}>
+                                {rev.status}
+                              </span>
+                            </div>
+                            
+                            <div className="ua-rev-comment">
+                              <p>"{rev.comment}"</p>
+                              {rev.verifiedPurchase && (
+                                <span className="ua-verified-purchase-badge">
+                                  ✓ Verified Purchase
+                                </span>
+                              )}
+                            </div>
+
+                            {rev.reply && (
+                              <div className="ua-rev-admin-reply">
+                                <h5 className="ua-reply-title">Response from Store Manager:</h5>
+                                <p className="ua-reply-text">"{rev.reply}"</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="ua-reviews-empty-state">
+                      <Star size={48} className="empty-reviews-icon" />
+                      <p>You haven't submitted any reviews yet.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
+
+      {isReviewModalOpen && selectedReviewProduct && (
+        <div className="ua-modal-overlay" onClick={() => setIsReviewModalOpen(false)}>
+          <div className="ua-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="ua-modal-header-row">
+              <h3 className="ua-modal-title">Write a Review</h3>
+              <button className="ua-modal-close-btn" onClick={() => setIsReviewModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="ua-review-modal-product-summary">
+              <img 
+                src={selectedReviewProduct.image.startsWith('http') ? selectedReviewProduct.image : resolveProductImage({ image: selectedReviewProduct.image })} 
+                alt={selectedReviewProduct.name} 
+                className="ua-rmps-img" 
+              />
+              <div>
+                <h4>{selectedReviewProduct.name}</h4>
+                <p>Share your honest experience</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleReviewSubmit} className="ua-review-submit-form">
+              <div className="ua-form-group">
+                <label className="ua-form-label">Overall Rating</label>
+                <div className="ua-star-rating-selector">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      type="button"
+                      className="ua-star-selector-btn"
+                      onClick={() => setReviewRating(star)}
+                    >
+                      <Star
+                        size={28}
+                        fill={star <= reviewRating ? "#F2C94C" : "none"}
+                        stroke={star <= reviewRating ? "#F2C94C" : "#BDBDBD"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="ua-form-group">
+                <label className="ua-form-label">Review Details</label>
+                <textarea
+                  className="ua-form-textarea"
+                  rows={4}
+                  placeholder="What did you like or dislike? How is the quality, fabric, size fit?"
+                  value={reviewComment}
+                  onChange={e => setReviewComment(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="ua-modal-actions">
+                <button 
+                  type="button" 
+                  className="ua-modal-btn btn-cancel"
+                  onClick={() => setIsReviewModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="ua-modal-btn btn-save" disabled={!reviewComment.trim()}>
+                  Submit Review
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .ua-rewards-view, .ua-reviews-view {
+          padding: 10px;
+        }
+        .ua-rewards-header, .ua-reviews-header {
+          margin-bottom: 25px;
+        }
+        .ua-rewards-title, .ua-reviews-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #051838;
+          margin-bottom: 5px;
+        }
+        .ua-rewards-sub, .ua-reviews-sub {
+          font-size: 14px;
+          color: #828282;
+        }
+
+        .ua-rewards-points-card {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: linear-gradient(135deg, #051838 0%, #1e3c72 100%);
+          padding: 25px;
+          border-radius: 12px;
+          color: #ffffff;
+          margin-bottom: 30px;
+          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.15);
+        }
+        .ua-rewards-points-left {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .ua-trophy-icon {
+          color: #F2C94C;
+        }
+        .ua-points-title {
+          font-size: 18px;
+          font-weight: 600;
+          margin: 0 0 5px 0;
+        }
+        .ua-points-sub {
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.8);
+          margin: 0;
+        }
+        .ua-rewards-points-right {
+          text-align: center;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .ua-points-number {
+          display: block;
+          font-size: 32px;
+          font-weight: 800;
+          color: #F2C94C;
+          line-height: 1;
+        }
+        .ua-points-lbl {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .ua-claims-section-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #051838;
+          margin-bottom: 20px;
+        }
+
+        .ua-claims-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 20px;
+        }
+        .ua-claim-card {
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          transition: all 0.3s ease;
+        }
+        .ua-claim-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+        .ua-claim-img-wrapper {
+          position: relative;
+          height: 180px;
+          background: #f9f9f9;
+        }
+        .ua-claim-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .ua-claim-status-badge {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .ua-claim-status-badge.pending {
+          background: #FFF9E6;
+          color: #D4AF37;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        .ua-claim-status-badge.claimed {
+          background: #E8F5E9;
+          color: #2E7D32;
+          border: 1px solid rgba(46, 125, 50, 0.3);
+        }
+        .ua-claim-info {
+          padding: 15px;
+          flex-grow: 1;
+        }
+        .ua-claim-name {
+          font-size: 15px;
+          font-weight: 600;
+          color: #051838;
+          margin: 0 0 5px 0;
+          line-height: 1.4;
+        }
+        .ua-claim-meta {
+          font-size: 12px;
+          color: #828282;
+          margin: 0 0 10px 0;
+        }
+        .ua-claim-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: #E94FA8;
+          margin: 0;
+        }
+        .ua-claim-actions {
+          padding: 0 15px 15px 15px;
+        }
+        .ua-claim-btn-action {
+          width: 100%;
+          padding: 10px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .claim-pending-btn {
+          background: #051838;
+          color: #ffffff;
+          border: none;
+        }
+        .claim-pending-btn:hover {
+          background: #112d5a;
+          transform: scale(1.02);
+        }
+        .claim-done-btn {
+          background: #f2f2f2;
+          color: #828282;
+          border: 1px solid #e0e0e0;
+          cursor: not-allowed;
+        }
+
+        .ua-claims-empty-state, .ua-reviews-empty-state {
+          text-align: center;
+          padding: 50px 20px;
+          background: #ffffff;
+          border-radius: 12px;
+          border: 1px solid #e0e0e0;
+        }
+        .empty-sparkles-icon, .empty-reviews-icon {
+          color: #E0E0E0;
+          margin-bottom: 15px;
+        }
+        .ua-claims-empty-state p, .ua-reviews-empty-state p {
+          color: #828282;
+          font-size: 14px;
+          margin-bottom: 20px;
+        }
+
+        .ua-reviews-tabs {
+          display: flex;
+          gap: 15px;
+          border-bottom: 1px solid #e0e0e0;
+          margin-bottom: 25px;
+        }
+        .ua-review-tab-btn {
+          background: none;
+          border: none;
+          padding: 12px 20px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #828282;
+          cursor: pointer;
+          position: relative;
+          transition: all 0.2s ease;
+        }
+        .ua-review-tab-btn:hover {
+          color: #051838;
+        }
+        .ua-review-tab-btn.active {
+          color: #051838;
+        }
+        .ua-review-tab-btn.active::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: #051838;
+        }
+
+        .ua-reviews-product-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 20px;
+        }
+        .ua-review-pending-card {
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          padding: 15px;
+          display: flex;
+          gap: 15px;
+          align-items: center;
+        }
+        .ua-rp-img {
+          width: 70px;
+          height: 70px;
+          border-radius: 8px;
+          object-fit: cover;
+        }
+        .ua-rp-info {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .ua-rp-name {
+          font-size: 14px;
+          font-weight: 600;
+          color: #051838;
+          margin: 0 0 3px 0;
+        }
+        .ua-rp-meta {
+          font-size: 11px;
+          color: #828282;
+          margin-bottom: 8px;
+        }
+        .ua-rp-btn-review {
+          align-self: flex-start;
+          background: #E94FA8;
+          color: #ffffff;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .ua-rp-btn-review:hover {
+          background: #d83d97;
+        }
+
+        .ua-submitted-reviews-list {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .ua-review-item-card {
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          padding: 20px;
+        }
+        .ua-rev-header {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          margin-bottom: 15px;
+        }
+        .ua-rev-img {
+          width: 50px;
+          height: 50px;
+          border-radius: 6px;
+          object-fit: cover;
+        }
+        .ua-rev-meta {
+          flex-grow: 1;
+        }
+        .ua-rev-product-name {
+          font-size: 15px;
+          font-weight: 600;
+          color: #051838;
+          margin: 0 0 4px 0;
+        }
+        .ua-rev-stars-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .ua-rev-date {
+          font-size: 12px;
+          color: #828282;
+          margin-left: 8px;
+        }
+        .ua-rev-status-badge {
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .ua-rev-status-badge.pending {
+          background: #FFF9E6;
+          color: #D4AF37;
+        }
+        .ua-rev-status-badge.approved {
+          background: #E8F5E9;
+          color: #2E7D32;
+        }
+        .ua-rev-status-badge.rejected {
+          background: #FFEBEE;
+          color: #C62828;
+        }
+        .ua-rev-comment {
+          font-size: 14px;
+          color: #4f4f4f;
+          line-height: 1.5;
+          margin-bottom: 15px;
+        }
+        .ua-verified-purchase-badge {
+          display: inline-block;
+          font-size: 11px;
+          color: #2E7D32;
+          font-weight: 600;
+          background: #E8F5E9;
+          padding: 2px 6px;
+          border-radius: 4px;
+          margin-top: 5px;
+        }
+        .ua-rev-admin-reply {
+          background: #f9f9f9;
+          border-left: 3px solid #051838;
+          padding: 12px 15px;
+          border-radius: 0 8px 8px 0;
+          margin-top: 15px;
+        }
+        .ua-reply-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: #051838;
+          margin: 0 0 5px 0;
+        }
+        .ua-reply-text {
+          font-size: 13px;
+          font-style: italic;
+          color: #4f4f4f;
+          margin: 0;
+        }
+
+        .ua-modal-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #e0e0e0;
+          padding-bottom: 15px;
+          margin-bottom: 15px;
+        }
+        .ua-modal-close-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #828282;
+          padding: 4px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .ua-modal-close-btn:hover {
+          background: #f2f2f2;
+          color: #051838;
+        }
+        .ua-review-modal-product-summary {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          background: #f9f9f9;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+        .ua-rmps-img {
+          width: 60px;
+          height: 60px;
+          border-radius: 6px;
+          object-fit: cover;
+        }
+        .ua-review-modal-product-summary h4 {
+          font-size: 14px;
+          font-weight: 600;
+          color: #051838;
+          margin: 0 0 3px 0;
+        }
+        .ua-review-modal-product-summary p {
+          font-size: 11px;
+          color: #828282;
+          margin: 0;
+        }
+        .ua-star-rating-selector {
+          display: flex;
+          gap: 8px;
+          margin: 10px 0;
+        }
+        .ua-star-selector-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 2px;
+          transition: transform 0.2s ease;
+        }
+        .ua-star-selector-btn:hover {
+          transform: scale(1.15);
+        }
+        .ua-form-textarea {
+          width: 100%;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 12px;
+          font-family: inherit;
+          font-size: 14px;
+          line-height: 1.5;
+          resize: vertical;
+        }
+        .ua-form-textarea:focus {
+          outline: none;
+          border-color: #051838;
+        }
+      ` }} />
     </div>
   );
 }

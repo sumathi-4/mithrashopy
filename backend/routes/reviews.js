@@ -12,15 +12,44 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Fetch reviews error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews.' });
+  } catch (err) {
+    console.error('Fetch reviews error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch reviews.' });
+  }
+});
+
+// GET /api/reviews/my-reviews - Get reviews written by the logged-in user
+router.get('/my-reviews', authenticate, async (req, res) => {
+  try {
+    const reviews = await Review.find({ userId: req.user.id }).sort({ id: -1 }).lean();
+    res.json({ success: true, reviews });
+  } catch (err) {
+    console.error('Fetch my-reviews error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch your reviews.' });
   }
 });
 
 // POST /api/reviews - Submit a new review
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { productName, rating, comment, productImage } = req.body;
+    const { productName, rating, comment, productImage, productId } = req.body;
     if (!productName || !rating || !comment) {
       return res.status(400).json({ success: false, message: 'Product name, rating and review text are required.' });
+    }
+
+    // Check for verified purchase
+    let verifiedPurchase = false;
+    const { Order } = require('../db/database');
+    const userOrders = await Order.find({ userId: req.user.id }).lean();
+    for (const o of userOrders) {
+      const match = o.items && o.items.some(item => 
+        (item.name && String(item.name).toLowerCase().trim() === String(productName).toLowerCase().trim()) ||
+        (productId && String(item.productId) === String(productId))
+      );
+      if (match) {
+        verifiedPurchase = true;
+        break;
+      }
     }
 
     const maxReview = await Review.findOne().sort({ id: -1 });
@@ -35,7 +64,9 @@ router.post('/', authenticate, async (req, res) => {
       comment: comment.trim(),
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       status: 'Pending',
-      reply: ''
+      reply: '',
+      userId: req.user.id,
+      verifiedPurchase
     });
 
     res.status(201).json({ success: true, message: 'Review submitted successfully! It will appear once approved.', review: newReview });

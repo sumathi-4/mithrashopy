@@ -306,10 +306,20 @@ export const apiService = {
   async createOrder(order) {
     try {
       const res = await apiRequest('/api/orders', 'POST', order);
-      return res.order;
+      return res;
     } catch (err) {
       if (isBackendReachable) throw err;
-      return { ...order, id: '#ORD' + Math.floor(1000 + Math.random() * 9000), date: 'Jun 28, 2025', status: 'Pending' };
+      return { success: true, order: { ...order, id: '#ORD' + Math.floor(1000 + Math.random() * 9000), date: 'Jun 28, 2025', status: 'Pending' } };
+    }
+  },
+
+  async verifyPayment(verificationPayload) {
+    try {
+      const res = await apiRequest('/api/orders/verify', 'POST', verificationPayload);
+      return res;
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      return { success: true, order: { id: verificationPayload.orderId, status: 'Processing', payment: 'Razorpay' } };
     }
   },
 
@@ -334,6 +344,15 @@ export const apiService = {
   },
 
   // ─── User Profile & Addresses & Cart & Wishlist ───
+  async getMe() {
+    try {
+      const res = await apiRequest('/api/auth/me');
+      return res.user;
+    } catch (err) {
+      return null;
+    }
+  },
+
   async updateProfile(profile) {
     try {
       const res = await apiRequest('/api/user/profile', 'PUT', profile);
@@ -532,6 +551,80 @@ export const apiService = {
     }
   },
 
+  // ─── Features (Website Functionalities) ───
+  async getFeatures() {
+    try {
+      const res = await apiRequest('/api/features');
+      return res.features;
+    } catch (err) {
+      const local = localStorage.getItem('mithra_admin_features');
+      if (local) {
+        return JSON.parse(local);
+      }
+      const defaultFeatures = [
+        { id: 1, key: 'hero', name: 'Hero Carousel', title: 'Curated Elegance', subtitle: 'Explore Mithira Shopy collections', status: 'Active', order: 1 },
+        { id: 2, key: 'trust_bar', name: 'Trust Bar', title: 'Why You Can Trust Us', subtitle: 'Our commitments to you', status: 'Active', order: 2 },
+        { id: 3, key: 'categories', name: 'Shop by Top Categories', title: 'Shop by Top Categories', subtitle: 'Explore our top categories and find your perfect style', status: 'Active', order: 3 },
+        { id: 4, key: 'video_showcase', name: 'Video Showcase', title: 'Video Tour', subtitle: 'Take a virtual look inside our boutique', status: 'Active', order: 4 },
+        { id: 5, key: 'exclusive_products', name: 'Exclusive Products', title: 'Exclusive Collection', subtitle: 'Handpicked premium fashion boutique items', status: 'Active', order: 5 },
+        { id: 6, key: 'celebrity_collection', name: 'Celebrity Collection', title: 'Celebrity Collections', subtitle: 'Inspired by leading fashion influencers', status: 'Active', order: 6 },
+        { id: 7, key: 'why_choose_us', name: 'Why Choose Us', title: 'Why Choose Mithra Shopy', subtitle: 'Direct-from-weaver premium quality items', status: 'Active', order: 7 }
+      ];
+      localStorage.setItem('mithra_admin_features', JSON.stringify(defaultFeatures));
+      return defaultFeatures;
+    }
+  },
+
+  async createFeature(feature) {
+    try {
+      const res = await apiRequest('/api/features', 'POST', feature);
+      return res.feature;
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      const local = localStorage.getItem('mithra_admin_features');
+      const list = local ? JSON.parse(local) : [];
+      const nextId = list.reduce((max, f) => f.id > max ? f.id : max, 0) + 1;
+      const newFeature = {
+        ...feature,
+        id: nextId,
+        key: feature.key.trim().toLowerCase().replace(/\s+/g, '_'),
+        status: feature.status || 'Active',
+        order: feature.order !== undefined ? parseInt(feature.order, 10) : list.length + 1
+      };
+      list.push(newFeature);
+      localStorage.setItem('mithra_admin_features', JSON.stringify(list));
+      return newFeature;
+    }
+  },
+
+  async updateFeature(id, feature) {
+    try {
+      const res = await apiRequest(`/api/features/${id}`, 'PUT', feature);
+      return res.feature;
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      const local = localStorage.getItem('mithra_admin_features');
+      let list = local ? JSON.parse(local) : [];
+      list = list.map(f => f.id === id ? { ...f, ...feature } : f);
+      localStorage.setItem('mithra_admin_features', JSON.stringify(list));
+      return { id, ...feature };
+    }
+  },
+
+  async deleteFeature(id) {
+    try {
+      await apiRequest(`/api/features/${id}`, 'DELETE');
+      return true;
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      const local = localStorage.getItem('mithra_admin_features');
+      let list = local ? JSON.parse(local) : [];
+      list = list.filter(f => f.id !== id);
+      localStorage.setItem('mithra_admin_features', JSON.stringify(list));
+      return true;
+    }
+  },
+
   async uploadImage(filename, base64Data) {
     try {
       const res = await apiRequest('/api/upload', 'POST', { filename, base64Data });
@@ -539,6 +632,90 @@ export const apiService = {
     } catch (err) {
       console.error('File upload error, returning mock URL');
       return `https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80`;
+    }
+  },
+
+  // ─── Lucky Charm Endpoints ──────────────────────────────────────────────
+  async getActiveLuckyRewards() {
+    try {
+      const res = await apiRequest('/api/lucky-charms/active-rewards');
+      return res.rewards;
+    } catch (err) {
+      console.warn('Backend offline, loading mock lucky rewards...');
+      return [
+        { _id: '1', rewardName: 'Premium Leather Diary', rewardType: 'product', productId: 111, chancePercentage: 20, luckyStock: 50, luckyPrice: 299, image: 'Stationery', value: 299 },
+        { _id: '2', rewardName: 'Boho Necklace', rewardType: 'product', productId: 118, chancePercentage: 15, luckyStock: 40, luckyPrice: 399, image: 'Accessories', value: 399 },
+        { _id: '3', rewardName: '10% OFF Coupon', rewardType: 'coupon', couponId: 'LUCKY10', chancePercentage: 25, luckyStock: 200, image: 'Coupon', value: 10 }
+      ];
+    }
+  },
+
+  async spinLuckyCharm() {
+    try {
+      return await apiRequest('/api/lucky-charms/spin', 'POST');
+    } catch (err) {
+      console.warn('Backend offline, returning mock win');
+      return {
+        success: true,
+        won: true,
+        reward: {
+          id: 111,
+          rewardName: 'Premium Leather Diary',
+          rewardType: 'product',
+          productId: 111,
+          rewardValue: 299,
+          image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80'
+        },
+        claimId: 'mock_claim_' + Date.now()
+      };
+    }
+  },
+
+  async getLuckyStats() {
+    return await apiRequest('/api/lucky-charms/stats');
+  },
+
+  async getLuckyRewards() {
+    return await apiRequest('/api/lucky-charms/rewards');
+  },
+
+  async createLuckyReward(reward) {
+    return await apiRequest('/api/lucky-charms/rewards', 'POST', reward);
+  },
+
+  async updateLuckyReward(id, reward) {
+    return await apiRequest(`/api/lucky-charms/rewards/${id}`, 'PUT', reward);
+  },
+
+  async deleteLuckyReward(id) {
+    return await apiRequest(`/api/lucky-charms/rewards/${id}`, 'DELETE');
+  },
+
+  // ─── Customer Dashboard Extra Hookups ───
+  async cancelOrder(id) {
+    try {
+      return await apiRequest(`/api/orders/${id}/cancel`, 'PUT');
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      return { success: true };
+    }
+  },
+
+  async getMyReviews() {
+    try {
+      const res = await apiRequest('/api/reviews/my-reviews');
+      return res.reviews;
+    } catch (err) {
+      return [];
+    }
+  },
+
+  async getMyClaims() {
+    try {
+      const res = await apiRequest('/api/lucky-charms/my-claims');
+      return res.claims;
+    } catch (err) {
+      return [];
     }
   }
 };

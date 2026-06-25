@@ -27,11 +27,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   const [showRegPwd, setShowRegPwd] = useState(false);
   const [regError, setRegError] = useState('');
 
-  // Admin form state
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showAdminPwd, setShowAdminPwd] = useState(false);
-  const [adminError, setAdminError] = useState('');
+
 
   const [announcements, setAnnouncements] = useState([]);
 
@@ -48,6 +44,14 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAuth = (e) => {
+      openModal(e.detail?.type || 'user');
+    };
+    window.addEventListener('mithira_open_auth_modal', handleOpenAuth);
+    return () => window.removeEventListener('mithira_open_auth_modal', handleOpenAuth);
   }, []);
 
   useEffect(() => {
@@ -299,25 +303,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setAdminError('');
-    try {
-      const result = await loginAdmin({ email: adminEmail, password: adminPassword });
-      if (result.success) {
-        setAuthUser(result.user);
-        closeModal();
-        if (onNavigate) onNavigate('/admin');
-      } else {
-        setAdminError(result.message || 'Invalid admin credentials.');
-      }
-    } catch {
-      setAdminError('Cannot connect to server. Please ensure the backend is running.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
   const handleLogout = () => {
     authLogout();
@@ -435,24 +421,13 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                         </div>
                       </div>
                       <div className="pdm-divider" />
-                      {authUser.role !== 'admin' && (
-                        <button
-                          className="pdm-item"
-                          onClick={() => { if (onNavigate) onNavigate('/account'); setProfileDropdownOpen(false); }}
-                        >
-                          <User size={15} />
-                          <span>My Account</span>
-                        </button>
-                      )}
-                      {authUser.role === 'admin' && (
-                        <button
-                          className="pdm-item"
-                          onClick={() => { if (onNavigate) onNavigate('/admin'); setProfileDropdownOpen(false); }}
-                        >
-                          <LayoutDashboard size={15} />
-                          <span>Admin Dashboard</span>
-                        </button>
-                      )}
+                      <button
+                        className="pdm-item"
+                        onClick={() => { if (onNavigate) onNavigate('/account'); setProfileDropdownOpen(false); }}
+                      >
+                        <User size={15} />
+                        <span>My Account</span>
+                      </button>
                       <button className="pdm-item pdm-logout" onClick={handleLogout}>
                         <LogOut size={15} />
                         <span>Logout</span>
@@ -471,10 +446,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                       <button className="pdm-item pdm-user-btn" onClick={() => openModal('user')}>
                         <User size={15} />
                         <span>Login / Register</span>
-                      </button>
-                      <button className="pdm-item pdm-admin-btn" onClick={() => openModal('admin')}>
-                        <Shield size={15} />
-                        <span>Admin Login</span>
                       </button>
                     </>
                   )}
@@ -658,36 +629,38 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             {/* ── USER MODAL ── */}
             {authModal === 'user' && (
               <div className="auth-user-content">
-                {/* Left Panel */}
-                <div className="auth-left-panel">
-                  <div className="auth-left-inner">
-                    <img src={`${logoImg}?v=2`} alt="Logo" className="auth-panel-logo" />
-                    <h2 className="auth-panel-brand">
-                      <span className="auth-brand-mithira">Mithra</span>
-                      <span className="auth-brand-shoppy">Shopy</span>
-                    </h2>
-                    <p className="auth-panel-tagline">Your style. Your story.</p>
-                    <ul className="auth-panel-perks">
-                      <li>🛍️ Exclusive member-only offers</li>
-                      <li>❤️ Save items to your wishlist</li>
-                      <li>📦 Track your orders easily</li>
-                      <li>✨ Early access to new arrivals</li>
-                    </ul>
+
+                {/* Top Brand Header */}
+                <div className="auth-user-header">
+                  <div className="auth-user-header-glow" />
+                  <img src={`${logoImg}?v=2`} alt="Logo" className="auth-user-logo" />
+                  <div className="auth-user-brand">
+                    <span className="auth-brand-mithira">Mithra</span>
+                    <span className="auth-brand-shoppy">Shopy</span>
                   </div>
+                  <p className="auth-user-tagline">Your style. Your story.</p>
                 </div>
 
-                {/* Right Panel – Form */}
-                <div className="auth-right-panel">
+                {/* Tab Toggle */}
+                <div className="auth-user-tabs">
+                  <button
+                    className={`auth-user-tab ${activeTab === 'login' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('login'); setUserLoginError(''); setRegError(''); }}
+                    type="button"
+                  >Sign In</button>
+                  <button
+                    className={`auth-user-tab ${activeTab === 'register' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('register'); setUserLoginError(''); setRegError(''); }}
+                    type="button"
+                  >New Account</button>
+                </div>
 
-                  {/* ── Heading changes based on mode ── */}
-                  <h3 className="auth-form-heading">
-                    {activeTab === 'login' ? 'Welcome Back!' : 'Create Account'}
-                  </h3>
+                {/* Form Body */}
+                <div className="auth-user-body">
 
                   {/* ── LOGIN FORM ── */}
                   {activeTab === 'login' && (
                     <form className="auth-form" onSubmit={handleUserLogin} noValidate>
-                      <p className="auth-form-sub">Log in to access your orders &amp; wishlist</p>
                       {userLoginError && <div className="auth-error-msg">{userLoginError}</div>}
 
                       <div className="auth-field-group">
@@ -724,7 +697,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                       </div>
 
                       <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
-                        {isSubmitting ? 'Logging in...' : 'Login to Account'}
+                        {isSubmitting ? 'Logging in…' : 'Login to Account'}
                       </button>
 
                       <p className="auth-switch-text">
@@ -743,7 +716,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                   {/* ── REGISTER FORM ── */}
                   {activeTab === 'register' && (
                     <form className="auth-form" onSubmit={handleRegister} noValidate>
-                      <p className="auth-form-sub">Join Mithra Shopy — it's free!</p>
                       {regError && <div className="auth-error-msg">{regError}</div>}
 
                       <div className="auth-field-group">
@@ -770,36 +742,37 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                         />
                       </div>
 
-                      <div className="auth-field-group">
-                        <label className="auth-label">Mobile Number</label>
-                        <input
-                          className="auth-input"
-                          type="tel"
-                          placeholder="Enter your mobile number"
-                          value={regPhone}
-                          onChange={(e) => setRegPhone(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="auth-field-group">
-                        <label className="auth-label">Password <span className="auth-required">*</span></label>
-                        <div className="auth-pwd-wrap">
+                      <div className="auth-reg-two-col">
+                        <div className="auth-field-group">
+                          <label className="auth-label">Mobile Number</label>
                           <input
                             className="auth-input"
-                            type={showRegPwd ? 'text' : 'password'}
-                            placeholder="Create a password (min 6 chars)"
-                            value={regPassword}
-                            onChange={(e) => setRegPassword(e.target.value)}
-                            required
+                            type="tel"
+                            placeholder="Mobile number"
+                            value={regPhone}
+                            onChange={(e) => setRegPhone(e.target.value)}
                           />
-                          <button type="button" className="auth-eye-btn" onClick={() => setShowRegPwd(!showRegPwd)}>
-                            {showRegPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
+                        </div>
+                        <div className="auth-field-group">
+                          <label className="auth-label">Password <span className="auth-required">*</span></label>
+                          <div className="auth-pwd-wrap">
+                            <input
+                              className="auth-input"
+                              type={showRegPwd ? 'text' : 'password'}
+                              placeholder="Min 6 characters"
+                              value={regPassword}
+                              onChange={(e) => setRegPassword(e.target.value)}
+                              required
+                            />
+                            <button type="button" className="auth-eye-btn" onClick={() => setShowRegPwd(!showRegPwd)}>
+                              {showRegPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
                       <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
-                        {isSubmitting ? 'Creating Account...' : 'Create Account'}
+                        {isSubmitting ? 'Creating Account…' : 'Create Account'}
                       </button>
 
                       <p className="auth-switch-text">
@@ -809,62 +782,13 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           className="auth-switch-link"
                           onClick={() => { setActiveTab('login'); setRegError(''); }}
                         >
-                          Login
+                          Sign In
                         </button>
                       </p>
                     </form>
                   )}
 
                 </div>
-              </div>
-            )}
-
-
-            {/* ── ADMIN MODAL ── */}
-            {authModal === 'admin' && (
-              <div className="auth-admin-content">
-                <div className="auth-admin-icon-wrap">
-                  <Shield size={36} />
-                </div>
-                <h2 className="auth-admin-title">Admin Portal</h2>
-                <p className="auth-admin-subtitle">Restricted access — authorized personnel only</p>
-
-                <form className="auth-form auth-admin-form" onSubmit={handleAdminLogin} noValidate>
-                  {adminError && <div className="auth-error-msg">{adminError}</div>}
-
-                  <div className="auth-field-group">
-                    <label className="auth-label">Admin Email</label>
-                    <input
-                      className="auth-input"
-                      type="email"
-                      placeholder="Enter admin email"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field-group">
-                    <label className="auth-label">Password</label>
-                    <div className="auth-pwd-wrap">
-                      <input
-                        className="auth-input"
-                        type={showAdminPwd ? 'text' : 'password'}
-                        placeholder="Enter admin password"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        required
-                      />
-                      <button type="button" className="auth-eye-btn" onClick={() => setShowAdminPwd(!showAdminPwd)}>
-                        {showAdminPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="auth-primary-btn auth-admin-submit-btn" disabled={isSubmitting}>
-                    {isSubmitting ? 'Verifying...' : 'Access Dashboard'}
-                  </button>
-                </form>
               </div>
             )}
           </div>

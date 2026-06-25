@@ -213,14 +213,17 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   };
 
   const getProductDiscount = (p) => {
+    if (!p) return 0;
+    const originalPriceNum = p.originalPrice ? parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) : 0;
+    const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+    if (originalPriceNum && originalPriceNum > priceNum) {
+      return Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100);
+    }
     if (p.discount) {
       const dVal = parseFloat(String(p.discount).replace(/[^0-9.]/g, ''));
-      if (!isNaN(dVal)) return dVal;
-    }
-    const price = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
-    const originalPrice = p.originalPrice ? (typeof p.originalPrice === 'number' ? p.originalPrice : parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) || 0) : 0;
-    if (originalPrice > price) {
-      return Math.round(((originalPrice - price) / originalPrice) * 100);
+      if (!isNaN(dVal) && dVal <= 100) {
+        return Math.round(dVal);
+      }
     }
     return 0;
   };
@@ -1290,7 +1293,11 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                     
                     const originalPriceNum = product.originalPrice ? parseFloat(String(product.originalPrice).replace(/[^0-9.]/g, '')) : 0;
                     const priceNum = parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0;
-                    const discountPercentage = product.discount ? parseFloat(String(product.discount).replace(/[^0-9.]/g, '')) : (originalPriceNum ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100) : 0);
+                    const discountPercentage = (originalPriceNum && originalPriceNum > priceNum) 
+                      ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
+                      : (product.discount && parseFloat(String(product.discount)) <= 100 
+                          ? Math.round(parseFloat(String(product.discount))) 
+                          : 0);
                     
                     const brandName = product.brand || 'Mithira Collection';
                     const inStock = product.stock !== undefined ? product.stock > 0 : true;
@@ -1411,8 +1418,8 @@ export default function ProductsSection({ authUser, setAuthUser }) {
         </div>
       </section>
 
-      {/* 2. NEW ARRIVALS (Full-width layout with bright solid themes and torn paper detail container) */}
-      <section id="new-arrivals" className="new-arrivals-section full-width-arrivals-section">
+      {/* 2. NEW ARRIVALS (Full-width layout with auto-scroll marquee/carousel themed in premium gold and royal blue) */}
+      <section id="new-arrivals" className="new-arrivals-section full-width-arrivals-section theme-gold-blue">
 
         <div className="section-container full-width-container">
 
@@ -1424,107 +1431,142 @@ export default function ProductsSection({ authUser, setAuthUser }) {
             <p className="section-subtitle">Exhibition of Brighter Premium Collections</p>
           </div>
 
-          {/* Kombu Layout Container styled as Full Width */}
-          <div className={`kombu-layout-wrapper full-width-kombu ${getThemeClass(currentArrival.category)}`}>
-            
-            {/* Left Side: Brighter backdrop content containing Torn Paper Card */}
-            <div className="kombu-left-panel">
-              
-              {/* Premium Torn Paper Backdrop Box */}
-              <div className="torn-paper-card">
-                
-                {/* SVG Jagged Edge Torn Paper Path */}
-                <div className="torn-paper-bg">
-                  <svg viewBox="0 0 400 340" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-                    <path 
-                      d="M 12,18 
-                         Q 15,14 30,16 T 60,14 T 90,17 T 120,14 T 150,16 T 180,13 T 210,17 T 240,14 T 270,17 T 300,13 T 330,16 T 360,14 T 388,16
-                         Q 391,14 388,28 T 390,60 T 387,90 T 390,120 T 387,150 T 390,180 T 387,210 T 390,240 T 387,270 T 390,298
-                         Q 388,308 370,305 T 340,307 T 310,304 T 280,306 T 250,303 T 220,306 T 190,303 T 160,305 T 130,302 T 100,305 T 70,302 T 40,305 T 18,303
-                         Q 10,305 13,290 T 11,260 T 14,230 T 11,200 T 13,170 T 10,140 T 13,110 T 10,80 T 13,50 T 11,28 Z" 
-                      fill="#ffffff" 
-                    />
-                  </svg>
-                </div>
-
-                <div className="torn-paper-content">
-                  <span className="kombu-badge">{currentArrival.badge}</span>
-                  <h3 className="kombu-title">{currentArrival.title}</h3>
-                  <p className="kombu-desc">{currentArrival.desc}</p>
+          {/* Infinite Marquee Slider Layout */}
+          <div className="new-arrivals-carousel-container">
+            <div className="new-arrivals-carousel-viewport">
+              <div className="new-arrivals-carousel-track">
+                {(() => {
+                  const dbNewArrivals = productsList.filter(p => p.isNewArrival);
+                  const finalNewArrivals = dbNewArrivals.length > 0 ? dbNewArrivals : newArrivalsProducts;
+                  // Duplicate the array 3 times to ensure infinite smooth marquee scrolling across all screen widths
+                  const marqueeItems = [...finalNewArrivals, ...finalNewArrivals, ...finalNewArrivals];
                   
-                  <div className="kombu-meta">
-                    <span className="kombu-price">{currentArrival.price}</span>
-                    <div className="kombu-rating">
-                      <div className="stars-wrapper">{renderStars(currentArrival.rating)}</div>
-                      <span className="reviews-count">({currentArrival.reviews} reviews)</span>
-                    </div>
-                  </div>
+                  return marqueeItems.map((product, idx) => {
+                    const isWishlisted = wishlist.includes(product.id);
+                    const isInCart = cart.includes(product.id);
+                    
+                    const originalPriceNum = product.originalPrice ? parseFloat(String(product.originalPrice).replace(/[^0-9.]/g, '')) : 0;
+                    const priceNum = parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0;
+                    const discountPercentage = (originalPriceNum && originalPriceNum > priceNum) 
+                      ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
+                      : (product.discount && parseFloat(String(product.discount)) <= 100 
+                          ? Math.round(parseFloat(String(product.discount))) 
+                          : 0);
+                    
+                    const brandName = product.brand || 'Mithira Collection';
+                    const inStock = product.stock !== undefined ? product.stock > 0 : true;
 
-                  <div className="kombu-actions">
-                    <button 
-                      className="kombu-btn black-white-btn"
-                      onClick={() => handleNavigation('/Shop')}
-                    >
-                      Examine Collection
-                    </button>
-                    <button 
-                      className={`kombu-wish-btn black-white-btn ${wishlist.includes(currentArrival.id) ? 'active' : ''}`}
-                      onClick={() => toggleWishlist(currentArrival.id)}
-                      aria-label="Add to Wishlist"
-                    >
-                      <Heart size={20} fill={wishlist.includes(currentArrival.id) ? "currentColor" : "none"} />
-                    </button>
-                  </div>
-                </div>
+                    return (
+                      <div 
+                        key={`${product.id}-${idx}`} 
+                        className="clothing-product-card theme-clothing new-arrival-card animate-fade-in-up"
+                        onClick={() => handleProductClick(product)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}>
+                          {/* Dedicated Red NEW Badge */}
+                          <div className="clothing-new-badge">NEW</div>
 
+                          {/* Discount Badge */}
+                          {discountPercentage > 0 && (
+                            <div className="clothing-discount-badge" style={{ top: '48px' }}>
+                              {discountPercentage}% OFF
+                            </div>
+                          )}
+                          
+                          {/* Wishlist float button (top-right of image) */}
+                          <button 
+                            className={`clothing-wishlist-float-btn ${isWishlisted ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                            aria-label="Add to Wishlist"
+                          >
+                            <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
+                          </button>
+
+                          <img src={product.image} alt={product.title} className="clothing-img" />
+
+                          {/* Image Hover Overlay */}
+                          <div className="clothing-hover-overlay">
+                            <button 
+                              className={`clothing-hover-action-btn hover-wishlist-btn ${isWishlisted ? 'active' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                              title="Add to Wishlist"
+                            >
+                              <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+                            </button>
+                            <button 
+                              className="clothing-hover-action-btn hover-quickview-btn"
+                              onClick={(e) => { e.stopPropagation(); handleQuickViewClick(product); }}
+                              title="Quick View"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button 
+                              className={`clothing-hover-action-btn hover-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(product.id, product.title); }}
+                              title="Add to Cart"
+                            >
+                              <ShoppingCart size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="clothing-info-section">
+                          <div className="clothing-brand-row">
+                            <span className="clothing-brand-name">{brandName}</span>
+                            <div className="clothing-stock-badge">
+                              {inStock ? (
+                                <span className="stock-status-in">In Stock</span>
+                              ) : (
+                                <span className="stock-status-out">Out of Stock</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <h4 className="clothing-product-title" onClick={() => handleProductClick(product)}>
+                            {product.title}
+                          </h4>
+
+                          <div className="clothing-rating-badge-container">
+                            <div className="clothing-rating-pill-green">
+                              <span>{(product.rating || 5).toFixed(1)}</span>
+                              <span className="rating-star-icon">★</span>
+                              <span className="rating-divider">|</span>
+                              <span className="rating-count">{product.reviews || 0}</span>
+                            </div>
+                          </div>
+
+                          <div className="clothing-price-and-action">
+                            <div className="clothing-price-box">
+                              <span className="clothing-selling-price">
+                                {String(product.price).startsWith('₹') ? product.price : `₹${product.price}`}
+                              </span>
+                              {product.originalPrice && (
+                                <span className="clothing-original-price">
+                                  {String(product.originalPrice).startsWith('₹') ? product.originalPrice : `₹${product.originalPrice}`}
+                                </span>
+                              )}
+                            </div>
+                            <button 
+                              className={`clothing-card-add-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); toggleCart(product.id, product.title); }}
+                            >
+                              {isInCart ? "IN CART" : "ADD TO CART"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-
             </div>
-
-            {/* Right Side: Enhanced tall portrait image viewport */}
-            <div className="kombu-right-panel tall-image-panel">
-              <div className="kombu-image-viewport">
-                {newArrivalsProducts.map((product, index) => (
-                  <div 
-                    key={product.id}
-                    className={`kombu-slide-img-box ${index === currentArrivalIndex ? 'active' : ''}`}
-                  >
-                    <img 
-                      src={product.image} 
-                      alt={product.title} 
-                      className="kombu-main-img" 
-                    />
-                    <div className="kombu-img-shadow-fade"></div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Manual navigation keys */}
-              <div className="kombu-nav-keys">
-                <button 
-                  className="nav-arrow"
-                  onClick={() => setCurrentArrivalIndex((prev) => (prev - 1 + newArrivalsProducts.length) % newArrivalsProducts.length)}
-                  aria-label="Previous Slide"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <button 
-                  className="nav-arrow"
-                  onClick={() => setCurrentArrivalIndex((prev) => (prev + 1) % newArrivalsProducts.length)}
-                  aria-label="Next Slide"
-                >
-                  <ChevronRight size={24} />
-                </button>
-              </div>
-
-            </div>
-
           </div>
 
           <div className="section-footer-btn">
             <button 
               className="view-all-btn flex-center"
-              onClick={() => handleNavigation('/Shop')}
+              onClick={() => handleNavigation('/NewArrivals')}
             >
               View All Products
             </button>
@@ -1559,7 +1601,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
         const origPriceNum = origPrice ? (typeof origPrice === 'number' ? origPrice : parseFloat(String(origPrice).replace(/[^0-9.]/g, '')) || 0) : Math.round(priceNum * 1.5);
         const displayOriginalPriceStr = `₹${origPriceNum.toLocaleString()}`;
 
-        const discountVal = quickViewProduct.discount ? parseInt(String(quickViewProduct.discount).replace(/[^0-9.]/g, '')) : Math.round(((origPriceNum - priceNum) / origPriceNum) * 100);
+        const discountVal = getProductDiscount(quickViewProduct);
 
         return (
           <div className={`modal-overlay quickview-split-overlay animate-fade-in ${getCategoryThemeClass(quickViewProduct.category)}`} onClick={() => setQuickViewProduct(null)}>

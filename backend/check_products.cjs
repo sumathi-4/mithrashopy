@@ -5,9 +5,8 @@ mongoose.connect(MONGODB_URI)
   .then(async () => {
     const Product = mongoose.connection.model('Product', new mongoose.Schema({}, { strict: false }), 'products');
     const products = await Product.find().lean();
-    console.log('PRODUCTS:');
     products.forEach(p => {
-      console.log(`- ID: ${p._id}, Title/Name: ${p.title || p.name}, Image: ${p.image}, Images: ${JSON.stringify(p.images)}, Category: ${p.category}`);
+      console.log(JSON.stringify(p, null, 2));
     });
     mongoose.disconnect();
   })

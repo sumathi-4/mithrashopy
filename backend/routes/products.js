@@ -67,7 +67,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/products - Create a new product
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyChancePercentage, luckyStock, luckyActive, luckyPrice } = req.body;
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
@@ -100,8 +100,16 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       reviews: reviews !== undefined ? parseInt(reviews, 10) : 120,
       discount: discount !== undefined ? parseInt(discount, 10) : 0,
       originalPrice: originalPrice !== undefined ? (parseFloat(originalPrice) || null) : null,
+      badge: badge || '',
+      isNewArrival: isNewArrival === true || isNewArrival === 'true',
+      isOffer: isOffer === true || isOffer === 'true',
       attributes: formatAttributesForDatabase(attributes),
-      variants: variants || []
+      variants: variants || [],
+      includeInLuckyCharm: includeInLuckyCharm === true || includeInLuckyCharm === 'true',
+      luckyChancePercentage: parseFloat(luckyChancePercentage) || 0,
+      luckyStock: parseInt(luckyStock, 10) || 0,
+      luckyActive: luckyActive === true || luckyActive === 'true',
+      luckyPrice: parseFloat(luckyPrice) || 0
     });
 
     const responseProduct = newProduct.toObject();
@@ -120,7 +128,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyChancePercentage, luckyStock, luckyActive, luckyPrice } = req.body;
 
     if (variants && Array.isArray(variants) && variants.length > 0) {
       if (variants.some(v => !v.image || !v.image.trim())) {
@@ -144,8 +152,16 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     if (reviews !== undefined) updateFields.reviews = parseInt(reviews, 10);
     if (discount !== undefined) updateFields.discount = parseInt(discount, 10);
     if (originalPrice !== undefined) updateFields.originalPrice = originalPrice !== null ? (parseFloat(originalPrice) || null) : null;
+    if (badge !== undefined) updateFields.badge = badge;
+    if (isNewArrival !== undefined) updateFields.isNewArrival = isNewArrival === true || isNewArrival === 'true';
+    if (isOffer !== undefined) updateFields.isOffer = isOffer === true || isOffer === 'true';
     if (attributes !== undefined) updateFields.attributes = formatAttributesForDatabase(attributes);
     if (variants !== undefined) updateFields.variants = variants;
+    if (includeInLuckyCharm !== undefined) updateFields.includeInLuckyCharm = includeInLuckyCharm === true || includeInLuckyCharm === 'true';
+    if (luckyChancePercentage !== undefined) updateFields.luckyChancePercentage = parseFloat(luckyChancePercentage) || 0;
+    if (luckyStock !== undefined) updateFields.luckyStock = parseInt(luckyStock, 10) || 0;
+    if (luckyActive !== undefined) updateFields.luckyActive = luckyActive === true || luckyActive === 'true';
+    if (luckyPrice !== undefined) updateFields.luckyPrice = parseFloat(luckyPrice) || 0;
 
     const updated = await Product.findOneAndUpdate(
       { id },

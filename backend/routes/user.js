@@ -8,7 +8,7 @@ const router = express.Router();
 // ─── Profile Management ────────────────────────────────────────────────────────
 router.put('/profile', authenticate, async (req, res) => {
   try {
-    const { name, phone, dob, gender } = req.body;
+    const { name, phone, dob, gender, profileImage } = req.body;
 
     const user = await User.findOne({ id: req.user.id });
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
@@ -20,7 +20,8 @@ router.put('/profile', authenticate, async (req, res) => {
           name: name !== undefined ? name.trim() : user.name,
           phone: phone !== undefined ? phone.trim() : user.phone,
           dob: dob !== undefined ? dob.trim() : user.dob,
-          gender: gender !== undefined ? gender : user.gender
+          gender: gender !== undefined ? gender : user.gender,
+          profileImage: profileImage !== undefined ? profileImage : user.profileImage
         }
       },
       { new: true }

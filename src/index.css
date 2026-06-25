@@ -10377,145 +10377,142 @@ ul {
 
 
 /* ═══════════════════════════════════════════════════════════
-   USER MODAL — Two-panel layout (Myntra / AJIO style)
+   USER MODAL — Single elegant card
 ═══════════════════════════════════════════════════════════ */
 .auth-modal-user {
-  width: 820px;
+  width: 440px;
   max-width: 95vw;
   background: #fff;
-  box-shadow: 0 24px 80px rgba(212, 175, 55, 0.2), 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 32px 100px rgba(5, 24, 56, 0.22), 0 4px 24px rgba(0,0,0,0.1);
+  border-radius: 22px;
+  overflow: hidden;
 }
 
 .auth-user-content {
   display: flex;
-  min-height: 560px;
+  flex-direction: column;
 }
 
-/* Left branding panel */
-.auth-left-panel {
-  width: 340px;
-  flex-shrink: 0;
-  background: linear-gradient(145deg, #D4AF37 0%, #B38F2D 50%, #5a8427 100%);
+/* ── Top brand header ── */
+.auth-user-header {
+  background: linear-gradient(135deg, #051838 0%, #0b2545 55%, #133a6f 100%);
+  padding: 32px 36px 24px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 32px;
+  gap: 6px;
   position: relative;
   overflow: hidden;
 }
-
-.auth-left-panel::before {
+.auth-user-header::before {
   content: '';
   position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 220px;
-  height: 220px;
-  background: rgba(255,255,255,0.07);
+  top: -50px; right: -50px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%);
   border-radius: 50%;
 }
-.auth-left-panel::after {
+.auth-user-header::after {
   content: '';
   position: absolute;
-  bottom: -80px;
-  left: -40px;
-  width: 260px;
-  height: 260px;
-  background: rgba(255,255,255,0.05);
+  bottom: -40px; left: -30px;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%);
   border-radius: 50%;
 }
+.auth-user-header-glow {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 30px,
+    rgba(212,175,55,0.02) 30px,
+    rgba(212,175,55,0.02) 60px
+  );
+  pointer-events: none;
+}
 
-.auth-left-inner {
+.auth-user-logo {
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(212,175,55,0.25);
+  padding: 6px;
   position: relative;
   z-index: 1;
-  text-align: center;
-  color: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
-.auth-panel-logo {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: 16px;
-  background: transparent;
-  padding: 8px;
-  margin-bottom: 14px;
-}
-
-.auth-panel-brand {
-  font-size: 1.6rem;
+.auth-user-brand {
+  font-size: 1.55rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1.1;
-  margin-bottom: 10px;
+  letter-spacing: -0.4px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
 }
 .auth-brand-mithira { color: #fff; }
-.auth-brand-shoppy  { color: rgba(255,255,255,0.75); font-weight: 400; }
+.auth-brand-shoppy  { color: #D4AF37; }
 
-.auth-panel-tagline {
-  font-size: 0.88rem;
-  color: rgba(255,255,255,0.8);
+.auth-user-tagline {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
   font-style: italic;
-  margin-bottom: 28px;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.03em;
 }
 
-.auth-panel-perks {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
+/* ── Pill tab toggle ── */
+.auth-user-tabs {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.auth-panel-perks li {
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.9);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 30px;
-  padding: 8px 14px;
-}
-
-/* Right form panel */
-.auth-right-panel {
-  flex: 1;
-  padding: 36px 40px 32px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-/* Tabs */
-.auth-tabs {
-  display: flex;
-  border-bottom: 2px solid #f0f0f0;
-  margin-bottom: 22px;
   gap: 0;
+  background: #f5f3ef;
+  margin: 20px 28px 0;
+  border-radius: 50px;
+  padding: 4px;
 }
 
-.auth-tab-btn {
+.auth-user-tab {
   flex: 1;
-  padding: 11px 0;
+  padding: 9px 0;
   background: none;
   border: none;
+  border-radius: 50px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.87rem;
   font-weight: 600;
-  color: #aaa;
-  border-bottom: 2.5px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.22s ease;
+  color: #888;
   letter-spacing: 0.02em;
+  transition: all 0.22s ease;
+  font-family: inherit;
 }
-.auth-tab-btn.active {
+.auth-user-tab.active {
+  background: #051838;
   color: #D4AF37;
-  border-bottom-color: #D4AF37;
+  box-shadow: 0 2px 12px rgba(5,24,56,0.25);
 }
-.auth-tab-btn:hover:not(.active) {
-  color: #3a2a2f;
+.auth-user-tab:not(.active):hover {
+  color: #051838;
+  background: rgba(5,24,56,0.06);
+}
+
+/* ── Form body ── */
+.auth-user-body {
+  padding: 20px 28px 28px;
+}
+
+/* two-col layout for phone + password in register */
+.auth-reg-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .auth-reg-two-col { grid-template-columns: 1fr; }
 }
 
 /* Form styles */
@@ -10628,22 +10625,24 @@ ul {
 .auth-primary-btn {
   width: 100%;
   padding: 13px;
-  background: linear-gradient(135deg, #D4AF37 0%, #5a9318 100%);
+  background: #051838;
   color: #fff;
-  border: none;
+  border: 1.5px solid #D4AF37;
   border-radius: 10px;
   font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.04em;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 18px rgba(5, 24, 56, 0.25);
   margin-top: 2px;
 }
 .auth-primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(212, 175, 55, 0.45);
-  background: linear-gradient(135deg, #aa7c11 0%, #D4AF37 100%);
+  box-shadow: 0 8px 28px rgba(212, 175, 55, 0.35);
+  background: #D4AF37;
+  color: #051838;
+  border-color: #D4AF37;
 }
 .auth-primary-btn:active {
   transform: translateY(0);
@@ -10707,8 +10706,9 @@ ul {
 .auth-modal-admin {
   width: 420px;
   max-width: 95vw;
-  background: linear-gradient(155deg, #111a11 0%, #1a261a 50%, #111611 100%);
-  box-shadow: 0 24px 80px rgba(255, 138, 0, 0.4), 0 4px 20px rgba(0,0,0,0.4);
+  background: linear-gradient(155deg, #020b1a 0%, #051838 50%, #0c234a 100%);
+  box-shadow: 0 24px 80px rgba(212, 175, 55, 0.25), 0 4px 20px rgba(0,0,0,0.4);
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .auth-admin-content {
@@ -10723,7 +10723,7 @@ ul {
   width: 70px;
   height: 70px;
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(212, 175, 55,0.2), rgba(255, 138, 0,0.3));
+  background: linear-gradient(135deg, rgba(212, 175, 55,0.2), rgba(5, 24, 56,0.3));
   border: 1px solid rgba(212, 175, 55,0.25);
   display: flex;
   align-items: center;
@@ -10782,11 +10782,20 @@ ul {
 }
 
 .auth-admin-submit-btn {
-  background: linear-gradient(135deg, #D4AF37 0%, #aa7c11 100%);
-  box-shadow: 0 4px 20px rgba(155, 89, 182, 0.4);
+  background: #051838;
+  border: 1.5px solid #D4AF37;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(5, 24, 56, 0.4);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.25s ease;
 }
 .auth-admin-submit-btn:hover {
-  box-shadow: 0 8px 32px rgba(155, 89, 182, 0.5);
+  background: #D4AF37;
+  color: #051838;
+  border-color: #D4AF37;
+  box-shadow: 0 8px 32px rgba(212, 175, 55, 0.45);
 }
 
 .auth-admin-hint {
@@ -25229,3 +25238,1150 @@ body .quickview-thumbnail-wrapper.active {
 .celebrity-view-page .celeb-view-container {
   padding-top: 15px !important;
 }
+
+/* New Arrivals Infinite Marquee Carousel */
+.new-arrivals-section.theme-gold-blue {
+  background: transparent !important;
+  padding: 80px 0;
+  overflow: hidden;
+}
+
+.new-arrivals-section.theme-gold-blue .section-title {
+  color: #051838 !important;
+}
+
+.new-arrivals-section.theme-gold-blue .section-subtitle {
+  color: #b38600 !important; /* Premium gold adjusted for readability on light background */
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+/* Red color badge for NEW arrivals on home page */
+.clothing-new-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #ff4d4d 0%, #c62828 100%) !important;
+  color: #ffffff !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  padding: 4px 12px !important;
+  border-radius: 4px !important;
+  z-index: 2 !important;
+  letter-spacing: 0.08em !important;
+  box-shadow: 0 2px 6px rgba(198, 40, 40, 0.3) !important;
+  text-transform: uppercase !important;
+}
+
+.new-arrivals-carousel-container {
+  position: relative;
+  width: 100%;
+  margin: 40px 0;
+  padding: 0 40px;
+  overflow: hidden;
+}
+
+.new-arrivals-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.new-arrivals-carousel-track {
+  display: flex;
+  width: max-content; /* Ensure track is as wide as its children combined */
+  animation: new-arrivals-marquee 35s linear infinite;
+  will-change: transform;
+}
+
+/* Pause scroll animation on hover to allow interactions */
+.new-arrivals-carousel-track:hover {
+  animation-play-state: paused !important;
+}
+
+/* Base style for card to behave nicely in track */
+.new-arrivals-carousel-track .clothing-product-card.new-arrival-card {
+  flex: 0 0 280px; /* fixed width for stable marquee cards */
+  width: 280px;
+  margin: 0 15px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(223, 183, 67, 0.2); /* gold tinted border */
+}
+
+/* Hover lift effect */
+.new-arrivals-carousel-track .clothing-product-card.new-arrival-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(223, 183, 67, 0.25);
+  border-color: #dfb743;
+}
+
+/* Theme overrides inside new arrivals for gold-blue style */
+.new-arrival-card .clothing-price-and-action .clothing-card-add-cart-btn {
+  background: #051838 !important;
+  color: #ffffff !important;
+  border: 1px solid #051838 !important;
+}
+
+.new-arrival-card .clothing-price-and-action .clothing-card-add-cart-btn:hover {
+  background: #dfb743 !important;
+  color: #ffffff !important;
+  border-color: #dfb743 !important;
+}
+
+.new-arrival-card .clothing-price-and-action .clothing-card-add-cart-btn.in-cart {
+  background: #dfb743 !important;
+  color: #ffffff !important;
+  border-color: #dfb743 !important;
+}
+
+.new-arrival-card .clothing-selling-price {
+  color: #051838 !important;
+}
+
+.new-arrival-card .clothing-rating-pill-green {
+  background: #051838 !important;
+  color: #dfb743 !important;
+}
+
+/* View All button overrides for theme */
+.new-arrivals-section.theme-gold-blue .view-all-btn {
+  background: #dfb743 !important;
+  color: #051838 !important;
+  border: 2px solid #dfb743 !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.new-arrivals-section.theme-gold-blue .view-all-btn:hover {
+  background: transparent !important;
+  color: #dfb743 !important;
+  border-color: #dfb743 !important;
+}
+
+@keyframes new-arrivals-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 3)); /* Since we duplicate 3 times, translating by exactly 1/3 offsets exactly one set */
+  }
+}
+
+/* ==========================================================================
+   PREMIUM SOFT CREAM BOUTIQUE STYLING & ACCENT BADGES
+   ========================================================================== */
+.new-arrivals-view-page {
+  background-color: #FAF6EE !important;
+  background: linear-gradient(180deg, #FAF6EE 0%, #FDFBF7 100%) !important;
+}
+
+.new-arrivals-view-page .arrivals-container {
+  background: transparent !important;
+}
+
+.new-arrivals-view-page .exclusive-filters-sidebar {
+  background: #FDFBF7 !important;
+  border-color: #E6DFD3 !important;
+  box-shadow: 0 10px 30px rgba(160, 140, 110, 0.06) !important;
+}
+
+.new-arrivals-view-page .unified-filters-card {
+  background: #FAF6EE !important;
+  border-color: #E6DFD3 !important;
+}
+
+.new-arrivals-view-page .premium-sort-bar-m2 {
+  background: #FDFBF7 !important;
+  border-color: #E6DFD3 !important;
+  box-shadow: 0 4px 15px rgba(160, 140, 110, 0.04) !important;
+}
+
+.new-arrivals-view-page .lookbook-section {
+  background: #FDFBF7 !important;
+  border: 1px solid #E6DFD3 !important;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(160, 140, 110, 0.05) !important;
+}
+
+.new-arrivals-view-page .shop-product-detail-page-view {
+  background-color: #FAF6EE !important;
+  background: linear-gradient(180deg, #FAF6EE 0%, #FDFBF7 100%) !important;
+}
+
+.new-arrivals-view-page .detail-tab-pane,
+.new-arrivals-view-page .product-detail-similar-section {
+  border-color: #E6DFD3 !important;
+}
+
+.new-arrivals-view-page .filter-search-box-m3,
+.new-arrivals-view-page .category-list-search {
+  background: #FAF6EE !important;
+  border-color: #E6DFD3 !important;
+}
+
+.new-arrivals-view-page .filter-search-input-m3 {
+  background: transparent !important;
+}
+
+.new-arrivals-view-page .filter-card-section {
+  border-bottom: 1px solid #E6DFD3 !important;
+}
+
+/* Premium Rounded Pill NEW Badge using Brand Green and Brand Orange Accent */
+.arrival-new-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: linear-gradient(135deg, #8CC63F 0%, #FF8A00 100%) !important;
+  color: #ffffff !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  z-index: 2 !important;
+  letter-spacing: 0.08em !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+  text-transform: uppercase !important;
+}
+
+.new-arrivals-view-page .product-detail-badge-pill {
+  background: linear-gradient(135deg, #8CC63F 0%, #FF8A00 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+}
+
+/* ==========================================================================
+   ADMIN PANEL THEME OVERRIDES (NAVY BLUE & GOLD ACCENT THEME)
+   Aligned with the main Mithira Shoppy premium store aesthetic.
+   ========================================================================== */
+
+/* Sidebar Layout: Deep Navy Blue */
+body .admin-re-sidebar {
+  background-color: #051838 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Sidebar Brand Logo Casing */
+body .admin-re-brand-name .brand-mithira {
+  color: #dfb743 !important; /* Premium Gold */
+}
+body .admin-re-brand-name .brand-shoppy {
+  color: #ffffff !important; /* Pure White */
+}
+
+/* Nav Item Styling: Faded white to gold active */
+body .admin-re-nav-item {
+  color: rgba(255, 255, 255, 0.75) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+body .admin-re-nav-item svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+  transition: color 0.25s ease !important;
+}
+
+/* Nav Item Hover: Light opacity overlay, gold highlights */
+body .admin-re-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #dfb743 !important;
+}
+body .admin-re-nav-item:hover svg {
+  color: #dfb743 !important;
+}
+
+/* Nav Item Active: Premium Gold background, navy text */
+body .admin-re-nav-item.active {
+  background-color: #dfb743 !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+}
+body .admin-re-nav-item.active svg {
+  color: #051838 !important;
+}
+
+/* Topbar styles */
+body .admin-re-topbar {
+  background-color: #fdfbf7 !important; /* Champagne warm white background */
+  border-bottom: 1px solid rgba(160, 140, 110, 0.15) !important;
+}
+body .admin-re-page-title {
+  color: #051838 !important; /* Navy title */
+  font-family: var(--font-serif) !important;
+  font-weight: 800 !important;
+}
+
+/* Search bar styling */
+body .admin-re-search-input {
+  border: 1px solid rgba(160, 140, 110, 0.25) !important;
+  background-color: #faf6ee !important;
+}
+body .admin-re-search-input:focus {
+  border-color: #dfb743 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(223, 183, 67, 0.15) !important;
+}
+
+/* Profile menu */
+body .admin-re-profile-trigger {
+  border: 1px solid rgba(160, 140, 110, 0.15) !important;
+  background-color: #faf6ee !important;
+}
+body .admin-re-profile-trigger .profile-name {
+  color: #051838 !important;
+  font-weight: 700 !important;
+}
+body .admin-re-profile-trigger .profile-role {
+  color: #b38f2d !important;
+}
+
+/* Primary buttons in Admin Panel */
+body .admin-app-layout .btn-primary,
+body .admin-app-layout button[type="submit"]:not(.qty-btn),
+body .admin-modal-box .btn-primary {
+  background: #051838 !important;
+  border: 1px solid #051838 !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+  transition: all 0.2s !important;
+}
+body .admin-app-layout .btn-primary:hover,
+body .admin-app-layout button[type="submit"]:not(.qty-btn):hover,
+body .admin-modal-box .btn-primary:hover {
+  background: #dfb743 !important;
+  border-color: #dfb743 !important;
+  color: #ffffff !important;
+}
+
+/* Secondary buttons */
+body .admin-app-layout .btn-secondary,
+body .admin-modal-box .btn-secondary {
+  background: transparent !important;
+  border: 1px solid #051838 !important;
+  color: #051838 !important;
+  font-weight: bold !important;
+}
+body .admin-app-layout .btn-secondary:hover,
+body .admin-modal-box .btn-secondary:hover {
+  background: rgba(5, 24, 56, 0.05) !important;
+}
+
+/* Interactive elements & highlights */
+body .admin-app-layout .re-stat-card {
+  background: #fdfbf7 !important;
+  border: 1px solid rgba(160, 140, 110, 0.2) !important;
+  box-shadow: 0 4px 15px rgba(160, 140, 110, 0.04) !important;
+}
+body .admin-app-layout .re-stat-card .stat-val {
+  color: #051838 !important;
+  font-weight: 800 !important;
+}
+body .admin-app-layout .re-stat-card .stat-lbl {
+  color: #666666 !important;
+}
+
+/* Panels */
+body .admin-app-layout .graph-panel,
+body .admin-app-layout .bottom-widget-card,
+body .admin-app-layout .admin-table-card {
+  background: #fdfbf7 !important;
+  border: 1px solid rgba(160, 140, 110, 0.2) !important;
+  box-shadow: 0 4px 15px rgba(160, 140, 110, 0.04) !important;
+}
+body .admin-app-layout .panel-title,
+body .admin-app-layout .widget-title,
+body .admin-app-layout .card-title {
+  color: #051838 !important;
+  font-family: var(--font-serif) !important;
+  font-weight: 700 !important;
+}
+
+/* Modals overlays & headers */
+body .admin-modal-box {
+  background: #fdfbf7 !important;
+  border: 2px solid #dfb743 !important;
+  border-radius: 16px !important;
+}
+body .admin-modal-box .modal-hdr {
+  border-bottom: 1px solid rgba(160, 140, 110, 0.15) !important;
+}
+body .admin-modal-box .modal-hdr h3 {
+  color: #051838 !important;
+  font-family: var(--font-serif) !important;
+  font-weight: 700 !important;
+}
+
+/* Category cards list and tables */
+body .admin-app-layout table th {
+  background-color: #faf6ee !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid rgba(160, 140, 110, 0.15) !important;
+}
+body .admin-app-layout table td {
+  border-bottom: 1px solid rgba(160, 140, 110, 0.1) !important;
+}
+
+/* Sub-tabs / pills navigation styling inside settings, coupons etc */
+body .admin-app-layout .settings-sub-nav-item {
+  color: #555555 !important;
+}
+body .admin-app-layout .settings-sub-nav-item:hover {
+  color: #dfb743 !important;
+  background-color: rgba(223, 183, 67, 0.05) !important;
+}
+body .admin-app-layout .settings-sub-nav-item.active {
+  background-color: rgba(5, 24, 56, 0.08) !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+}
+body .admin-app-layout .settings-sub-nav-item.active svg {
+  color: #051838 !important;
+}
+
+/* ==========================================================================
+   UNIFIED PREMIUM MODERN REDESIGN & VISIBILITY OVERRIDES (MEESHO-STYLE)
+   ========================================================================== */
+
+/* 1. Global Page Backgrounds - No more dark/violent morphing themes */
+body .shop-view-page,
+body .shop-view-page.theme-clothing,
+body .shop-view-page.theme-stationery,
+body .shop-view-page.theme-gifts,
+body .shop-view-page.theme-accessories,
+body .shop-product-detail-page-view,
+body .shop-product-detail-page-view.theme-clothing,
+body .shop-product-detail-page-view.theme-stationery,
+body .shop-product-detail-page-view.theme-gifts,
+body .shop-product-detail-page-view.theme-accessories {
+  background-color: #f8fafc !important; /* Soft premium off-white/light grey background */
+  color: #1e293b !important;
+}
+
+/* 2. Unified Product Card Styling - White, clean, premium design for all categories */
+body .clothing-product-card,
+body .clothing-product-card.theme-clothing,
+body .clothing-product-card.cat-card-stationery,
+body .clothing-product-card.cat-card-gifts,
+body .clothing-product-card.cat-card-accessories,
+body .shop-product-detail-page-view.theme-stationery .clothing-product-card,
+body .shop-product-detail-page-view.theme-gifts .clothing-product-card,
+body .shop-product-detail-page-view.theme-accessories .clothing-product-card,
+body .shop-product-detail-page-view.theme-clothing .clothing-product-card,
+body .shop-view-page.stationery-lavender-theme .clothing-product-card,
+body .shop-view-page.gifts-serene-theme .clothing-product-card,
+body .shop-view-page.accessories-luxury-theme .clothing-product-card,
+body .shop-view-page.clothing-wine-theme .clothing-product-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  position: relative !important;
+  color: #1e293b !important;
+  overflow: hidden !important;
+}
+
+body .clothing-product-card:hover,
+body .clothing-product-card.theme-clothing:hover,
+body .clothing-product-card.cat-card-stationery:hover,
+body .clothing-product-card.cat-card-gifts:hover,
+body .clothing-product-card.cat-card-accessories:hover,
+body .shop-product-detail-page-view.theme-stationery .clothing-product-card:hover,
+body .shop-product-detail-page-view.theme-gifts .clothing-product-card:hover,
+body .shop-product-detail-page-view.theme-accessories .clothing-product-card:hover,
+body .shop-product-detail-page-view.theme-clothing .clothing-product-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Card image hover zoom */
+body .clothing-product-card .clothing-img {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+body .clothing-product-card:hover .clothing-img {
+  transform: scale(1.04) !important;
+}
+
+/* Card Brand Name */
+body .clothing-product-card .clothing-brand-name,
+body .clothing-product-card.theme-clothing .clothing-brand-name,
+body .clothing-product-card.cat-card-stationery .clothing-brand-name,
+body .clothing-product-card.cat-card-gifts .clothing-brand-name,
+body .clothing-product-card.cat-card-accessories .clothing-brand-name {
+  color: #64748b !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Card Product Title */
+body .clothing-product-card .clothing-product-title,
+body .clothing-product-card.theme-clothing .clothing-product-title,
+body .clothing-product-card.cat-card-stationery .clothing-product-title,
+body .clothing-product-card.cat-card-gifts .clothing-product-title,
+body .clothing-product-card.cat-card-accessories .clothing-product-title {
+  color: #334155 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  margin: 4px 0 !important;
+  line-height: 1.4 !important;
+  transition: color 0.2s ease !important;
+}
+
+body .clothing-product-card .clothing-product-title:hover,
+body .clothing-product-card.theme-clothing .clothing-product-title:hover,
+body .clothing-product-card.cat-card-stationery .clothing-product-title:hover,
+body .clothing-product-card.cat-card-gifts .clothing-product-title:hover,
+body .clothing-product-card.cat-card-accessories .clothing-product-title:hover {
+  color: #aa7c11 !important; /* Brand Gold */
+}
+
+/* Card Price box layout and colors */
+body .clothing-product-card .clothing-price-and-action {
+  margin-top: auto !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-top: 1px solid #f1f5f9 !important;
+  padding-top: 10px !important;
+}
+
+body .clothing-product-card .clothing-selling-price,
+body .clothing-product-card.theme-clothing .clothing-selling-price,
+body .clothing-product-card.cat-card-stationery .clothing-selling-price,
+body .clothing-product-card.cat-card-gifts .clothing-selling-price,
+body .clothing-product-card.cat-card-accessories .clothing-selling-price {
+  color: #0f172a !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+}
+
+body .clothing-product-card .clothing-original-price,
+body .clothing-product-card.theme-clothing .clothing-original-price,
+body .clothing-product-card.cat-card-stationery .clothing-original-price,
+body .clothing-product-card.cat-card-gifts .clothing-original-price,
+body .clothing-product-card.cat-card-accessories .clothing-original-price {
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+  text-decoration: line-through !important;
+  margin-left: 6px !important;
+  font-weight: 500 !important;
+}
+
+/* Premium Meesho Green Discount Badge */
+body .clothing-product-card .clothing-discount-badge,
+body .clothing-product-card.theme-clothing .clothing-discount-badge,
+body .clothing-product-card.cat-card-stationery .clothing-discount-badge,
+body .clothing-product-card.cat-card-gifts .clothing-discount-badge,
+body .clothing-product-card.cat-card-accessories .clothing-discount-badge {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2) !important;
+  border: none !important;
+}
+
+/* Card Rating Pill */
+body .clothing-product-card .clothing-rating-pill-green {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body .clothing-product-card .clothing-rating-pill-green .rating-star-icon {
+  color: #eab308 !important; /* Gold Star */
+}
+body .clothing-product-card .clothing-rating-pill-green .rating-divider {
+  color: #cbd5e1 !important;
+}
+body .clothing-product-card .clothing-rating-pill-green .rating-count {
+  color: #64748b !important;
+}
+
+/* Add to Cart Card Button */
+body .clothing-product-card .clothing-card-add-cart-btn,
+body .clothing-product-card.theme-clothing .clothing-card-add-cart-btn,
+body .clothing-product-card.cat-card-stationery .clothing-card-add-cart-btn,
+body .clothing-product-card.cat-card-gifts .clothing-card-add-cart-btn,
+body .clothing-product-card.cat-card-accessories .clothing-card-add-cart-btn {
+  background: #051838 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #051838 !important;
+  border-radius: 6px !important;
+  padding: 8px 14px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+body .clothing-product-card .clothing-card-add-cart-btn:hover,
+body .clothing-product-card.theme-clothing .clothing-card-add-cart-btn:hover,
+body .clothing-product-card.cat-card-stationery .clothing-card-add-cart-btn:hover,
+body .clothing-product-card.cat-card-gifts .clothing-card-add-cart-btn:hover,
+body .clothing-product-card.cat-card-accessories .clothing-card-add-cart-btn:hover {
+  background: #D4AF37 !important;
+  border-color: #D4AF37 !important;
+  color: #ffffff !important;
+}
+
+/* 3. Product Details Page - Total Visibility Overrides */
+body .shop-product-detail-page-view .product-detail-grid-layout,
+body .shop-product-detail-page-view.theme-clothing .product-detail-grid-layout,
+body .shop-product-detail-page-view.theme-stationery .product-detail-grid-layout,
+body .shop-product-detail-page-view.theme-gifts .product-detail-grid-layout,
+body .shop-product-detail-page-view.theme-accessories .product-detail-grid-layout {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 16px !important;
+}
+
+/* Detail Title */
+body .shop-product-detail-page-view .product-detail-title,
+body .shop-product-detail-page-view.theme-clothing .product-detail-title,
+body .shop-product-detail-page-view.theme-stationery .product-detail-title,
+body .shop-product-detail-page-view.theme-gifts .product-detail-title,
+body .shop-product-detail-page-view.theme-accessories .product-detail-title {
+  color: #0f172a !important; /* Premium dark slate */
+  font-weight: 700 !important;
+}
+
+/* Detail Tagline */
+body .shop-product-detail-page-view .product-detail-tagline,
+body .shop-product-detail-page-view.theme-clothing .product-detail-tagline,
+body .shop-product-detail-page-view.theme-stationery .product-detail-tagline,
+body .shop-product-detail-page-view.theme-gifts .product-detail-tagline,
+body .shop-product-detail-page-view.theme-accessories .product-detail-tagline {
+  color: #64748b !important;
+  font-style: normal !important;
+  font-size: 0.95rem !important;
+}
+
+/* Detail reviews count */
+body .shop-product-detail-page-view .product-detail-reviews,
+body .shop-product-detail-page-view.theme-clothing .product-detail-reviews,
+body .shop-product-detail-page-view.theme-stationery .product-detail-reviews,
+body .shop-product-detail-page-view.theme-gifts .product-detail-reviews,
+body .shop-product-detail-page-view.theme-accessories .product-detail-reviews {
+  color: #64748b !important;
+}
+
+/* Detail Selling & Original Price */
+body .shop-product-detail-page-view .product-detail-price-value,
+body .shop-product-detail-page-view.theme-clothing .product-detail-price-value,
+body .shop-product-detail-page-view.theme-stationery .product-detail-price-value,
+body .shop-product-detail-page-view.theme-gifts .product-detail-price-value,
+body .shop-product-detail-page-view.theme-accessories .product-detail-price-value {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+body .shop-product-detail-page-view .product-detail-price-label,
+body .shop-product-detail-page-view.theme-clothing .product-detail-price-label,
+body .shop-product-detail-page-view.theme-stationery .product-detail-price-label,
+body .shop-product-detail-page-view.theme-gifts .product-detail-price-label,
+body .shop-product-detail-page-view.theme-accessories .product-detail-price-label {
+  color: #64748b !important;
+}
+body .shop-product-detail-page-view .product-detail-original-price,
+body .shop-product-detail-page-view.theme-clothing .product-detail-original-price,
+body .shop-product-detail-page-view.theme-stationery .product-detail-original-price,
+body .shop-product-detail-page-view.theme-gifts .product-detail-original-price,
+body .shop-product-detail-page-view.theme-accessories .product-detail-original-price {
+  color: #94a3b8 !important;
+}
+
+/* Detail Section Heading (Quantity, Color, Size) */
+body .shop-product-detail-page-view .product-detail-section-title,
+body .shop-product-detail-page-view .product-detail-availability-label,
+body .shop-product-detail-page-view.theme-clothing .product-detail-section-title,
+body .shop-product-detail-page-view.theme-stationery .product-detail-section-title,
+body .shop-product-detail-page-view.theme-gifts .product-detail-section-title,
+body .shop-product-detail-page-view.theme-accessories .product-detail-section-title {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+/* Specifications Table styling */
+body .shop-product-detail-page-view .specs-key,
+body .shop-product-detail-page-view.theme-clothing .specs-key,
+body .shop-product-detail-page-view.theme-stationery .specs-key,
+body .shop-product-detail-page-view.theme-gifts .specs-key,
+body .shop-product-detail-page-view.theme-accessories .specs-key {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+body .shop-product-detail-page-view .specs-val,
+body .shop-product-detail-page-view.theme-clothing .specs-val,
+body .shop-product-detail-page-view.theme-stationery .specs-val,
+body .shop-product-detail-page-view.theme-gifts .specs-val,
+body .shop-product-detail-page-view.theme-accessories .specs-val {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+}
+
+/* Detail Tabs buttons */
+body .shop-product-detail-page-view .detail-tab-btn,
+body .shop-product-detail-page-view.theme-clothing .detail-tab-btn,
+body .shop-product-detail-page-view.theme-stationery .detail-tab-btn,
+body .shop-product-detail-page-view.theme-gifts .detail-tab-btn,
+body .shop-product-detail-page-view.theme-accessories .detail-tab-btn {
+  color: #64748b !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+}
+body .shop-product-detail-page-view .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-clothing .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-stationery .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-gifts .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-accessories .detail-tab-btn.active {
+  color: #aa7c11 !important;
+  border-bottom-color: #aa7c11 !important;
+}
+
+/* Tabs content */
+body .shop-product-detail-page-view .detail-tab-content,
+body .shop-product-detail-page-view.theme-clothing .detail-tab-content,
+body .shop-product-detail-page-view.theme-stationery .detail-tab-content,
+body .shop-product-detail-page-view.theme-gifts .detail-tab-content,
+body .shop-product-detail-page-view.theme-accessories .detail-tab-content {
+  color: #334155 !important;
+}
+
+/* Quantity Counter span */
+body .shop-product-detail-page-view .product-detail-qty-control span,
+body .shop-product-detail-page-view.theme-clothing .product-detail-qty-control span,
+body .shop-product-detail-page-view.theme-stationery .product-detail-qty-control span,
+body .shop-product-detail-page-view.theme-gifts .product-detail-qty-control span,
+body .shop-product-detail-page-view.theme-accessories .product-detail-qty-control span {
+  color: #1e293b !important;
+}
+
+/* Review text */
+body .shop-product-detail-page-view .review-comment-text {
+  color: #334155 !important;
+}
+
+/* Breadcrumbs text */
+body .shop-product-detail-page-view .breadcrumb-title,
+body .shop-product-detail-page-view .breadcrumb-category,
+body .shop-product-detail-page-view .product-detail-nav svg {
+  color: #334155 !important;
+}
+body .shop-product-detail-page-view .back-to-shop-btn {
+  color: #051838 !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+}
+body .shop-product-detail-page-view .back-to-shop-btn:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* ==========================================================================
+   QUICK VIEW MODAL - LIGHT/CREAM THEME AND VISIBILITY OVERRIDES
+   ========================================================================== */
+
+/* 1. Card Container background (force fdfbf7 cream background) */
+body .quickview-split-overlay .quickview-split-card,
+body .quickview-split-overlay.theme-clothing .quickview-split-card,
+body .quickview-split-overlay.theme-stationery .quickview-split-card,
+body .quickview-split-overlay.theme-gifts .quickview-split-card,
+body .quickview-split-overlay.theme-accessories .quickview-split-card {
+  background-color: #fdfbf7 !important;
+  background: #fdfbf7 !important;
+  border: 2px solid #dfb743 !important;
+  box-shadow: 0 15px 45px rgba(5, 24, 56, 0.15) !important;
+}
+
+/* 2. Top Header Bar */
+body .quickview-split-overlay .quickview-modal-header,
+body .quickview-split-overlay.theme-clothing .quickview-modal-header,
+body .quickview-split-overlay.theme-stationery .quickview-modal-header,
+body .quickview-split-overlay.theme-gifts .quickview-modal-header,
+body .quickview-split-overlay.theme-accessories .quickview-modal-header {
+  background-color: #fdfbf7 !important;
+  background: #fdfbf7 !important;
+  border-bottom: 1px solid rgba(5, 24, 56, 0.1) !important;
+}
+
+/* 3. Top Title "Quick View" */
+body .quickview-split-overlay .quickview-modal-title-top,
+body .quickview-split-overlay.theme-clothing .quickview-modal-title-top,
+body .quickview-split-overlay.theme-stationery .quickview-modal-title-top,
+body .quickview-split-overlay.theme-gifts .quickview-modal-title-top,
+body .quickview-split-overlay.theme-accessories .quickview-modal-title-top {
+  color: #051838 !important;
+  font-weight: 700 !important;
+}
+
+/* 4. Close Button */
+body .quickview-split-overlay .modal-close-btn,
+body .quickview-split-overlay.theme-clothing .modal-close-btn,
+body .quickview-split-overlay.theme-stationery .modal-close-btn,
+body .quickview-split-overlay.theme-gifts .modal-close-btn,
+body .quickview-split-overlay.theme-accessories .modal-close-btn {
+  color: #051838 !important;
+}
+
+/* 5. Product Title */
+body .quickview-split-overlay .modal-title,
+body .quickview-split-overlay.theme-clothing .modal-title,
+body .quickview-split-overlay.theme-stationery .modal-title,
+body .quickview-split-overlay.theme-gifts .modal-title,
+body .quickview-split-overlay.theme-accessories .modal-title {
+  color: #051838 !important;
+  font-weight: 800 !important;
+}
+
+/* 6. Ratings stars & Reviews Count */
+body .quickview-split-overlay .modal-reviews-count,
+body .quickview-split-overlay.theme-clothing .modal-reviews-count,
+body .quickview-split-overlay.theme-stationery .modal-reviews-count,
+body .quickview-split-overlay.theme-gifts .modal-reviews-count,
+body .quickview-split-overlay.theme-accessories .modal-reviews-count {
+  color: #64748b !important;
+}
+
+/* 7. Prices */
+body .quickview-split-overlay .modal-price,
+body .quickview-split-overlay.theme-clothing .modal-price,
+body .quickview-split-overlay.theme-stationery .modal-price,
+body .quickview-split-overlay.theme-gifts .modal-price,
+body .quickview-split-overlay.theme-accessories .modal-price {
+  color: #051838 !important;
+  font-weight: 800 !important;
+}
+body .quickview-split-overlay .modal-original-price,
+body .quickview-split-overlay.theme-clothing .modal-original-price,
+body .quickview-split-overlay.theme-stationery .modal-original-price,
+body .quickview-split-overlay.theme-gifts .modal-original-price,
+body .quickview-split-overlay.theme-accessories .modal-original-price {
+  color: #94a3b8 !important;
+  text-decoration: line-through !important;
+}
+
+/* 8. Availability labels and status */
+body .quickview-split-overlay .availability-label,
+body .quickview-split-overlay.theme-clothing .availability-label,
+body .quickview-split-overlay.theme-stationery .availability-label,
+body .quickview-split-overlay.theme-gifts .availability-label,
+body .quickview-split-overlay.theme-accessories .availability-label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+/* 9. Description */
+body .quickview-split-overlay .modal-desc,
+body .quickview-split-overlay.theme-clothing .modal-desc,
+body .quickview-split-overlay.theme-stationery .modal-desc,
+body .quickview-split-overlay.theme-gifts .modal-desc,
+body .quickview-split-overlay.theme-accessories .modal-desc {
+  color: #334155 !important;
+  line-height: 1.5 !important;
+}
+
+/* 10. Selector Section Titles (Color, Select Size, Pack Size, Quantity) */
+body .quickview-split-overlay .modal-section-title,
+body .quickview-split-overlay.theme-clothing .modal-section-title,
+body .quickview-split-overlay.theme-stationery .modal-section-title,
+body .quickview-split-overlay.theme-gifts .modal-section-title,
+body .quickview-split-overlay.theme-accessories .modal-section-title {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+body .quickview-split-overlay .modal-section-title .color-name,
+body .quickview-split-overlay.theme-clothing .modal-section-title .color-name,
+body .quickview-split-overlay.theme-stationery .modal-section-title .color-name,
+body .quickview-split-overlay.theme-gifts .modal-section-title .color-name,
+body .quickview-split-overlay.theme-accessories .modal-section-title .color-name {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+/* 11. Quantity span value */
+body .quickview-split-overlay .qty-value,
+body .quickview-split-overlay.theme-clothing .qty-value,
+body .quickview-split-overlay.theme-stationery .qty-value,
+body .quickview-split-overlay.theme-gifts .qty-value,
+body .quickview-split-overlay.theme-accessories .qty-value {
+  color: #051838 !important;
+  font-weight: 700 !important;
+}
+
+/* 12. Thumbnail Navigation Chevrons */
+body .quickview-split-overlay .thumbnail-nav-arrow,
+body .quickview-split-overlay.theme-clothing .thumbnail-nav-arrow,
+body .quickview-split-overlay.theme-stationery .thumbnail-nav-arrow,
+body .quickview-split-overlay.theme-gifts .thumbnail-nav-arrow,
+body .quickview-split-overlay.theme-accessories .thumbnail-nav-arrow {
+  color: #051838 !important;
+}
+
+/* 13. Action Buttons */
+body .quickview-split-overlay .modal-primary-action-btn,
+body .quickview-split-overlay.theme-clothing .modal-primary-action-btn,
+body .quickview-split-overlay.theme-stationery .modal-primary-action-btn,
+body .quickview-split-overlay.theme-gifts .modal-primary-action-btn,
+body .quickview-split-overlay.theme-accessories .modal-primary-action-btn {
+  background-color: #051838 !important;
+  color: #ffffff !important;
+  border: 1px solid #051838 !important;
+  transition: all 0.2s ease !important;
+}
+body .quickview-split-overlay .modal-primary-action-btn:hover,
+body .quickview-split-overlay.theme-clothing .modal-primary-action-btn:hover,
+body .quickview-split-overlay.theme-stationery .modal-primary-action-btn:hover,
+body .quickview-split-overlay.theme-gifts .modal-primary-action-btn:hover,
+body .quickview-split-overlay.theme-accessories .modal-primary-action-btn:hover {
+  background-color: #D4AF37 !important;
+  border-color: #D4AF37 !important;
+  color: #ffffff !important;
+}
+
+body .quickview-split-overlay .modal-secondary-action-btn,
+body .quickview-split-overlay.theme-clothing .modal-secondary-action-btn,
+body .quickview-split-overlay.theme-stationery .modal-secondary-action-btn,
+body .quickview-split-overlay.theme-gifts .modal-secondary-action-btn,
+body .quickview-split-overlay.theme-accessories .modal-secondary-action-btn {
+  background-color: #ffffff !important;
+  color: #051838 !important;
+  border: 1px solid #cbd5e1 !important;
+  transition: all 0.2s ease !important;
+}
+body .quickview-split-overlay .modal-secondary-action-btn:hover,
+body .quickview-split-overlay.theme-clothing .modal-secondary-action-btn:hover,
+body .quickview-split-overlay.theme-stationery .modal-secondary-action-btn:hover,
+body .quickview-split-overlay.theme-gifts .modal-secondary-action-btn:hover,
+body .quickview-split-overlay.theme-accessories .modal-secondary-action-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #051838 !important;
+}
+
+/* ==========================================================================
+   PRODUCT DETAILS PAGE - BRAND THEME COLORS (NAVY & GOLD) OVERRIDES
+   ========================================================================== */
+
+/* 1. Add to Cart / Primary action buttons */
+body .shop-product-detail-page-view .product-detail-cart-btn,
+body .shop-product-detail-page-view .product-detail-primary-btn,
+body .shop-product-detail-page-view .detail-action-add-btn,
+body .shop-product-detail-page-view.theme-clothing .product-detail-cart-btn,
+body .shop-product-detail-page-view.theme-stationery .product-detail-cart-btn,
+body .shop-product-detail-page-view.theme-gifts .product-detail-cart-btn,
+body .shop-product-detail-page-view.theme-accessories .product-detail-cart-btn,
+body .shop-product-detail-page-view.theme-clothing .product-detail-primary-btn,
+body .shop-product-detail-page-view.theme-stationery .product-detail-primary-btn,
+body .shop-product-detail-page-view.theme-gifts .product-detail-primary-btn,
+body .shop-product-detail-page-view.theme-accessories .product-detail-primary-btn {
+  background-color: #051838 !important;
+  background: #051838 !important;
+  color: #ffffff !important;
+  border: 2px solid #D4AF37 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 10px rgba(5, 24, 56, 0.1) !important;
+}
+
+body .shop-product-detail-page-view .product-detail-cart-btn:hover,
+body .shop-product-detail-page-view .product-detail-primary-btn:hover,
+body .shop-product-detail-page-view .detail-action-add-btn:hover,
+body .shop-product-detail-page-view.theme-clothing .product-detail-cart-btn:hover,
+body .shop-product-detail-page-view.theme-stationery .product-detail-cart-btn:hover,
+body .shop-product-detail-page-view.theme-gifts .product-detail-cart-btn:hover,
+body .shop-product-detail-page-view.theme-accessories .product-detail-cart-btn:hover,
+body .shop-product-detail-page-view.theme-clothing .product-detail-primary-btn:hover,
+body .shop-product-detail-page-view.theme-stationery .product-detail-primary-btn:hover,
+body .shop-product-detail-page-view.theme-gifts .product-detail-primary-btn:hover,
+body .shop-product-detail-page-view.theme-accessories .product-detail-primary-btn:hover {
+  background-color: #D4AF37 !important;
+  background: #D4AF37 !important;
+  color: #051838 !important;
+  border-color: #D4AF37 !important;
+}
+
+/* 2. Buy Now / Secondary action buttons */
+body .shop-product-detail-page-view .product-detail-buy-btn,
+body .shop-product-detail-page-view.theme-clothing .product-detail-buy-btn,
+body .shop-product-detail-page-view.theme-stationery .product-detail-buy-btn,
+body .shop-product-detail-page-view.theme-gifts .product-detail-buy-btn,
+body .shop-product-detail-page-view.theme-accessories .product-detail-buy-btn {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #051838 !important;
+  border: 2px solid #051838 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 6px !important;
+}
+
+body .shop-product-detail-page-view .product-detail-buy-btn:hover,
+body .shop-product-detail-page-view.theme-clothing .product-detail-buy-btn:hover,
+body .shop-product-detail-page-view.theme-stationery .product-detail-buy-btn:hover,
+body .shop-product-detail-page-view.theme-gifts .product-detail-buy-btn:hover,
+body .shop-product-detail-page-view.theme-accessories .product-detail-buy-btn:hover {
+  background-color: #f1f5f9 !important;
+  background: #f1f5f9 !important;
+  color: #051838 !important;
+  border-color: #051838 !important;
+}
+
+/* 3. Product image floating badge pill */
+body .shop-product-detail-page-view .product-detail-badge-pill,
+body .shop-product-detail-page-view.theme-clothing .product-detail-badge-pill,
+body .shop-product-detail-page-view.theme-stationery .product-detail-badge-pill,
+body .shop-product-detail-page-view.theme-gifts .product-detail-badge-pill,
+body .shop-product-detail-page-view.theme-accessories .product-detail-badge-pill,
+body .new-arrivals-view-page .product-detail-badge-pill {
+  background-color: #051838 !important;
+  background: #051838 !important;
+  color: #D4AF37 !important;
+  border: 1px solid #D4AF37 !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+}
+
+/* 4. Active tab indicator */
+body .shop-product-detail-page-view .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-clothing .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-stationery .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-gifts .detail-tab-btn.active,
+body .shop-product-detail-page-view.theme-accessories .detail-tab-btn.active {
+  color: #D4AF37 !important;
+  border-bottom: 2px solid #D4AF37 !important;
+}
+
+/* 5. Quantity selector highlights */
+body .shop-product-detail-page-view .product-detail-qty-control button:hover,
+body .shop-product-detail-page-view.theme-clothing .product-detail-qty-control button:hover,
+body .shop-product-detail-page-view.theme-stationery .product-detail-qty-control button:hover,
+body .shop-product-detail-page-view.theme-gifts .product-detail-qty-control button:hover,
+body .shop-product-detail-page-view.theme-accessories .product-detail-qty-control button:hover {
+  background-color: #f1f5f9 !important;
+  color: #D4AF37 !important;
+}
+
+/* ==========================================================================
+   SPACING & GAP REDUCTIONS - COMPACT ALIGNMENT FOR SHOP & NEW ARRIVALS
+   ========================================================================== */
+
+/* Reduce container top padding on New Arrivals & Shop Views and expand to full width */
+body .new-arrivals-view-page .arrivals-container {
+  padding-top: 10px !important;
+  padding-bottom: 20px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  box-sizing: border-box !important;
+}
+body .arrivals-container {
+  padding: 15px 24px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Reduce headers margins */
+body .arrivals-header-section {
+  margin-bottom: 15px !important;
+}
+
+/* Reduce category tabs margin */
+body .new-arrivals-category-tabs {
+  margin-top: 0 !important;
+  margin-bottom: 15px !important;
+}
+
+/* Reduce main content outer padding and expand to full width */
+body .shop-content-container {
+  padding-top: 10px !important;
+  padding-bottom: 20px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  box-sizing: border-box !important;
+}
+
+/* Reduce toggle buttons row margin */
+body .filters-toggle-row-m3 {
+  margin-bottom: 10px !important;
+}
+
+/* Compact layout flex gap & margin top */
+body .exclusive-products-layout {
+  margin-top: 10px !important;
+  gap: 20px !important;
+}
+
+/* Compact Sidebar Filters internal elements spacing */
+body .exclusive-filters-sidebar {
+  padding: 15px !important;
+}
+body .filters-header-box-m3 {
+  margin-bottom: 10px !important;
+  padding-bottom: 8px !important;
+}
+body .filter-block-m3 {
+  margin-bottom: 12px !important;
+}
+body .filter-label-m3 {
+  margin-bottom: 4px !important;
+}
+body .filter-card-section {
+  padding: 8px 0 !important;
+}
+body .unified-filters-card {
+  padding: 5px 12px 12px 12px !important;
+}
+
+/* Sort bar vertical margins */
+body .premium-sort-bar-m2 {
+  margin-bottom: 15px !important;
+  padding: 10px 20px !important;
+}
+
+/* Grid layout columns and gaps */
+body .shop-products-grid {
+  gap: 16px !important;
+}
+
+/* Compact Product Cards details & action buttons */
+body .clothing-product-card {
+  border-radius: 10px !important;
+}
+body .clothing-info-section {
+  padding: 12px !important;
+  gap: 6px !important;
+}
+body .clothing-product-card .clothing-price-and-action {
+  padding-top: 8px !important;
+  gap: 6px !important;
+}
+body .clothing-product-card .clothing-card-add-cart-btn {
+  padding: 6px 12px !important;
+  font-size: 0.78rem !important;
+}
+
+
+
+
+

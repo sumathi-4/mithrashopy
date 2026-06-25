@@ -1,16 +1,43 @@
-- [x] Increase filter sidebar width to `380px` and decrease gap to `30px` in `src/index.css`.
-- [x] Set shop product grid to 4 columns (`repeat(4, 1fr)`) and 5 columns when hidden.
-- [x] Remove max-height and internal scrollbar from sidebars.
-- [x] Enlarge filter font sizes to `1.08rem` and headings to `1.25rem`. Brighten blue color to `#0b3294`.
-- [x] Make "Exclusive Products" text golden color (`#b89047`) and increase font-size to `2.8rem`.
-- [x] Enlarge crown logo above Exclusive Products section to `90px` to make it prominent.
-- [x] Design a premium sort bar above product cards showing total premium products count and a styled sort select box on both pages.
-- [x] Remove 🎛️ and 🔄 emojis from the Filters title and RESET buttons in `ProductsSection.jsx`.
-- [x] Redesign Category accordion in `ProductsSection.jsx` to render flat categories checklist with a search bar and "Show More" truncation toggle.
-- [x] Redesign Category accordion in `ShopView.jsx` to render flat categories checklist with search and "Show More", dynamically filtered by the active top tab category.
-- [x] Fix reset filter buttons in both components to clear all filter arrays and states.
-- [x] Modify `src/components/Footer.jsx` to remove category menu markup and clean up imports.
-- [x] Implement split-screen structure in [WhyChooseUs.jsx](file:///c:/Users/ELCOT/OneDrive/Desktop/job%20tasks/project2/src/components/WhyChooseUs.jsx)
-- [x] Add new layout and typographic styles in [index.css](file:///c:/Users/ELCOT/OneDrive/Desktop/job%20tasks/project2/src/index.css)
-- [x] Verify build with `npm run build`
-- [x] Verify manually.
+# Tasks - Standalone Admin Dashboard Migration
+
+- [x] Backend Updates
+  - [x] Update backend seed credentials in `backend/.env`
+  - [x] Modify `seedAdmin()` in `backend/db/database.js` to seed the new admin and remove the old admin
+- [x] Main Website Cleanup (Port 5173)
+  - [x] Remove admin routes and dashboard imports from `src/App.jsx`
+  - [x] Remove admin login button, form, and handle logic from `src/components/Navbar.jsx`
+- [x] Standalone Admin website (Port 5174)
+  - [x] Create `admin-panel/package.json`
+  - [x] Create `admin-panel/vite.config.js`
+  - [x] Create `admin-panel/index.html`
+  - [x] Create `admin-panel/src/main.jsx`
+  - [x] Create `admin-panel/src/index.css` with layout styles
+  - [x] Create `admin-panel/src/App.jsx` with secure login screen
+  - [x] Copy and adjust `AdminDashboard.jsx` in `admin-panel/src/components/`
+  - [x] Copy services (`apiService.js`, `authService.js`) and helpers (`imageHelper.js`)
+- [x] Verification
+  - [x] Run build checks on both user and admin websites
+  - [x] Perform end-to-end flow checks
+- [x] Backend route enhancements
+  - [x] Implement `PUT /api/orders/:id/cancel` in `backend/routes/orders.js` (with stock re-incrementation)
+  - [x] Update `POST /api/reviews` to save `userId` and auto-set `verifiedPurchase` in `backend/routes/reviews.js`
+  - [x] Implement `GET /api/reviews/my-reviews` in `backend/routes/reviews.js`
+  - [x] Update `PUT /api/user/profile` to support updating `profileImage` in `backend/routes/user.js`
+  - [x] Implement `GET /api/lucky-charms/my-claims` in `backend/routes/luckyCharm.js`
+- [x] Frontend service hookups
+  - [x] Add `cancelOrder` in `src/services/apiService.js`
+  - [x] Add `getMyReviews` in `src/services/apiService.js`
+  - [x] Add `getMyClaims` in `src/services/apiService.js`
+- [x] UserAccount component refactoring (`src/components/UserAccount.jsx`)
+  - [x] Replace mock state lists for addresses, wishlist, and orders with empty array initializations
+  - [x] Implement useEffect fetching for fresh data on mount and auth changes
+  - [x] Bind Stats card metrics to live values (Orders, Wishlist, Addresses, and calculated Reward Points)
+  - [x] Connect address creation, editing, and deletion to real database APIs
+  - [x] Connect wishlist item deletions and cart additions dynamically
+  - [x] Implement profile picture change trigger via file picker, base64 conversion, and API save
+  - [x] Add a fully functional and beautifully styled "My Rewards" tab showing the user's spin rewards history and allowing them to claim pending items
+  - [x] Add a "My Reviews" tab listing past reviews and enabling users to write reviews for their purchased products
+  - [x] Implement customer self-cancellation of pending/processing orders
+- [x] Verification and validation
+  - [x] Verify frontend and backend build/run status
+  - [x] Create walkthrough report with screenshots/logs

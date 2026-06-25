@@ -48,12 +48,7 @@ const UserSchema = new mongoose.Schema({
   cart: { type: [String], default: [] }, // Backwards compatibility: array of product IDs
   cartItems: [{
     productId: { type: Number, required: true },
-    variant: {
-      size: { type: String, default: null },
-      color: { type: String, default: null },
-      variantId: { type: String, default: null },
-      sku: { type: String, default: null }
-    },
+    variant: { type: mongoose.Schema.Types.Mixed, default: {} },
     quantity: { type: Number, default: 1 }
   }],
   wishlist: { type: [String], default: [] }, // Backwards compatibility: array of product IDs
@@ -97,13 +92,22 @@ const ProductSchema = new mongoose.Schema({
   reviews: { type: Number, default: 120 },
   discount: { type: Number, default: 0 },
   originalPrice: { type: Number, default: null },
+  badge: { type: String, default: '' },
+  isNewArrival: { type: Boolean, default: false },
+  isOffer: { type: Boolean, default: false },
   attributes: {
     type: [{
       key: { type: String },
       value: { type: String }
     }],
     default: []
-  }
+  },
+  // Lucky Charm Fields
+  includeInLuckyCharm: { type: Boolean, default: false },
+  luckyChancePercentage: { type: Number, default: 0 },
+  luckyStock: { type: Number, default: 0 },
+  luckyActive: { type: Boolean, default: false },
+  luckyPrice: { type: Number, default: 0 }
 });
 
 // Auto-populate the images array with the main image if empty
@@ -156,12 +160,7 @@ const CatalogueSchema = new mongoose.Schema({
 const OrderItemSchema = new mongoose.Schema({
   productId: { type: Number, required: true },
   name: { type: String, required: true },
-  variant: {
-    size: { type: String, default: null },
-    color: { type: String, default: null },
-    variantId: { type: String, default: null },
-    sku: { type: String, default: null }
-  },
+  variant: { type: mongoose.Schema.Types.Mixed, default: {} },
   catalogue: { type: String, default: null },
   quantity: { type: Number, default: 1 },
   price: { type: Number, required: true }
@@ -177,7 +176,8 @@ const OrderSchema = new mongoose.Schema({
   status: { type: String, default: 'Pending' },
   date: { type: String, required: true },
   items: { type: [OrderItemSchema], default: [] }, // Detailed order items containing variants and catalogue details
-  catalogueDetails: { type: Map, of: String } // Key-value catalogue info for analytics
+  catalogueDetails: { type: Map, of: String }, // Key-value catalogue info for analytics
+  isLuckyCharmOrder: { type: Boolean, default: false }
 });
 
 const CouponSchema = new mongoose.Schema({
@@ -261,6 +261,17 @@ const SettingsSchema = new mongoose.Schema({
   enableInternational: { type: Boolean, default: false }
 });
 
+const FeatureSchema = new mongoose.Schema({
+  id: { type: Number, required: true, unique: true },
+  key: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  title: { type: String, default: '' },
+  subtitle: { type: String, default: '' },
+  status: { type: String, default: 'Active' },
+  order: { type: Number, required: true }
+});
+
+
 // ─── Future-Ready Schemas ───────────────────────────────────────────────────
 const NewsletterSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -285,6 +296,40 @@ const AnalyticsSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+const LuckyRewardSchema = new mongoose.Schema({
+  rewardName: { type: String, required: true },
+  rewardType: { type: String, enum: ['product', 'coupon'], required: true },
+  productId: { type: Number, default: null }, // References Product.id
+  couponId: { type: String, default: null },  // References Coupon.code
+  chancePercentage: { type: Number, default: 0 },
+  luckyStock: { type: Number, default: 0 },
+  luckyPrice: { type: Number, default: 0 },
+  status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+  startDate: { type: Date, default: null },
+  endDate: { type: Date, default: null }
+});
+
+const LuckySpinSchema = new mongoose.Schema({
+  userId: { type: String, default: null }, // User.id or null
+  rewardId: { type: mongoose.Schema.Types.ObjectId, ref: 'LuckyReward', default: null },
+  productId: { type: Number, default: null }, // Product.id if won a product
+  couponCode: { type: String, default: null }, // Coupon.code if won a coupon
+  rewardType: { type: String, enum: ['product', 'coupon', 'none'], default: 'none' },
+  spunAt: { type: Date, default: Date.now }
+});
+
+const LuckyRewardClaimSchema = new mongoose.Schema({
+  userId: { type: String, default: null },
+  rewardType: { type: String, enum: ['product', 'coupon'], required: true },
+  productId: { type: Number, default: null }, // Product.id
+  couponCode: { type: String, default: null }, // Coupon.code
+  rewardName: { type: String, required: true },
+  rewardValue: { type: Number, default: 0 }, // Discounted price or coupon discount
+  claimedAt: { type: Date, default: Date.now },
+  status: { type: String, enum: ['Pending', 'Claimed'], default: 'Pending' },
+  orderId: { type: String, default: null } // Order.id when order is placed
+});
+
 const User = mongoose.model('User', UserSchema);
 const Product = mongoose.model('Product', ProductSchema);
 const Category = mongoose.model('Category', CategorySchema);
@@ -296,6 +341,7 @@ const Banner = mongoose.model('Banner', BannerSchema);
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 const ContactQuery = mongoose.model('ContactQuery', ContactQuerySchema);
 const Settings = mongoose.model('Settings', SettingsSchema);
+const Feature = mongoose.model('Feature', FeatureSchema);
 
 // ─── Seed Data ───────────────────────────────────────────────────────────────
 async function seedStoreData() {
@@ -304,6 +350,125 @@ async function seedStoreData() {
     if (!settingsDoc) {
       await Settings.create({});
       console.log('✅ Default settings seeded successfully');
+    }
+
+    // Seed default coupons if not exist
+    const existingL10 = await Coupon.findOne({ code: 'LUCKY10' });
+    if (!existingL10) {
+      await Coupon.create({
+        code: 'LUCKY10',
+        discount: '10',
+        type: 'Percentage',
+        minCart: '₹0',
+        expiry: '2027-12-31',
+        usage: '0/1000',
+        status: 'Active'
+      });
+      console.log('✅ Coupon LUCKY10 seeded successfully');
+    }
+
+    const existingM100 = await Coupon.findOne({ code: 'MITHRA100' });
+    if (!existingM100) {
+      await Coupon.create({
+        code: 'MITHRA100',
+        discount: '100',
+        type: 'Flat',
+        minCart: '₹500',
+        expiry: '2027-12-31',
+        usage: '0/1000',
+        status: 'Active'
+      });
+      console.log('✅ Coupon MITHRA100 seeded successfully');
+    }
+
+    // Seed default lucky rewards
+    const existingRewards = await LuckyReward.findOne();
+    if (!existingRewards) {
+      await LuckyReward.create([
+        {
+          rewardName: 'Premium Leather Diary',
+          rewardType: 'product',
+          productId: 111,
+          chancePercentage: 20,
+          luckyStock: 50,
+          luckyPrice: 299,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        },
+        {
+          rewardName: 'Boho Necklace',
+          rewardType: 'product',
+          productId: 118,
+          chancePercentage: 15,
+          luckyStock: 40,
+          luckyPrice: 399,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        },
+        {
+          rewardName: 'Luxury Watch',
+          rewardType: 'product',
+          productId: 115,
+          chancePercentage: 10,
+          luckyStock: 10,
+          luckyPrice: 499,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        },
+        {
+          rewardName: '10% OFF Coupon',
+          rewardType: 'coupon',
+          couponId: 'LUCKY10',
+          chancePercentage: 25,
+          luckyStock: 200,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        },
+        {
+          rewardName: '₹100 OFF Coupon',
+          rewardType: 'coupon',
+          couponId: 'MITHRA100',
+          chancePercentage: 20,
+          luckyStock: 150,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        },
+        {
+          rewardName: 'Gift Box',
+          rewardType: 'product',
+          productId: 120,
+          chancePercentage: 10,
+          luckyStock: 30,
+          luckyPrice: 199,
+          status: 'Active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        }
+      ]);
+      console.log('✅ Default Lucky Rewards seeded successfully');
+    }
+
+    const defaultFeatures = [
+      { id: 1, key: 'hero', name: 'Hero Carousel', title: 'Curated Elegance', subtitle: 'Explore Mithira Shopy collections', status: 'Active', order: 1 },
+      { id: 2, key: 'trust_bar', name: 'Trust Bar', title: 'Why You Can Trust Us', subtitle: 'Our commitments to you', status: 'Active', order: 2 },
+      { id: 3, key: 'categories', name: 'Shop by Top Categories', title: 'Shop by Top Categories', subtitle: 'Explore our top categories and find your perfect style', status: 'Active', order: 3 },
+      { id: 4, key: 'video_showcase', name: 'Video Showcase', title: 'Video Tour', subtitle: 'Take a virtual look inside our boutique', status: 'Active', order: 4 },
+      { id: 5, key: 'exclusive_products', name: 'Exclusive Products', title: 'Exclusive Collection', subtitle: 'Handpicked premium fashion boutique items', status: 'Active', order: 5 },
+      { id: 6, key: 'celebrity_collection', name: 'Celebrity Collection', title: 'Celebrity Collections', subtitle: 'Inspired by leading fashion influencers', status: 'Active', order: 6 },
+      { id: 7, key: 'why_choose_us', name: 'Why Choose Us', title: 'Why Choose Mithra Shopy', subtitle: 'Direct-from-weaver premium quality items', status: 'Active', order: 7 }
+    ];
+
+    for (const f of defaultFeatures) {
+      const existingF = await Feature.findOne({ key: f.key });
+      if (!existingF) {
+        await Feature.create(f);
+        console.log(`✅ Seeded feature functionality: ${f.name}`);
+      }
     }
 
     const existing = await Product.findOne({ id: 2 });
@@ -711,6 +876,142 @@ async function seedStoreData() {
       console.log('✅ Teal Ruffle Frock (id: 116) seeded successfully');
     }
 
+    // Seed 5 new arrivals products (117-121) requested by user
+    const existingFrockNew = await Product.findOne({ id: 117 });
+    if (!existingFrockNew) {
+      await Product.create({
+        id: 117,
+        name: 'Pink Gingham Cotton Frock',
+        category: 'Clothing > Kids > Girls > Frock',
+        subCategory: 'Frock',
+        catalogue: 'Catalogue A',
+        price: 1299,
+        stock: 25,
+        sales: 0,
+        status: 'Active',
+        image: 'pink_gingham_frock.jpg',
+        images: ['pink_gingham_frock.jpg'],
+        description: 'A lovely pink gingham checkered cotton frock for girls, featuring an elegant overlay daisy-patterned pink cardigan knit jacket. Extremely soft, breathable, and premium weave.',
+        brand: 'Mithira Kids',
+        rating: 4.8,
+        reviews: 42,
+        discount: 31,
+        originalPrice: 1899,
+        badge: 'NEW',
+        isNewArrival: true,
+        isOffer: false
+      });
+      console.log('✅ Pink Gingham Cotton Frock (id: 117) seeded successfully');
+    }
+
+    const existingBohoNeck = await Product.findOne({ id: 118 });
+    if (!existingBohoNeck) {
+      await Product.create({
+        id: 118,
+        name: 'Turquoise Bead Layered Necklace',
+        category: 'Accessories > Jewellery > Necklace',
+        subCategory: 'Necklace',
+        catalogue: 'Catalogue A',
+        price: 1899,
+        stock: 15,
+        sales: 0,
+        status: 'Active',
+        image: 'boho_necklace.jpg',
+        images: ['boho_necklace.jpg'],
+        description: 'An exquisite multi-layered bohemian statement necklace featuring polished natural turquoise beads, vintage silver feather charms, wooden accents, and matching statement rings.',
+        brand: 'Mithira Luxe',
+        rating: 4.9,
+        reviews: 58,
+        discount: 32,
+        originalPrice: 2799,
+        badge: 'NEW',
+        isNewArrival: true,
+        isOffer: false
+      });
+      console.log('✅ Turquoise Bead Layered Necklace (id: 118) seeded successfully');
+    }
+
+    const existingStationerySet = await Product.findOne({ id: 119 });
+    if (!existingStationerySet) {
+      await Product.create({
+        id: 119,
+        name: 'Pastel Study & Planner Set',
+        category: 'Stationery > Binders > Planner',
+        subCategory: 'Planner',
+        catalogue: 'Catalogue A',
+        price: 999,
+        stock: 30,
+        sales: 0,
+        status: 'Active',
+        image: 'pastel_stationery.jpg',
+        images: ['pastel_stationery.jpg'],
+        description: 'A premium organized study set including a pastel pink planner notebook, multi-colored highlighters, heart-topped decorative pencils, designer pens, clips, and matching pastel page flags.',
+        brand: 'Mithira Stationery',
+        rating: 4.7,
+        reviews: 24,
+        discount: 33,
+        originalPrice: 1499,
+        badge: 'NEW',
+        isNewArrival: true,
+        isOffer: false
+      });
+      console.log('✅ Pastel Study & Planner Set (id: 119) seeded successfully');
+    }
+
+    const existingFancyBands = await Product.findOne({ id: 120 });
+    if (!existingFancyBands) {
+      await Product.create({
+        id: 120,
+        name: 'Scrunchie & Hair Band Set',
+        category: 'Accessories > fancy > bands',
+        subCategory: 'bands',
+        catalogue: 'Catalogue A',
+        price: 399,
+        stock: 50,
+        sales: 0,
+        status: 'Active',
+        image: 'scrunchie_fancy_set.jpg',
+        images: ['scrunchie_fancy_set.jpg'],
+        description: 'A fancy satin hair accessories bundle containing pastel pink and blue scrunchies, pearl-embellished bands, mini notebooks, gel pens, and an elegant storage tray gift box.',
+        brand: 'Mithira Accessories',
+        rating: 4.6,
+        reviews: 18,
+        discount: 33,
+        originalPrice: 599,
+        badge: 'NEW',
+        isNewArrival: true,
+        isOffer: false
+      });
+      console.log('✅ Scrunchie & Hair Band Set (id: 120) seeded successfully');
+    }
+
+    const existingCrochetBouquet = await Product.findOne({ id: 121 });
+    if (!existingCrochetBouquet) {
+      await Product.create({
+        id: 121,
+        name: 'Crochet Handmade Flower Bouquet',
+        category: 'Gifts > Flowers > Bouquet',
+        subCategory: 'Bouquet',
+        catalogue: 'Catalogue A',
+        price: 1499,
+        stock: 20,
+        sales: 0,
+        status: 'Active',
+        image: 'crochet_bouquet.jpg',
+        images: ['crochet_bouquet.jpg'],
+        description: 'A gorgeous, forever-blooming hand-knitted crochet flower bouquet featuring a vibrant selection of handcrafted red, orange, and purple flowers. An exquisite artisanal gift.',
+        brand: 'Mithira Gifts',
+        rating: 5.0,
+        reviews: 65,
+        discount: 31,
+        originalPrice: 2199,
+        badge: 'NEW',
+        isNewArrival: true,
+        isOffer: false
+      });
+      console.log('✅ Crochet Handmade Flower Bouquet (id: 121) seeded successfully');
+    }
+
     const defaultCategories = [
       { name: 'Clothing', parent: '—' },
       { name: 'Stationery', parent: '—' },
@@ -722,6 +1023,18 @@ async function seedStoreData() {
       { name: 'Kids', parent: 'Clothing' },
       { name: 'Boys', parent: 'Clothing' },
       { name: 'Girls', parent: 'Clothing' },
+
+      // Binders and Planners for Stationery
+      { name: 'Binders', parent: 'Stationery' },
+      { name: 'Planner', parent: 'Binders' },
+      
+      // Fancy and bands for Accessories
+      { name: 'fancy', parent: 'Accessories' },
+      { name: 'bands', parent: 'fancy' },
+
+      // Flowers and Bouquet for Gifts
+      { name: 'Flowers', parent: 'Gifts' },
+      { name: 'Bouquet', parent: 'Flowers' },
       
       { name: 'Kurti', parent: 'Women' },
       { name: 'Saree', parent: 'Women' },
@@ -791,8 +1104,11 @@ async function seedStoreData() {
 
 async function seedAdmin() {
   try {
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@mithira.com').toLowerCase();
+    const adminEmail = (process.env.ADMIN_EMAIL || 'adminmithrashoppy@gmail.com').toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    // Delete legacy admin if exists to ensure security
+    await User.deleteOne({ email: 'admin@mithira.com' });
 
     const existing = await User.findOne({ email: adminEmail, role: 'admin' });
     if (!existing) {
@@ -856,6 +1172,9 @@ const dbHelpers = {
 const Newsletter = mongoose.model('Newsletter', NewsletterSchema);
 const Campaign = mongoose.model('Campaign', CampaignSchema);
 const Analytics = mongoose.model('Analytics', AnalyticsSchema);
+const LuckyReward = mongoose.model('LuckyReward', LuckyRewardSchema);
+const LuckySpin = mongoose.model('LuckySpin', LuckySpinSchema);
+const LuckyRewardClaim = mongoose.model('LuckyRewardClaim', LuckyRewardClaimSchema);
 
 module.exports = {
   dbHelpers,
@@ -872,7 +1191,11 @@ module.exports = {
   Announcement,
   ContactQuery,
   Settings,
+  Feature,
   Newsletter,
   Campaign,
-  Analytics
+  Analytics,
+  LuckyReward,
+  LuckySpin,
+  LuckyRewardClaim
 };

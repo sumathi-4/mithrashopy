@@ -70,6 +70,15 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Dynamic features states
+  const [featuresList, setFeaturesList] = useState([]);
+  const [showAddFeatureModal, setShowAddFeatureModal] = useState(false);
+  const [newFeatureName, setNewFeatureName] = useState('');
+  const [newFeatureKey, setNewFeatureKey] = useState('');
+  const [newFeatureTitle, setNewFeatureTitle] = useState('');
+  const [newFeatureSubtitle, setNewFeatureSubtitle] = useState('');
+  const [editFeatureItem, setEditFeatureItem] = useState(null);
+  
   // Interactive UI Dropdowns
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
@@ -107,6 +116,126 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleToggleFeatureStatus = async (featureId) => {
+    const feat = featuresList.find(f => f.id === featureId);
+    if (!feat) return;
+    const newStatus = feat.status === 'Active' ? 'Inactive' : 'Active';
+    try {
+      await apiService.updateFeature(featureId, { status: newStatus });
+      setFeaturesList(prev => prev.map(f => f.id === featureId ? { ...f, status: newStatus } : f));
+      window.dispatchEvent(new Event('mithira_features_update'));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to toggle feature status.');
+    }
+  };
+
+  const handleMoveFeature = async (index, direction) => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === featuresList.length - 1) return;
+
+    const newList = [...featuresList];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    const temp = newList[index];
+    newList[index] = newList[targetIndex];
+    newList[targetIndex] = temp;
+
+    const updatedList = newList.map((f, idx) => ({ ...f, order: idx + 1 }));
+
+    try {
+      setFeaturesList(updatedList);
+      for (const f of updatedList) {
+        await apiService.updateFeature(f.id, { order: f.order });
+      }
+      window.dispatchEvent(new Event('mithira_features_update'));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddFeatureSubmit = async (e) => {
+    e.preventDefault();
+    if (!newFeatureName || !newFeatureKey) {
+      alert('Name and Key are required.');
+      return;
+    }
+
+    const cleanKey = newFeatureKey.trim().toLowerCase().replace(/\s+/g, '_');
+    if (featuresList.some(f => f.key === cleanKey)) {
+      alert('A feature with this key already exists.');
+      return;
+    }
+
+    const nextOrder = featuresList.length + 1;
+    const featObj = {
+      name: newFeatureName.trim(),
+      key: cleanKey,
+      title: newFeatureTitle.trim(),
+      subtitle: newFeatureSubtitle.trim(),
+      status: 'Active',
+      order: nextOrder
+    };
+
+    try {
+      const saved = await apiService.createFeature(featObj);
+      setFeaturesList(prev => [...prev, saved].sort((a,b) => a.order - b.order));
+      window.dispatchEvent(new Event('mithira_features_update'));
+      setShowAddFeatureModal(false);
+      setNewFeatureName('');
+      setNewFeatureKey('');
+      setNewFeatureTitle('');
+      setNewFeatureSubtitle('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add custom feature.');
+    }
+  };
+
+  const handleEditFeatureSubmit = async (e) => {
+    e.preventDefault();
+    if (!editFeatureItem.name) {
+      alert('Name is required.');
+      return;
+    }
+
+    try {
+      await apiService.updateFeature(editFeatureItem.id, {
+        name: editFeatureItem.name.trim(),
+        title: editFeatureItem.title.trim(),
+        subtitle: editFeatureItem.subtitle.trim()
+      });
+      setFeaturesList(prev => prev.map(f => f.id === editFeatureItem.id ? { ...f, ...editFeatureItem } : f));
+      window.dispatchEvent(new Event('mithira_features_update'));
+      setEditFeatureItem(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update feature.');
+    }
+  };
+
+  const handleDeleteFeature = async (featureId) => {
+    const feat = featuresList.find(f => f.id === featureId);
+    if (!feat) return;
+
+    const coreKeys = ['hero', 'trust_bar', 'categories', 'video_showcase', 'exclusive_products', 'celebrity_collection', 'why_choose_us'];
+    if (coreKeys.includes(feat.key)) {
+      alert('Core website features cannot be deleted. You can deactivate them instead.');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete the custom section "${feat.name}"?`)) {
+      try {
+        await apiService.deleteFeature(featureId);
+        setFeaturesList(prev => prev.filter(f => f.id !== featureId).map((f, idx) => ({ ...f, order: idx + 1 })));
+        window.dispatchEvent(new Event('mithira_features_update'));
+      } catch (err) {
+        console.error(err);
+        alert('Failed to delete feature.');
+      }
+    }
   };
 
   // Settings Sub-tab States
@@ -453,7 +582,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
 
   // Form states & Modals states
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false });
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -569,6 +698,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     localStorage.setItem('mithra_admin_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
+  useEffect(() => {
+    localStorage.setItem('mithra_admin_features', JSON.stringify(featuresList));
+  }, [featuresList]);
+
   // Sync state with backend database on mount
   useEffect(() => {
     const syncBackendData = async () => {
@@ -613,6 +746,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         
         const queriesData = await apiService.getContactQueries();
         if (queriesData && queriesData.length > 0) setContactQueries(queriesData);
+
+        try {
+          const featuresData = await apiService.getFeatures();
+          if (featuresData && featuresData.length > 0) setFeaturesList(featuresData);
+        } catch (featErr) {
+          console.error('Error fetching features:', featErr);
+        }
 
         try {
           const settingsData = await apiService.getSettings();
@@ -881,8 +1021,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     if (activeTab === 'Marketing') return '8. Marketing';
     if (activeTab === 'Reviews') return '9. Reviews';
     if (activeTab === 'Settings') return '10. Settings';
-    if (activeTab === 'Profile') return '11. Profile';
-    if (activeTab === 'Logout') return '12. Logout';
+    if (activeTab === 'Manage Features') return '11. Manage Features';
+    if (activeTab === 'Profile') return '12. Profile';
+    if (activeTab === 'Logout') return '13. Logout';
     return activeTab;
   };
 
@@ -1533,7 +1674,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       rating: newProduct.rating ? parseFloat(newProduct.rating) : 4.8,
       reviews: newProduct.reviews ? parseInt(newProduct.reviews, 10) : 120,
       discount: newProduct.discount ? parseInt(newProduct.discount, 10) : 0,
-      originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : null
+      originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : null,
+      badge: newProduct.badge || '',
+      isNewArrival: newProduct.isNewArrival || false,
+      isOffer: newProduct.isOffer || false
     };
 
     try {
@@ -1543,7 +1687,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setProducts([{ ...productToAdd, id: Date.now() }, ...products]);
     }
     setShowAddProductModal(false);
-    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '' });
+    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false });
   };
 
   const handleEditProductSubmit = async (e) => {
@@ -1573,7 +1717,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       rating: editProductItem.rating ? parseFloat(editProductItem.rating) : 4.8,
       reviews: editProductItem.reviews ? parseInt(editProductItem.reviews, 10) : 120,
       discount: editProductItem.discount ? parseInt(editProductItem.discount, 10) : 0,
-      originalPrice: editProductItem.originalPrice ? parseFloat(editProductItem.originalPrice) : null
+      originalPrice: editProductItem.originalPrice ? parseFloat(editProductItem.originalPrice) : null,
+      badge: editProductItem.badge || '',
+      isNewArrival: editProductItem.isNewArrival || false,
+      isOffer: editProductItem.isOffer || false
     };
 
     try {
@@ -1762,6 +1909,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     { label: 'Offers & Coupons', icon: <Tag size={18} /> },
     { label: 'Marketing', icon: <TrendingUp size={18} /> },
     { label: 'Reviews', icon: <Star size={18} /> },
+    { label: 'Manage Features', icon: <Globe size={18} /> },
     { label: 'Settings', icon: <Settings size={18} /> },
     { label: 'Profile', icon: <User size={18} /> }
   ];
@@ -4331,7 +4479,180 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
 
+          {/* TAB: MANAGE FEATURES VIEW */}
+          {activeTab === 'Manage Features' && (
+            <div className="admin-view-tab-content features-tab-container" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#051838', marginBottom: '4px' }}>Homepage Functionalities</h3>
+                  <p style={{ fontSize: '0.88rem', color: '#666' }}>Toggle sections on/off, re-arrange their order, or create new custom sections.</p>
+                </div>
+                <button 
+                  className="btn-primary" 
+                  style={{ 
+                    padding: '10px 20px', 
+                    backgroundColor: '#051838', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '8px', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={() => setShowAddFeatureModal(true)}
+                >
+                  <Plus size={16} /> Add Custom Section
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {featuresList && featuresList.length > 0 ? (
+                  featuresList.map((feat, index) => (
+                    <div 
+                      key={feat.id} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        padding: '16px 24px', 
+                        background: '#FAF6EE', 
+                        border: '1px solid rgba(160, 140, 110, 0.25)', 
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                        transition: 'transform 0.2s'
+                      }}
+                    >
+                      {/* Reorder Buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginRight: '24px', alignItems: 'center' }}>
+                        <button 
+                          onClick={() => handleMoveFeature(index, 'up')}
+                          disabled={index === 0}
+                          style={{ background: 'none', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#ccc' : '#D4AF37' }}
+                          title="Move Up"
+                        >
+                          ▲
+                        </button>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#051838' }}>{index + 1}</span>
+                        <button 
+                          onClick={() => handleMoveFeature(index, 'down')}
+                          disabled={index === featuresList.length - 1}
+                          style={{ background: 'none', border: 'none', cursor: index === featuresList.length - 1 ? 'not-allowed' : 'pointer', color: index === featuresList.length - 1 ? '#ccc' : '#D4AF37' }}
+                          title="Move Down"
+                        >
+                          ▼
+                        </button>
+                      </div>
+
+                      {/* Feature Details */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#051838', margin: 0 }}>{feat.name}</h4>
+                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#eae6df', color: '#666', borderRadius: '4px', fontFamily: 'monospace' }}>
+                            key: {feat.key}
+                          </span>
+                          {!['hero', 'trust_bar', 'categories', 'video_showcase', 'exclusive_products', 'celebrity_collection', 'why_choose_us'].includes(feat.key) && (
+                            <span style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#e0ebd5', color: '#8CC63F', borderRadius: '4px', fontWeight: 'bold' }}>
+                              Custom
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.88rem', color: '#555' }}>
+                          {feat.title && <div><strong>Title:</strong> {feat.title}</div>}
+                          {feat.subtitle && <div><strong>Subtitle:</strong> {feat.subtitle}</div>}
+                        </div>
+                      </div>
+
+                      {/* Status Toggle & Actions */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {/* Status Switch */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: feat.status === 'Active' ? '#8CC63F' : '#e53935' }}>
+                            {feat.status.toUpperCase()}
+                          </span>
+                          <button
+                            onClick={() => handleToggleFeatureStatus(feat.id)}
+                            style={{
+                              width: '44px',
+                              height: '24px',
+                              borderRadius: '12px',
+                              background: feat.status === 'Active' ? '#8CC63F' : '#ccc',
+                              border: 'none',
+                              cursor: 'pointer',
+                              position: 'relative',
+                              padding: 0,
+                              transition: 'background 0.2s'
+                            }}
+                          >
+                            <span style={{
+                              display: 'block',
+                              width: '18px',
+                              height: '18px',
+                              borderRadius: '50%',
+                              background: '#fff',
+                              position: 'absolute',
+                              top: '3px',
+                              left: feat.status === 'Active' ? '23px' : '3px',
+                              transition: 'left 0.2s'
+                            }} />
+                          </button>
+                        </div>
+
+                        {/* Edit Action */}
+                        <button
+                          onClick={() => setEditFeatureItem(feat)}
+                          style={{
+                            background: 'none',
+                            border: '1px solid #D4AF37',
+                            borderRadius: '6px',
+                            color: '#D4AF37',
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Edit3 size={12} /> Edit
+                        </button>
+
+                        {/* Delete Action (only custom features) */}
+                        {!['hero', 'trust_bar', 'categories', 'video_showcase', 'exclusive_products', 'celebrity_collection', 'why_choose_us'].includes(feat.key) ? (
+                          <button
+                            onClick={() => handleDeleteFeature(feat.id)}
+                            style={{
+                              background: 'none',
+                              border: '1px solid #e53935',
+                              borderRadius: '6px',
+                              color: '#e53935',
+                              padding: '6px 12px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        ) : null}
+                      </div>
+
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px', background: '#FAF6EE', border: '1px solid rgba(160, 140, 110, 0.25)', borderRadius: '12px' }}>
+                    No features available. Please reset database or add a custom section.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -4834,16 +5155,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                 className="modal-input"
                               />
                             </div>
-                            <div className="form-field">
-                              <label>Discount Percentage (%)</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.discount || '0'}
-                                onChange={(e) => setNewProduct({ ...newProduct, discount: e.target.value })}
-                                placeholder="33 (Optional)" 
-                                className="modal-input"
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -4888,6 +5199,68 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               />
                             </div>
                           </div>
+                        </div>
+                      </div>
+                      {/* Section 4: Badging & Labels */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header">
+                          <Tag size={16} />
+                          <h4>Product Badging & Labels</h4>
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row" style={{ alignItems: 'flex-start' }}>
+                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                              <input 
+                                type="checkbox" 
+                                id="add-prod-is-offer"
+                                checked={newProduct.isOffer || false}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setNewProduct({ 
+                                    ...newProduct, 
+                                    isOffer: checked,
+                                    discount: checked ? (newProduct.discount && newProduct.discount !== '0' ? newProduct.discount : '10') : '0'
+                                  });
+                                }}
+                              />
+                              <label htmlFor="add-prod-is-offer" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as Special Offer</label>
+                            </div>
+
+                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                              <input 
+                                type="checkbox" 
+                                id="add-prod-is-new"
+                                checked={newProduct.isNewArrival || false}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setNewProduct({ 
+                                    ...newProduct, 
+                                    isNewArrival: checked,
+                                    badge: checked ? 'NEW' : ''
+                                  });
+                                }}
+                              />
+                              <label htmlFor="add-prod-is-new" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as New Arrival</label>
+                            </div>
+                          </div>
+
+                          {newProduct.isOffer && (
+                            <div className="form-field-row" style={{ marginTop: '15px' }}>
+                              <div className="form-field">
+                                <label>Offer Percentage (%) <span style={{ color: 'red' }}>*</span></label>
+                                <input 
+                                  type="number" 
+                                  required
+                                  min="1"
+                                  max="99"
+                                  value={newProduct.discount && newProduct.discount !== '0' ? newProduct.discount : '10'}
+                                  onChange={(e) => setNewProduct({ ...newProduct, discount: e.target.value })}
+                                  placeholder="e.g. 20" 
+                                  className="modal-input"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </>
@@ -5138,16 +5511,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                 className="modal-input"
                               />
                             </div>
-                            <div className="form-field">
-                              <label>Discount Percentage (%)</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.discount || '0'}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, discount: e.target.value })}
-                                placeholder="33 (Optional)" 
-                                className="modal-input"
-                              />
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -5192,6 +5555,68 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               />
                             </div>
                           </div>
+                        </div>
+                      </div>
+                      {/* Section 4: Badging & Labels */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header">
+                          <Tag size={16} />
+                          <h4>Product Badging & Labels</h4>
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field-row" style={{ alignItems: 'flex-start' }}>
+                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                              <input 
+                                type="checkbox" 
+                                id="edit-prod-is-offer"
+                                checked={editProductItem.isOffer || false}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setEditProductItem({ 
+                                    ...editProductItem, 
+                                    isOffer: checked,
+                                    discount: checked ? (editProductItem.discount && editProductItem.discount !== '0' ? editProductItem.discount : '10') : '0'
+                                  });
+                                }}
+                              />
+                              <label htmlFor="edit-prod-is-offer" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as Special Offer</label>
+                            </div>
+
+                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                              <input 
+                                type="checkbox" 
+                                id="edit-prod-is-new"
+                                checked={editProductItem.isNewArrival || false}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setEditProductItem({ 
+                                    ...editProductItem, 
+                                    isNewArrival: checked,
+                                    badge: checked ? 'NEW' : ''
+                                  });
+                                }}
+                              />
+                              <label htmlFor="edit-prod-is-new" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as New Arrival</label>
+                            </div>
+                          </div>
+
+                          {editProductItem.isOffer && (
+                            <div className="form-field-row" style={{ marginTop: '15px' }}>
+                              <div className="form-field">
+                                <label>Offer Percentage (%) <span style={{ color: 'red' }}>*</span></label>
+                                <input 
+                                  type="number" 
+                                  required
+                                  min="1"
+                                  max="99"
+                                  value={editProductItem.discount && editProductItem.discount !== '0' ? editProductItem.discount : '10'}
+                                  onChange={(e) => setEditProductItem({ ...editProductItem, discount: e.target.value })}
+                                  placeholder="e.g. 20" 
+                                  className="modal-input"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </>
@@ -5462,6 +5887,115 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCouponModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary">Generate Code</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- ADD DYNAMIC FEATURE MODAL --- */}
+      {showAddFeatureModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowAddFeatureModal(false)}>
+          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr">
+              <h3>Add Custom Section</h3>
+              <button className="close-btn" onClick={() => setShowAddFeatureModal(false)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleAddFeatureSubmit} className="modal-body-form">
+              <div className="form-field">
+                <label>Section Name <span className="req">*</span></label>
+                <input 
+                  type="text" 
+                  value={newFeatureName}
+                  onChange={(e) => setNewFeatureName(e.target.value)}
+                  placeholder="e.g. Summer Promo, Customer Reviews" 
+                  required 
+                  className="modal-input"
+                />
+              </div>
+              <div className="form-field">
+                <label>Section Key <span className="req">*</span></label>
+                <input 
+                  type="text" 
+                  value={newFeatureKey}
+                  onChange={(e) => setNewFeatureKey(e.target.value)}
+                  placeholder="e.g. summer_promo (lowercase, no spaces)" 
+                  required 
+                  className="modal-input"
+                />
+              </div>
+              <div className="form-field">
+                <label>Section Title (Header Text)</label>
+                <input 
+                  type="text" 
+                  value={newFeatureTitle}
+                  onChange={(e) => setNewFeatureTitle(e.target.value)}
+                  placeholder="e.g. Big Summer Discounts" 
+                  className="modal-input"
+                />
+              </div>
+              <div className="form-field">
+                <label>Section Subtitle (Tag / Small text)</label>
+                <input 
+                  type="text" 
+                  value={newFeatureSubtitle}
+                  onChange={(e) => setNewFeatureSubtitle(e.target.value)}
+                  placeholder="e.g. Up to 50% OFF" 
+                  className="modal-input"
+                />
+              </div>
+              <div className="modal-actions-row">
+                <button type="button" className="btn-secondary" onClick={() => setShowAddFeatureModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Add Section</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- EDIT DYNAMIC FEATURE MODAL --- */}
+      {editFeatureItem && (
+        <div className="admin-modal-overlay" onClick={() => setEditFeatureItem(null)}>
+          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr">
+              <h3>Edit Section Details</h3>
+              <button className="close-btn" onClick={() => setEditFeatureItem(null)}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleEditFeatureSubmit} className="modal-body-form">
+              <div className="form-field">
+                <label>Section Name <span className="req">*</span></label>
+                <input 
+                  type="text" 
+                  value={editFeatureItem.name}
+                  onChange={(e) => setEditFeatureItem({ ...editFeatureItem, name: e.target.value })}
+                  placeholder="e.g. Summer Promo" 
+                  required 
+                  className="modal-input"
+                />
+              </div>
+              <div className="form-field">
+                <label>Section Title (Header Text)</label>
+                <input 
+                  type="text" 
+                  value={editFeatureItem.title || ''}
+                  onChange={(e) => setEditFeatureItem({ ...editFeatureItem, title: e.target.value })}
+                  placeholder="e.g. Big Summer Discounts" 
+                  className="modal-input"
+                />
+              </div>
+              <div className="form-field">
+                <label>Section Subtitle (Tag / Small text)</label>
+                <input 
+                  type="text" 
+                  value={editFeatureItem.subtitle || ''}
+                  onChange={(e) => setEditFeatureItem({ ...editFeatureItem, subtitle: e.target.value })}
+                  placeholder="e.g. Up to 50% OFF" 
+                  className="modal-input"
+                />
+              </div>
+              <div className="modal-actions-row">
+                <button type="button" className="btn-secondary" onClick={() => setEditFeatureItem(null)}>Cancel</button>
+                <button type="submit" className="btn-primary">Save Changes</button>
               </div>
             </form>
           </div>

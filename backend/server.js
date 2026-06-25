@@ -73,6 +73,8 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/features', require('./routes/features'));
+app.use('/api/lucky-charms', require('./routes/luckyCharm'));
 
 const fs = require('fs');
 const path = require('path');
@@ -130,7 +132,65 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start Server ──────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+const http      = require('http');
+const { execSync } = require('child_process');
+
+// Kill any existing process holding our port before we start
+function freePort(port) {
+  try {
+    // Works on Windows (PowerShell available)
+    const result = execSync(
+      `netstat -ano | findstr :${port}`,
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+    );
+    const lines = result.split('\n').filter(l => l.includes('LISTENING'));
+    lines.forEach(line => {
+      const parts = line.trim().split(/\s+/);
+      const pid = parts[parts.length - 1];
+      if (pid && pid !== '0') {
+        try {
+          execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+          console.log(`🗑️  Freed port ${port} (killed PID ${pid})`);
+        } catch (_) { /* already gone */ }
+      }
+    });
+  } catch (_) {
+    // No process on port — that's fine
+  }
+}
+
+freePort(PORT);
+
+const server = http.createServer(app);
+
+// ─── Handle any remaining port errors ─────────────────────────────────────────
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is still in use after cleanup.`);
+    console.error(`   Run this command manually and try again:`);
+    console.error(`   netstat -ano | findstr :${PORT}   →  then  taskkill /PID <PID> /F\n`);
+    process.exit(1);          // exit once — no retry loop
+  } else {
+    console.error('Server error:', err);
+    process.exit(1);
+  }
+});
+
+// ─── Graceful Shutdown (Ctrl+C / kill signal) ──────────────────────────────────
+function shutdown(signal) {
+  console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+  server.close(() => {
+    console.log('✅ Server closed. Port released.');
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+
+process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// ─── Start Listening ────────────────────────────────────────────────────────────
+server.listen(PORT, () => {
   console.log('');
   console.log('╔══════════════════════════════════════════╗');
   console.log('║   MithiraShoppy Backend Server           ║');
@@ -139,7 +199,6 @@ app.listen(PORT, () => {
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
 
-  // Seed data
   seedAdmin();
-  seedStoreData(); // enabled to seed products and categories
+  seedStoreData();
 });
