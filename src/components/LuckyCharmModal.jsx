@@ -20,22 +20,102 @@ export default function LuckyCharmModal() {
   const [isLuckyOrder, setIsLuckyOrder] = useState(false);
   const wheelRef = useRef(null);
 
+  const [sessionId, setSessionId] = useState('');
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const debounceTimerRef = useRef(null);
+  const isCheckingRef = useRef(false);
+
+  // Helper: Retrieve current cart items
+  const getCurrentCartItems = useCallback(() => {
+    let authUser = null;
+    try {
+      const stored = localStorage.getItem('mithira_auth_user');
+      if (stored) authUser = JSON.parse(stored);
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (authUser) {
+      return authUser.cartItems || [];
+    } else {
+      try {
+        return JSON.parse(localStorage.getItem('mithira_guest_cart_items') || '[]');
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    }
+  }, []);
+
+  const fetchActiveRewards = useCallback(async () => {
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
+    try {
+      const cartItems = getCurrentCartItems();
+      const res = await apiService.checkLuckyCharmEligibility(cartItems);
+      if (res?.success && res.available && res.rewards?.length > 0) {
+        setRewards(res.rewards);
+        setSessionId(res.sessionId || '');
+        setIsAvailable(true);
+        setErrorMessage('');
+      } else {
+        setRewards([]);
+        setSessionId('');
+        setIsAvailable(false);
+        setErrorMessage(res?.message || 'Lucky Charm is not available.');
+      }
+    } catch (e) {
+      console.error('Error checking lucky charm eligibility:', e);
+      setRewards([]);
+      setSessionId('');
+      setIsAvailable(false);
+      setErrorMessage('Failed to load campaign data.');
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, [getCurrentCartItems]);
+
+  const triggerEligibilityCheckDebounced = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      fetchActiveRewards();
+    }, 600);
+  }, [fetchActiveRewards]);
+
   // ── Open when navigating to /lucky-charms ──────────────────────────────────
   useEffect(() => {
     const handleLocationChange = () => {
       const path = window.location.pathname.toLowerCase();
       if (path.includes('/lucky-charms')) {
-        setIsOpen(true);
-        setStep('landing');
-        setWonReward(null);
-        setSpinDeg(0);
-        fetchActiveRewards();
+        // Disabled auto-open modal popup on path since we route to full page.
       }
     };
     handleLocationChange();
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
+  }, [fetchActiveRewards]);
+
+  // ── Listen to cart updates (debounced) ─────────────────────────────────────
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      if (isOpen) {
+        triggerEligibilityCheckDebounced();
+      }
+    };
+    window.addEventListener('storage', handleCartUpdate);
+    window.addEventListener('mithira_cart_update', handleCartUpdate);
+    return () => {
+      window.removeEventListener('storage', handleCartUpdate);
+      window.removeEventListener('mithira_cart_update', handleCartUpdate);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [isOpen, triggerEligibilityCheckDebounced]);
 
   // ── Order success listener ─────────────────────────────────────────────────
   useEffect(() => {
@@ -54,15 +134,6 @@ export default function LuckyCharmModal() {
       window.removeEventListener('mithira_order_success', handleOrderSuccess);
     };
   }, []);
-
-  const fetchActiveRewards = async () => {
-    try {
-      const data = await apiService.getActiveLuckyRewards();
-      if (data?.length > 0) setRewards(data);
-    } catch (e) {
-      console.error('Error fetching lucky rewards:', e);
-    }
-  };
 
   const handleClose = () => {
     const wasSuccess = step === 'orderSuccess';
@@ -90,24 +161,22 @@ export default function LuckyCharmModal() {
 
   // ── Spin handler ───────────────────────────────────────────────────────────
   const startSpin = async () => {
-    if (isSpinning || rewards.length === 0) return;
+    if (isSpinning || rewards.length === 0 || !sessionId) return;
     setIsSpinning(true);
 
     try {
-      const res = await apiService.spinLuckyCharm();
+      const cartItems = getCurrentCartItems();
+      const res = await apiService.spinLuckyCharm(sessionId, cartItems);
       if (res?.success && res.won) {
         const won = res.reward;
 
         let index = rewards.findIndex(r =>
-          (won.rewardType === 'product' && String(r.productId) === String(won.productId)) ||
-          (won.rewardType === 'coupon'  && String(r.couponId)  === String(won.couponCode))
+          won.rewardType === 'product' && String(r.productId) === String(won.productId)
         );
         if (index === -1) index = 0;
 
         const segCount    = rewards.length;
         const segAngle    = 360 / segCount;
-        // We want index to land under the TOP pointer
-        // Wheel rotates clockwise; segment 0 starts at 0° on the right
         const stopAngle   = 360 - (index * segAngle) - segAngle / 2;
         const newRotation = spinDeg + 1800 + stopAngle - (spinDeg % 360);
 
@@ -117,10 +186,12 @@ export default function LuckyCharmModal() {
           setWonReward(won);
           setStep('congratulations');
           setIsSpinning(false);
+          fetchActiveRewards();
         }, 4200);
       } else {
         alert(res?.message || 'Spin failed, please try again.');
         setIsSpinning(false);
+        fetchActiveRewards();
       }
     } catch (err) {
       console.error(err);
@@ -629,15 +700,23 @@ export default function LuckyCharmModal() {
             <p className="lc-hero-sub">Spin &amp; Win Premium Rewards</p>
             <p className="lc-hero-desc">Every Spin Gives You a Surprise</p>
 
-            <button className="lc-spin-cta" onClick={goToSpin}>
-              <Sparkles size={18} />
-              SPIN NOW
-            </button>
+            {isAvailable ? (
+              <>
+                <button className="lc-spin-cta" onClick={goToSpin}>
+                  <Sparkles size={18} />
+                  SPIN NOW
+                </button>
 
-            <div className="lc-guarantee">
-              <CheckCircle size={14} />
-              <span>Every Spin is a Winner</span>
-            </div>
+                <div className="lc-guarantee">
+                  <CheckCircle size={14} />
+                  <span>Every Spin is a Winner</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ marginTop: '20px', padding: '12px 16px', background: 'rgba(220, 53, 69, 0.1)', borderLeft: '4px solid #dc3545', color: '#ff8a8d', borderRadius: '4px', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                {errorMessage || 'Lucky Charm is currently not available.'}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: MINI WHEEL PREVIEW */}
@@ -745,7 +824,7 @@ export default function LuckyCharmModal() {
             <button
               className="lc-center-btn"
               onClick={startSpin}
-              disabled={isSpinning}
+              disabled={isSpinning || !sessionId}
             >
               {isSpinning ? '...' : 'SPIN'}
             </button>

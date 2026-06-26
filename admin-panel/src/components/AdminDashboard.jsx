@@ -431,7 +431,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [activeMarketingSubTab, setActiveMarketingSubTab] = useState('Newsletter');
   
   // Lucky Charm States
-  const [luckyRewards, setLuckyRewards] = useState([]);
+  const [luckyCampaigns, setLuckyCampaigns] = useState([]);
+  const [luckySpinHistory, setLuckySpinHistory] = useState([]);
   const [luckyStats, setLuckyStats] = useState({
     totalSpins: 0,
     todaysSpins: 0,
@@ -443,20 +444,19 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     topWonProducts: [],
     topWonCoupons: []
   });
-  const [showAddRewardModal, setShowAddRewardModal] = useState(false);
-  const [newReward, setNewReward] = useState({
-    rewardName: '',
-    rewardType: 'product',
-    productId: '',
-    couponId: '',
-    chancePercentage: '',
-    luckyStock: '',
-    luckyPrice: '',
-    status: 'Active',
+  const [showAddCampaignModal, setShowAddCampaignModal] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({
+    campaignName: '',
+    minOrderValue: '',
+    maxOrderValue: '',
+    rewardBudget: '',
+    wheelProductCount: 8,
+    campaignUsageLimit: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    status: 'Active'
   });
-  const [editRewardItem, setEditRewardItem] = useState(null);
+  const [editCampaignItem, setEditCampaignItem] = useState(null);
   const [luckyCharmSubTab, setLuckyCharmSubTab] = useState('Dashboard');
   
   // Newsletter States
@@ -614,7 +614,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
 
   // Form states & Modals states
-  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false });
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false, includeInLuckyCharm: false, luckyStock: 0 });
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -677,7 +677,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   useEffect(() => {
     if (activeMarketingSubTab === 'Lucky Charm') {
       fetchLuckyStats();
-      fetchLuckyRewards();
+      fetchLuckyCampaigns();
+      fetchLuckySpinHistory();
     }
   }, [activeMarketingSubTab]);
 
@@ -692,67 +693,73 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
-  const fetchLuckyRewards = async () => {
+  const fetchLuckyCampaigns = async () => {
     try {
-      const res = await apiService.getLuckyRewards();
-      if (res && res.success) {
-        setLuckyRewards(res.rewards);
-      }
+      const camps = await apiService.getLuckyCampaigns();
+      setLuckyCampaigns(camps || []);
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleAddLuckyRewardSubmit = async (e) => {
+  const fetchLuckySpinHistory = async () => {
+    try {
+      const history = await apiService.getLuckySpinHistory();
+      setLuckySpinHistory(history || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddLuckyCampaignSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiService.createLuckyReward(newReward);
+      const res = await apiService.createLuckyCampaign(newCampaign);
       if (res && res.success) {
-        setLuckyRewards(prev => [...prev, res.reward]);
-        setShowAddRewardModal(false);
-        setNewReward({
-          rewardName: '',
-          rewardType: 'product',
-          productId: '',
-          couponId: '',
-          chancePercentage: '',
-          luckyStock: '',
-          luckyPrice: '',
-          status: 'Active',
+        setLuckyCampaigns(prev => [...prev, res.campaign]);
+        setShowAddCampaignModal(false);
+        setNewCampaign({
+          campaignName: '',
+          minOrderValue: '',
+          maxOrderValue: '',
+          rewardBudget: '',
+          wheelProductCount: 8,
+          campaignUsageLimit: '',
           startDate: '',
-          endDate: ''
+          endDate: '',
+          status: 'Active'
         });
         fetchLuckyStats();
       }
     } catch (err) {
-      alert('Error creating reward: ' + err.message);
+      alert('Error creating campaign: ' + err.message);
     }
   };
 
-  const handleEditLuckyRewardSubmit = async (e) => {
+  const handleEditLuckyCampaignSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiService.updateLuckyReward(editRewardItem._id, editRewardItem);
+      const res = await apiService.updateLuckyCampaign(editCampaignItem._id, editCampaignItem);
       if (res && res.success) {
-        setLuckyRewards(prev => prev.map(r => r._id === editRewardItem._id ? res.reward : r));
-        setEditRewardItem(null);
+        setLuckyCampaigns(prev => prev.map(c => c._id === editCampaignItem._id ? res.campaign : c));
+        setEditCampaignItem(null);
         fetchLuckyStats();
       }
     } catch (err) {
-      alert('Error updating reward: ' + err.message);
+      alert('Error updating campaign: ' + err.message);
     }
   };
 
-  const deleteLuckyReward = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this lucky reward?')) return;
+  const deleteLuckyCampaign = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this campaign?')) return;
     try {
-      const res = await apiService.deleteLuckyReward(id);
+      const res = await apiService.deleteLuckyCampaign(id);
       if (res && res.success) {
-        setLuckyRewards(prev => prev.filter(r => r._id !== id));
+        setLuckyCampaigns(prev => prev.filter(c => c._id !== id));
         fetchLuckyStats();
       }
     } catch (err) {
-      alert('Error deleting reward: ' + err.message);
+      alert('Error deleting campaign: ' + err.message);
     }
   };
 
@@ -1792,7 +1799,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       originalPrice: newProduct.originalPrice ? parseFloat(newProduct.originalPrice) : null,
       badge: newProduct.badge || '',
       isNewArrival: newProduct.isNewArrival || false,
-      isOffer: newProduct.isOffer || false
+      isOffer: newProduct.isOffer || false,
+      includeInLuckyCharm: newProduct.includeInLuckyCharm || false,
+      luckyStock: parseInt(newProduct.luckyStock, 10) || 0
     };
 
     try {
@@ -1835,7 +1844,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       originalPrice: editProductItem.originalPrice ? parseFloat(editProductItem.originalPrice) : null,
       badge: editProductItem.badge || '',
       isNewArrival: editProductItem.isNewArrival || false,
-      isOffer: editProductItem.isOffer || false
+      isOffer: editProductItem.isOffer || false,
+      includeInLuckyCharm: editProductItem.includeInLuckyCharm || false,
+      luckyStock: parseInt(editProductItem.luckyStock, 10) || 0
     };
 
     try {
@@ -3719,19 +3730,19 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           <p style={{ fontSize: '0.82rem', color: '#666', margin: '2px 0 0 0' }}>Manage spin rewards, products, and orders</p>
                         </div>
                       </div>
-                      {luckyCharmSubTab === 'Reward Management' && (
+                      {luckyCharmSubTab === 'Campaign Management' && (
                         <button
-                          onClick={() => setShowAddRewardModal(true)}
+                          onClick={() => setShowAddCampaignModal(true)}
                           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none', backgroundColor: '#051838', color: '#D4AF37', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem' }}
                         >
-                          <Plus size={15} /> Add Reward
+                          <Plus size={15} /> Add Campaign
                         </button>
                       )}
                     </div>
 
                     {/* Lucky Charm Sub-Tab Navigation */}
                     <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #eae6df', paddingBottom: '0' }}>
-                      {['Dashboard', 'Reward Management', 'Product Management', 'Orders Integration'].map(tab => (
+                      {['Dashboard', 'Campaign Management', 'Spin History'].map(tab => (
                         <button
                           key={tab}
                           onClick={() => setLuckyCharmSubTab(tab)}
@@ -3776,7 +3787,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         </div>
 
                         {/* Analytics split */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                           <div style={{ padding: '20px', backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px' }}>
                             <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '14px', color: '#051838' }}>Most Won Products</h4>
                             {luckyStats.topWonProducts?.length > 0 ? (
@@ -3790,60 +3801,49 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                               </div>
                             ) : <p style={{ color: '#aaa', fontSize: '0.85rem' }}>No data yet</p>}
                           </div>
-                          <div style={{ padding: '20px', backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px' }}>
-                            <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '14px', color: '#051838' }}>Most Won Coupons</h4>
-                            {luckyStats.topWonCoupons?.length > 0 ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {luckyStats.topWonCoupons.map((c, idx) => (
-                                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #f5f5f5' }}>
-                                    <span style={{ fontWeight: 700, color: '#D4AF37', fontSize: '0.88rem' }}>{c.code}</span>
-                                    <span style={{ padding: '3px 10px', borderRadius: '12px', backgroundColor: '#fdf2f2', color: '#ef4444', fontSize: '0.78rem', fontWeight: 700 }}>{c.count} won</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : <p style={{ color: '#aaa', fontSize: '0.85rem' }}>No data yet</p>}
-                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* ─── SUB-TAB: REWARD MANAGEMENT ─── */}
-                    {luckyCharmSubTab === 'Reward Management' && (
+                    {/* ─── SUB-TAB: CAMPAIGN MANAGEMENT ─── */}
+                    {luckyCharmSubTab === 'Campaign Management' && (
                       <div style={{ backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px', overflow: 'hidden' }}>
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.87rem' }}>
                             <thead>
                               <tr style={{ borderBottom: '2px solid #eae6df', backgroundColor: '#faf9f6' }}>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Reward Name</th>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Type</th>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Product / Coupon</th>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Chance %</th>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Stock</th>
-                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Lucky Price</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Campaign Name</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Min Order</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Max Order</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Reward Budget</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Wheel Products</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Usage Limit</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Start Date</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>End Date</th>
                                 <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Status</th>
                                 <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444', textAlign: 'right' }}>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {luckyRewards.length === 0 ? (
-                                <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No rewards yet. Click "Add Reward" to create one.</td></tr>
-                              ) : luckyRewards.map((r) => (
-                                <tr key={r._id} style={{ borderBottom: '1px solid #f0f0f0', color: '#2b2b2b' }}>
-                                  <td style={{ padding: '13px 18px', fontWeight: 700 }}>{r.rewardName}</td>
-                                  <td style={{ padding: '13px 18px', textTransform: 'capitalize' }}>
-                                    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: r.rewardType === 'product' ? '#eef2fd' : '#fdf9ee', color: r.rewardType === 'product' ? '#2b87e3' : '#D4AF37' }}>{r.rewardType}</span>
-                                  </td>
-                                  <td style={{ padding: '13px 18px', color: '#666' }}>{r.rewardType === 'product' ? `ID: ${r.productId}` : r.couponId || '—'}</td>
-                                  <td style={{ padding: '13px 18px', fontWeight: 700, color: '#16a34a' }}>{r.chancePercentage}%</td>
-                                  <td style={{ padding: '13px 18px' }}>{r.luckyStock}</td>
-                                  <td style={{ padding: '13px 18px', fontWeight: 600 }}>₹{r.luckyPrice || 0}</td>
+                              {luckyCampaigns.length === 0 ? (
+                                <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No campaigns yet. Click "Add Campaign" to create one.</td></tr>
+                              ) : luckyCampaigns.map((c) => (
+                                <tr key={c._id} style={{ borderBottom: '1px solid #f0f0f0', color: '#2b2b2b' }}>
+                                  <td style={{ padding: '13px 18px', fontWeight: 700 }}>{c.campaignName}</td>
+                                  <td style={{ padding: '13px 18px' }}>₹{c.minOrderValue}</td>
+                                  <td style={{ padding: '13px 18px' }}>{c.maxOrderValue !== null && c.maxOrderValue !== undefined ? `₹${c.maxOrderValue}` : '—'}</td>
+                                  <td style={{ padding: '13px 18px', fontWeight: 600 }}>₹{c.rewardBudget}</td>
+                                  <td style={{ padding: '13px 18px' }}>{c.wheelProductCount}</td>
+                                  <td style={{ padding: '13px 18px' }}>{c.campaignUsageLimit !== null && c.campaignUsageLimit !== undefined ? c.campaignUsageLimit : 'Unlimited'}</td>
+                                  <td style={{ padding: '13px 18px', color: '#666' }}>{new Date(c.startDate).toLocaleDateString()}</td>
+                                  <td style={{ padding: '13px 18px', color: '#666' }}>{new Date(c.endDate).toLocaleDateString()}</td>
                                   <td style={{ padding: '13px 18px' }}>
-                                    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: r.status === 'Active' ? '#eef6e6' : '#fdf2f2', color: r.status === 'Active' ? '#16a34a' : '#ef4444' }}>{r.status}</span>
+                                    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: c.status === 'Active' ? '#eef6e6' : c.status === 'Completed' ? '#eef2fd' : '#fdf2f2', color: c.status === 'Active' ? '#16a34a' : c.status === 'Completed' ? '#2b87e3' : '#ef4444' }}>{c.status}</span>
                                   </td>
                                   <td style={{ padding: '13px 18px', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                      <button style={{ border: 'none', background: '#eef2fd', color: '#2b87e3', cursor: 'pointer', borderRadius: '8px', padding: '6px 10px' }} onClick={() => setEditRewardItem({ ...r })} title="Edit"><Edit3 size={14} /></button>
-                                      <button style={{ border: 'none', background: '#fdf2f2', color: '#ef4444', cursor: 'pointer', borderRadius: '8px', padding: '6px 10px' }} onClick={() => deleteLuckyReward(r._id)} title="Delete"><Trash2 size={14} /></button>
+                                      <button style={{ border: 'none', background: '#eef2fd', color: '#2b87e3', cursor: 'pointer', borderRadius: '8px', padding: '6px 10px' }} onClick={() => setEditCampaignItem({ ...c })} title="Edit"><Edit3 size={14} /></button>
+                                      <button style={{ border: 'none', background: '#fdf2f2', color: '#ef4444', cursor: 'pointer', borderRadius: '8px', padding: '6px 10px' }} onClick={() => deleteLuckyCampaign(c._id)} title="Delete"><Trash2 size={14} /></button>
                                     </div>
                                   </td>
                                 </tr>
@@ -3854,92 +3854,38 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       </div>
                     )}
 
-                    {/* ─── SUB-TAB: PRODUCT MANAGEMENT ─── */}
-                    {luckyCharmSubTab === 'Product Management' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ padding: '14px 18px', backgroundColor: '#fdf9ee', border: '1px solid #D4AF3733', borderRadius: '10px', fontSize: '0.87rem', color: '#7a6020' }}>
-                          ℹ️ Products listed below are enabled for the Lucky Charm wheel. To add more, edit a product and enable the "Include in Lucky Charm" toggle.
-                        </div>
-                        <div style={{ backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px', overflow: 'hidden' }}>
-                          <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.87rem' }}>
-                              <thead>
-                                <tr style={{ borderBottom: '2px solid #eae6df', backgroundColor: '#faf9f6' }}>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Product</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Category</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Original Price</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Lucky Price</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Lucky Stock</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Chance %</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Status</th>
+                    {/* ─── SUB-TAB: SPIN HISTORY ─── */}
+                    {luckyCharmSubTab === 'Spin History' && (
+                      <div style={{ backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px', overflow: 'hidden' }}>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.87rem' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid #eae6df', backgroundColor: '#faf9f6' }}>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>User</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Campaign</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Order</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Won Product</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Spin Time</th>
+                                <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Claim Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {luckySpinHistory.length === 0 ? (
+                                <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No spin history recorded yet.</td></tr>
+                              ) : luckySpinHistory.map((h) => (
+                                <tr key={h._id} style={{ borderBottom: '1px solid #f0f0f0', color: '#2b2b2b' }}>
+                                  <td style={{ padding: '13px 18px', fontWeight: 700 }}>{h.user || h.userId || 'Guest'}</td>
+                                  <td style={{ padding: '13px 18px' }}>{h.campaign || (h.campaignId && h.campaignId.campaignName) || '—'}</td>
+                                  <td style={{ padding: '13px 18px', color: '#2b87e3', fontWeight: 600 }}>{h.order || h.orderId || '—'}</td>
+                                  <td style={{ padding: '13px 18px' }}>{h.wonProduct || (h.productId ? `Product #${h.productId}` : '—')}</td>
+                                  <td style={{ padding: '13px 18px', color: '#666' }}>{new Date(h.spinTime).toLocaleString()}</td>
+                                  <td style={{ padding: '13px 18px' }}>
+                                    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: h.claimStatus === 'Claimed' ? '#eef6e6' : '#fff7ee', color: h.claimStatus === 'Claimed' ? '#16a34a' : '#D4AF37' }}>{h.claimStatus}</span>
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {products.filter(p => p.includeInLuckyCharm).length === 0 ? (
-                                  <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No products enabled for Lucky Charm yet. Edit products to enable them.</td></tr>
-                                ) : products.filter(p => p.includeInLuckyCharm).map((p) => (
-                                  <tr key={p.id} style={{ borderBottom: '1px solid #f0f0f0', color: '#2b2b2b' }}>
-                                    <td style={{ padding: '13px 18px', fontWeight: 700 }}>{p.name}</td>
-                                    <td style={{ padding: '13px 18px', color: '#666' }}>{p.category}</td>
-                                    <td style={{ padding: '13px 18px' }}>₹{p.price}</td>
-                                    <td style={{ padding: '13px 18px', fontWeight: 600, color: '#D4AF37' }}>₹{p.luckyPrice || p.price}</td>
-                                    <td style={{ padding: '13px 18px' }}>{p.luckyStock || 0}</td>
-                                    <td style={{ padding: '13px 18px', color: '#16a34a', fontWeight: 700 }}>{p.luckyChancePercentage || 0}%</td>
-                                    <td style={{ padding: '13px 18px' }}>
-                                      <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: p.luckyActive ? '#eef6e6' : '#f5f5f5', color: p.luckyActive ? '#16a34a' : '#aaa' }}>{p.luckyActive ? 'Active' : 'Inactive'}</span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ─── SUB-TAB: ORDERS INTEGRATION ─── */}
-                    {luckyCharmSubTab === 'Orders Integration' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ padding: '14px 18px', backgroundColor: '#eef6e6', border: '1px solid #16a34a33', borderRadius: '10px', fontSize: '0.87rem', color: '#166534' }}>
-                          ✅ Showing all orders that were placed through the Lucky Charm feature.
-                        </div>
-                        <div style={{ backgroundColor: '#fff', border: '1px solid #eae6df', borderRadius: '14px', overflow: 'hidden' }}>
-                          <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.87rem' }}>
-                              <thead>
-                                <tr style={{ borderBottom: '2px solid #eae6df', backgroundColor: '#faf9f6' }}>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Order ID</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Customer</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Product</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Amount</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Payment</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Date</th>
-                                  <th style={{ padding: '14px 18px', fontWeight: 700, color: '#444' }}>Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {orders.filter(o => o.isLuckyCharmOrder).length === 0 ? (
-                                  <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No Lucky Charm orders yet. Orders placed through Lucky Charm will appear here.</td></tr>
-                                ) : orders.filter(o => o.isLuckyCharmOrder).map((o) => (
-                                  <tr key={o.id} style={{ borderBottom: '1px solid #f0f0f0', color: '#2b2b2b' }}>
-                                    <td style={{ padding: '13px 18px', fontWeight: 700, color: '#2b87e3' }}>{o.id}</td>
-                                    <td style={{ padding: '13px 18px' }}>{o.customer}</td>
-                                    <td style={{ padding: '13px 18px', color: '#666' }}>{o.product}</td>
-                                    <td style={{ padding: '13px 18px', fontWeight: 700 }}>{o.amount}</td>
-                                    <td style={{ padding: '13px 18px', color: '#666' }}>{o.payment}</td>
-                                    <td style={{ padding: '13px 18px', color: '#666' }}>{o.date}</td>
-                                    <td style={{ padding: '13px 18px' }}>
-                                      <span style={{
-                                        padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
-                                        backgroundColor: o.status === 'Delivered' ? '#eef6e6' : o.status === 'Shipped' ? '#eef2fd' : o.status === 'Cancelled' ? '#fdf2f2' : '#fff7ee',
-                                        color: o.status === 'Delivered' ? '#16a34a' : o.status === 'Shipped' ? '#2b87e3' : o.status === 'Cancelled' ? '#ef4444' : '#D4AF37'
-                                      }}>{o.status}</span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     )}
@@ -5426,17 +5372,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
                     </div>
                   </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'lucky' ? 'active' : ''}`}
-                    onClick={() => setAddProductActiveTab('lucky')}
-                  >
-                    <Sparkles size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Lucky Charm Settings</span>
-                      <span className="admin-modal-sidebar-btn-desc">Include in Lucky Charm & set stock</span>
-                    </div>
-                  </button>
                 </div>
 
                 {/* Right Scrollable Content Pane */}
@@ -5669,6 +5604,39 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           )}
                         </div>
                       </div>
+
+                      {/* Section 5: Lucky Charm Settings */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header">
+                          <Sparkles size={16} />
+                          <h4>Lucky Charm Settings</h4>
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Include in Lucky Charm</label>
+                            <select 
+                              value={newProduct.includeInLuckyCharm ? 'Yes' : 'No'}
+                              onChange={(e) => setNewProduct({ ...newProduct, includeInLuckyCharm: e.target.value === 'Yes' })}
+                              className="modal-input"
+                            >
+                              <option value="No">No</option>
+                              <option value="Yes">Yes</option>
+                            </select>
+                          </div>
+                          {newProduct.includeInLuckyCharm && (
+                            <div className="form-field">
+                              <label>Lucky Stock</label>
+                              <input 
+                                type="number" 
+                                value={newProduct.luckyStock || ''}
+                                onChange={(e) => setNewProduct({ ...newProduct, luckyStock: parseInt(e.target.value, 10) || 0 })}
+                                placeholder="e.g. 50"
+                                className="modal-input"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </>
                   )}
 
@@ -5738,72 +5706,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     </>
                   )}
 
-                  {addProductActiveTab === 'lucky' && (
-                    <div className="admin-modal-section-card">
-                      <div className="admin-modal-section-header">
-                        <Sparkles size={16} />
-                        <h4>Lucky Charm Settings</h4>
-                      </div>
-                      <div className="admin-modal-section-body">
-                        <div className="form-field">
-                          <label>Include in Lucky Charm</label>
-                          <select 
-                            value={newProduct.includeInLuckyCharm ? 'Yes' : 'No'}
-                            onChange={(e) => setNewProduct({ ...newProduct, includeInLuckyCharm: e.target.value === 'Yes' })}
-                            className="modal-input"
-                          >
-                            <option value="No">No</option>
-                            <option value="Yes">Yes</option>
-                          </select>
-                        </div>
-                        {newProduct.includeInLuckyCharm && (
-                          <>
-                            <div className="form-field">
-                              <label>Chance Percentage (%)</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.luckyChancePercentage || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, luckyChancePercentage: parseFloat(e.target.value) || 0 })}
-                                placeholder="e.g. 15"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Lucky Stock</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.luckyStock || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, luckyStock: parseInt(e.target.value, 10) || 0 })}
-                                placeholder="e.g. 50"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Lucky Price (Discounted Reward Price)</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.luckyPrice || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, luckyPrice: parseFloat(e.target.value) || 0 })}
-                                placeholder="e.g. 299"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Active status</label>
-                              <select 
-                                value={newProduct.luckyActive ? 'Yes' : 'No'}
-                                onChange={(e) => setNewProduct({ ...newProduct, luckyActive: e.target.value === 'Yes' })}
-                                className="modal-input"
-                              >
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -5861,17 +5763,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <div className="sidebar-btn-text">
                       <span className="admin-modal-sidebar-btn-label">Media & Description</span>
                       <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'lucky' ? 'active' : ''}`}
-                    onClick={() => setEditProductActiveTab('lucky')}
-                  >
-                    <Sparkles size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Lucky Charm Settings</span>
-                      <span className="admin-modal-sidebar-btn-desc">Include in Lucky Charm & set stock</span>
                     </div>
                   </button>
                 </div>
@@ -6103,6 +5994,39 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                           )}
                         </div>
                       </div>
+
+                      {/* Section 5: Lucky Charm Settings */}
+                      <div className="admin-modal-section-card">
+                        <div className="admin-modal-section-header">
+                          <Sparkles size={16} />
+                          <h4>Lucky Charm Settings</h4>
+                        </div>
+                        <div className="admin-modal-section-body">
+                          <div className="form-field">
+                            <label>Include in Lucky Charm</label>
+                            <select 
+                              value={editProductItem.includeInLuckyCharm ? 'Yes' : 'No'}
+                              onChange={(e) => setEditProductItem({ ...editProductItem, includeInLuckyCharm: e.target.value === 'Yes' })}
+                              className="modal-input"
+                            >
+                              <option value="No">No</option>
+                              <option value="Yes">Yes</option>
+                            </select>
+                          </div>
+                          {editProductItem.includeInLuckyCharm && (
+                            <div className="form-field">
+                              <label>Lucky Stock</label>
+                              <input 
+                                type="number" 
+                                value={editProductItem.luckyStock || ''}
+                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyStock: parseInt(e.target.value, 10) || 0 })}
+                                placeholder="e.g. 50"
+                                className="modal-input"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </>
                   )}
 
@@ -6172,72 +6096,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     </>
                   )}
 
-                  {editProductActiveTab === 'lucky' && (
-                    <div className="admin-modal-section-card">
-                      <div className="admin-modal-section-header">
-                        <Sparkles size={16} />
-                        <h4>Lucky Charm Settings</h4>
-                      </div>
-                      <div className="admin-modal-section-body">
-                        <div className="form-field">
-                          <label>Include in Lucky Charm</label>
-                          <select 
-                            value={editProductItem.includeInLuckyCharm ? 'Yes' : 'No'}
-                            onChange={(e) => setEditProductItem({ ...editProductItem, includeInLuckyCharm: e.target.value === 'Yes' })}
-                            className="modal-input"
-                          >
-                            <option value="No">No</option>
-                            <option value="Yes">Yes</option>
-                          </select>
-                        </div>
-                        {editProductItem.includeInLuckyCharm && (
-                          <>
-                            <div className="form-field">
-                              <label>Chance Percentage (%)</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.luckyChancePercentage || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyChancePercentage: parseFloat(e.target.value) || 0 })}
-                                placeholder="e.g. 15"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Lucky Stock</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.luckyStock || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyStock: parseInt(e.target.value, 10) || 0 })}
-                                placeholder="e.g. 50"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Lucky Price (Discounted Reward Price)</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.luckyPrice || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyPrice: parseFloat(e.target.value) || 0 })}
-                                placeholder="e.g. 299"
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Active status</label>
-                              <select 
-                                value={editProductItem.luckyActive ? 'Yes' : 'No'}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyActive: e.target.value === 'Yes' })}
-                                className="modal-input"
-                              >
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -7819,23 +7677,23 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         </div>
       )}
       {/* --- CUSTOMER REVIEW REPLY MODAL --- */}
-      {/* --- ADD LUCKY CHARM REWARD MODAL --- */}
-      {showAddRewardModal && (
-        <div className="admin-modal-overlay" onClick={() => setShowAddRewardModal(false)}>
+      {/* --- ADD LUCKY CHARM CAMPAIGN MODAL --- */}
+      {showAddCampaignModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowAddCampaignModal(false)}>
           <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3>Create Lucky Charm Reward</h3>
-              <button className="close-btn" onClick={() => setShowAddRewardModal(false)}><X size={18} /></button>
+              <h3>Create Lucky Charm Campaign</h3>
+              <button className="close-btn" onClick={() => setShowAddCampaignModal(false)}><X size={18} /></button>
             </div>
             
-            <form onSubmit={handleAddLuckyRewardSubmit} className="modal-body-form">
+            <form onSubmit={handleAddLuckyCampaignSubmit} className="modal-body-form">
               <div className="form-field">
-                <label>Reward Name <span className="req">*</span></label>
+                <label>Campaign Name <span className="req">*</span></label>
                 <input 
                   type="text" 
-                  value={newReward.rewardName}
-                  onChange={(e) => setNewReward({ ...newReward, rewardName: e.target.value })}
-                  placeholder="e.g. Premium Leather Diary" 
+                  value={newCampaign.campaignName}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, campaignName: e.target.value })}
+                  placeholder="e.g. Summer Bonanza" 
                   required 
                   className="modal-input"
                 />
@@ -7843,136 +7701,87 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
               <div className="form-field-row">
                 <div className="form-field">
-                  <label>Reward Type</label>
-                  <select 
-                    value={newReward.rewardType}
-                    onChange={(e) => {
-                      const type = e.target.value;
-                      setNewReward({ 
-                        ...newReward, 
-                        rewardType: type,
-                        productId: '',
-                        couponId: '',
-                        rewardName: ''
-                      });
-                    }}
-                    className="modal-input"
-                  >
-                    <option value="product">Product</option>
-                    <option value="coupon">Coupon</option>
-                  </select>
-                </div>
-
-                {newReward.rewardType === 'product' ? (
-                  <div className="form-field">
-                    <label>Select Product <span className="req">*</span></label>
-                    <select 
-                      value={newReward.productId}
-                      onChange={(e) => {
-                        const prodId = e.target.value;
-                        const prod = products.find(p => String(p.id) === String(prodId));
-                        setNewReward({ 
-                          ...newReward, 
-                          productId: prodId,
-                          rewardName: prod ? prod.name : newReward.rewardName,
-                          luckyPrice: prod ? prod.price : newReward.luckyPrice
-                        });
-                      }}
-                      required
-                      className="modal-input"
-                    >
-                      <option value="">Select a Product...</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="form-field">
-                    <label>Select Coupon <span className="req">*</span></label>
-                    <select 
-                      value={newReward.couponId}
-                      onChange={(e) => {
-                        const cpCode = e.target.value;
-                        const cp = coupons.find(c => c.code === cpCode);
-                        setNewReward({ 
-                          ...newReward, 
-                          couponId: cpCode,
-                          rewardName: cp ? `${cp.code} (${cp.discount})` : newReward.rewardName
-                        });
-                      }}
-                      required
-                      className="modal-input"
-                    >
-                      <option value="">Select a Coupon...</option>
-                      {coupons.map(c => (
-                        <option key={c.code} value={c.code}>{c.code} ({c.discount})</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Chance Percentage (%) <span className="req">*</span></label>
+                  <label>Min Order Value (₹) <span className="req">*</span></label>
                   <input 
                     type="number"
-                    step="0.01"
                     min="0"
-                    max="100"
-                    value={newReward.chancePercentage}
-                    onChange={(e) => setNewReward({ ...newReward, chancePercentage: e.target.value })}
-                    placeholder="e.g. 15" 
+                    value={newCampaign.minOrderValue}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, minOrderValue: e.target.value })}
+                    placeholder="e.g. 500" 
                     required 
                     className="modal-input"
                   />
                 </div>
                 <div className="form-field">
-                  <label>Lucky Stock <span className="req">*</span></label>
+                  <label>Max Order Value (₹) (Optional)</label>
                   <input 
                     type="number"
                     min="0"
-                    value={newReward.luckyStock}
-                    onChange={(e) => setNewReward({ ...newReward, luckyStock: e.target.value })}
-                    placeholder="e.g. 50" 
+                    value={newCampaign.maxOrderValue}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, maxOrderValue: e.target.value })}
+                    placeholder="e.g. 2000" 
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-field-row">
+                <div className="form-field">
+                  <label>Reward Budget (₹) <span className="req">*</span></label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={newCampaign.rewardBudget}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, rewardBudget: e.target.value })}
+                    placeholder="e.g. 5000" 
+                    required 
+                    className="modal-input"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Wheel Product Count <span className="req">*</span></label>
+                  <input 
+                    type="number"
+                    min="1"
+                    value={newCampaign.wheelProductCount}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, wheelProductCount: e.target.value })}
+                    placeholder="e.g. 8" 
                     required 
                     className="modal-input"
                   />
                 </div>
               </div>
 
-              {newReward.rewardType === 'product' && (
-                <div className="form-field">
-                  <label>Lucky Price (₹) <span className="req">*</span></label>
-                  <input 
-                    type="number"
-                    min="0"
-                    value={newReward.luckyPrice}
-                    onChange={(e) => setNewReward({ ...newReward, luckyPrice: e.target.value })}
-                    placeholder="e.g. 299" 
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-              )}
+              <div className="form-field">
+                <label>Campaign Usage Limit (Optional)</label>
+                <input 
+                  type="number"
+                  min="1"
+                  value={newCampaign.campaignUsageLimit}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, campaignUsageLimit: e.target.value })}
+                  placeholder="e.g. 100" 
+                  className="modal-input"
+                />
+              </div>
 
               <div className="form-field-row">
                 <div className="form-field">
-                  <label>Start Date</label>
+                  <label>Start Date <span className="req">*</span></label>
                   <input 
                     type="date"
-                    value={newReward.startDate ? newReward.startDate.split('T')[0] : ''}
-                    onChange={(e) => setNewReward({ ...newReward, startDate: e.target.value })}
+                    value={newCampaign.startDate ? newCampaign.startDate.split('T')[0] : ''}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, startDate: e.target.value })}
+                    required
                     className="modal-input"
                   />
                 </div>
                 <div className="form-field">
-                  <label>End Date</label>
+                  <label>End Date <span className="req">*</span></label>
                   <input 
                     type="date"
-                    value={newReward.endDate ? newReward.endDate.split('T')[0] : ''}
-                    onChange={(e) => setNewReward({ ...newReward, endDate: e.target.value })}
+                    value={newCampaign.endDate ? newCampaign.endDate.split('T')[0] : ''}
+                    onChange={(e) => setNewCampaign({ ...newCampaign, endDate: e.target.value })}
+                    required
                     className="modal-input"
                   />
                 </div>
@@ -7981,40 +7790,41 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <div className="form-field">
                 <label>Status</label>
                 <select 
-                  value={newReward.status}
-                  onChange={(e) => setNewReward({ ...newReward, status: e.target.value })}
+                  value={newCampaign.status}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, status: e.target.value })}
                   className="modal-input"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
 
               <div className="modal-actions-row">
-                <button type="button" className="btn-secondary" onClick={() => setShowAddRewardModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Add Reward</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowAddCampaignModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Add Campaign</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* --- EDIT LUCKY CHARM REWARD MODAL --- */}
-      {editRewardItem && (
-        <div className="admin-modal-overlay" onClick={() => setEditRewardItem(null)}>
+      {/* --- EDIT LUCKY CHARM CAMPAIGN MODAL --- */}
+      {editCampaignItem && (
+        <div className="admin-modal-overlay" onClick={() => setEditCampaignItem(null)}>
           <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hdr">
-              <h3>Edit Lucky Charm Reward</h3>
-              <button className="close-btn" onClick={() => setEditRewardItem(null)}><X size={18} /></button>
+              <h3>Edit Lucky Charm Campaign</h3>
+              <button className="close-btn" onClick={() => setEditCampaignItem(null)}><X size={18} /></button>
             </div>
             
-            <form onSubmit={handleEditLuckyRewardSubmit} className="modal-body-form">
+            <form onSubmit={handleEditLuckyCampaignSubmit} className="modal-body-form">
               <div className="form-field">
-                <label>Reward Name <span className="req">*</span></label>
+                <label>Campaign Name <span className="req">*</span></label>
                 <input 
                   type="text" 
-                  value={editRewardItem.rewardName}
-                  onChange={(e) => setEditRewardItem({ ...editRewardItem, rewardName: e.target.value })}
+                  value={editCampaignItem.campaignName}
+                  onChange={(e) => setEditCampaignItem({ ...editCampaignItem, campaignName: e.target.value })}
                   required 
                   className="modal-input"
                 />
@@ -8022,133 +7832,82 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
               <div className="form-field-row">
                 <div className="form-field">
-                  <label>Reward Type</label>
-                  <select 
-                    value={editRewardItem.rewardType}
-                    onChange={(e) => {
-                      const type = e.target.value;
-                      setEditRewardItem({ 
-                        ...editRewardItem, 
-                        rewardType: type,
-                        productId: '',
-                        couponId: '',
-                        rewardName: ''
-                      });
-                    }}
-                    className="modal-input"
-                  >
-                    <option value="product">Product</option>
-                    <option value="coupon">Coupon</option>
-                  </select>
-                </div>
-
-                {editRewardItem.rewardType === 'product' ? (
-                  <div className="form-field">
-                    <label>Select Product <span className="req">*</span></label>
-                    <select 
-                      value={editRewardItem.productId || ''}
-                      onChange={(e) => {
-                        const prodId = e.target.value;
-                        const prod = products.find(p => String(p.id) === String(prodId));
-                        setEditRewardItem({ 
-                          ...editRewardItem, 
-                          productId: prodId,
-                          rewardName: prod ? prod.name : editRewardItem.rewardName,
-                          luckyPrice: prod ? prod.price : editRewardItem.luckyPrice
-                        });
-                      }}
-                      required
-                      className="modal-input"
-                    >
-                      <option value="">Select a Product...</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="form-field">
-                    <label>Select Coupon <span className="req">*</span></label>
-                    <select 
-                      value={editRewardItem.couponId || ''}
-                      onChange={(e) => {
-                        const cpCode = e.target.value;
-                        const cp = coupons.find(c => c.code === cpCode);
-                        setEditRewardItem({ 
-                          ...editRewardItem, 
-                          couponId: cpCode,
-                          rewardName: cp ? `${cp.code} (${cp.discount})` : editRewardItem.rewardName
-                        });
-                      }}
-                      required
-                      className="modal-input"
-                    >
-                      <option value="">Select a Coupon...</option>
-                      {coupons.map(c => (
-                        <option key={c.code} value={c.code}>{c.code} ({c.discount})</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-field-row">
-                <div className="form-field">
-                  <label>Chance Percentage (%) <span className="req">*</span></label>
+                  <label>Min Order Value (₹) <span className="req">*</span></label>
                   <input 
                     type="number"
-                    step="0.01"
                     min="0"
-                    max="100"
-                    value={editRewardItem.chancePercentage}
-                    onChange={(e) => setEditRewardItem({ ...editRewardItem, chancePercentage: e.target.value })}
+                    value={editCampaignItem.minOrderValue}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, minOrderValue: e.target.value })}
                     required 
                     className="modal-input"
                   />
                 </div>
                 <div className="form-field">
-                  <label>Lucky Stock <span className="req">*</span></label>
+                  <label>Max Order Value (₹) (Optional)</label>
                   <input 
                     type="number"
                     min="0"
-                    value={editRewardItem.luckyStock}
-                    onChange={(e) => setEditRewardItem({ ...editRewardItem, luckyStock: e.target.value })}
+                    value={editCampaignItem.maxOrderValue || ''}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, maxOrderValue: e.target.value })}
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-field-row">
+                <div className="form-field">
+                  <label>Reward Budget (₹) <span className="req">*</span></label>
+                  <input 
+                    type="number"
+                    min="0"
+                    value={editCampaignItem.rewardBudget}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, rewardBudget: e.target.value })}
+                    required 
+                    className="modal-input"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Wheel Product Count <span className="req">*</span></label>
+                  <input 
+                    type="number"
+                    min="1"
+                    value={editCampaignItem.wheelProductCount}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, wheelProductCount: e.target.value })}
                     required 
                     className="modal-input"
                   />
                 </div>
               </div>
 
-              {editRewardItem.rewardType === 'product' && (
-                <div className="form-field">
-                  <label>Lucky Price (₹) <span className="req">*</span></label>
-                  <input 
-                    type="number"
-                    min="0"
-                    value={editRewardItem.luckyPrice || ''}
-                    onChange={(e) => setEditRewardItem({ ...editRewardItem, luckyPrice: e.target.value })}
-                    required 
-                    className="modal-input"
-                  />
-                </div>
-              )}
+              <div className="form-field">
+                <label>Campaign Usage Limit (Optional)</label>
+                <input 
+                  type="number"
+                  min="1"
+                  value={editCampaignItem.campaignUsageLimit || ''}
+                  onChange={(e) => setEditCampaignItem({ ...editCampaignItem, campaignUsageLimit: e.target.value })}
+                  className="modal-input"
+                />
+              </div>
 
               <div className="form-field-row">
                 <div className="form-field">
-                  <label>Start Date</label>
+                  <label>Start Date <span className="req">*</span></label>
                   <input 
                     type="date"
-                    value={editRewardItem.startDate ? editRewardItem.startDate.split('T')[0] : ''}
-                    onChange={(e) => setEditRewardItem({ ...editRewardItem, startDate: e.target.value })}
+                    value={editCampaignItem.startDate ? editCampaignItem.startDate.split('T')[0] : ''}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, startDate: e.target.value })}
+                    required
                     className="modal-input"
                   />
                 </div>
                 <div className="form-field">
-                  <label>End Date</label>
+                  <label>End Date <span className="req">*</span></label>
                   <input 
                     type="date"
-                    value={editRewardItem.endDate ? editRewardItem.endDate.split('T')[0] : ''}
-                    onChange={(e) => setEditRewardItem({ ...editRewardItem, endDate: e.target.value })}
+                    value={editCampaignItem.endDate ? editCampaignItem.endDate.split('T')[0] : ''}
+                    onChange={(e) => setEditCampaignItem({ ...editCampaignItem, endDate: e.target.value })}
+                    required
                     className="modal-input"
                   />
                 </div>
@@ -8157,17 +7916,18 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               <div className="form-field">
                 <label>Status</label>
                 <select 
-                  value={editRewardItem.status}
-                  onChange={(e) => setEditRewardItem({ ...editRewardItem, status: e.target.value })}
+                  value={editCampaignItem.status}
+                  onChange={(e) => setEditCampaignItem({ ...editCampaignItem, status: e.target.value })}
                   className="modal-input"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
 
               <div className="modal-actions-row">
-                <button type="button" className="btn-secondary" onClick={() => setEditRewardItem(null)}>Cancel</button>
+                <button type="button" className="btn-secondary" onClick={() => setEditCampaignItem(null)}>Cancel</button>
                 <button type="submit" className="btn-primary">Save Changes</button>
               </div>
             </form>

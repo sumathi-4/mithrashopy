@@ -636,23 +636,28 @@ export const apiService = {
   },
 
   // ─── Lucky Charm Endpoints ──────────────────────────────────────────────
-  async getActiveLuckyRewards() {
+  async checkLuckyCharmEligibility(cartItems = []) {
     try {
-      const res = await apiRequest('/api/lucky-charms/active-rewards');
-      return res.rewards;
+      return await apiRequest('/api/lucky-charms/check-eligibility', 'POST', { cartItems });
     } catch (err) {
       console.warn('Backend offline, loading mock lucky rewards...');
-      return [
-        { _id: '1', rewardName: 'Premium Leather Diary', rewardType: 'product', productId: 111, chancePercentage: 20, luckyStock: 50, luckyPrice: 299, image: 'Stationery', value: 299 },
-        { _id: '2', rewardName: 'Boho Necklace', rewardType: 'product', productId: 118, chancePercentage: 15, luckyStock: 40, luckyPrice: 399, image: 'Accessories', value: 399 },
-        { _id: '3', rewardName: '10% OFF Coupon', rewardType: 'coupon', couponId: 'LUCKY10', chancePercentage: 25, luckyStock: 200, image: 'Coupon', value: 10 }
-      ];
+      return {
+        success: true,
+        available: true,
+        sessionId: 'mock_session_' + Date.now(),
+        rewards: [
+          { _id: '1', rewardName: 'Premium Leather Diary', rewardType: 'product', productId: 111, luckyStock: 50, luckyPrice: 0, image: 'Stationery', value: 0 },
+          { _id: '2', rewardName: 'Boho Necklace', rewardType: 'product', productId: 118, luckyStock: 40, luckyPrice: 0, image: 'Accessories', value: 0 },
+          { _id: '3', rewardName: 'Bridal Floral Hair Accessory', rewardType: 'product', productId: 115, luckyStock: 30, luckyPrice: 0, image: 'Accessories', value: 0 }
+        ],
+        campaign: { campaignName: 'Mock Campaign', rewardBudget: 500, wheelProductCount: 3 }
+      };
     }
   },
 
-  async spinLuckyCharm() {
+  async spinLuckyCharm(sessionId, cartItems = []) {
     try {
-      return await apiRequest('/api/lucky-charms/spin', 'POST');
+      return await apiRequest('/api/lucky-charms/spin', 'POST', { sessionId, cartItems });
     } catch (err) {
       console.warn('Backend offline, returning mock win');
       return {
@@ -663,32 +668,12 @@ export const apiService = {
           rewardName: 'Premium Leather Diary',
           rewardType: 'product',
           productId: 111,
-          rewardValue: 299,
-          image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80'
+          rewardValue: 0,
+          image: 'Stationery'
         },
         claimId: 'mock_claim_' + Date.now()
       };
     }
-  },
-
-  async getLuckyStats() {
-    return await apiRequest('/api/lucky-charms/stats');
-  },
-
-  async getLuckyRewards() {
-    return await apiRequest('/api/lucky-charms/rewards');
-  },
-
-  async createLuckyReward(reward) {
-    return await apiRequest('/api/lucky-charms/rewards', 'POST', reward);
-  },
-
-  async updateLuckyReward(id, reward) {
-    return await apiRequest(`/api/lucky-charms/rewards/${id}`, 'PUT', reward);
-  },
-
-  async deleteLuckyReward(id) {
-    return await apiRequest(`/api/lucky-charms/rewards/${id}`, 'DELETE');
   },
 
   // ─── Customer Dashboard Extra Hookups ───

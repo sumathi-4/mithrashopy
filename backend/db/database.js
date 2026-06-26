@@ -104,10 +104,7 @@ const ProductSchema = new mongoose.Schema({
   },
   // Lucky Charm Fields
   includeInLuckyCharm: { type: Boolean, default: false },
-  luckyChancePercentage: { type: Number, default: 0 },
-  luckyStock: { type: Number, default: 0 },
-  luckyActive: { type: Boolean, default: false },
-  luckyPrice: { type: Number, default: 0 }
+  luckyStock: { type: Number, default: 0 }
 });
 
 // Auto-populate the images array with the main image if empty
@@ -280,14 +277,18 @@ const NewsletterSchema = new mongoose.Schema({
 });
 
 const CampaignSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  type: { type: String, default: 'Email' }, // e.g., Email, PPC, Social
-  status: { type: String, default: 'Active' },
-  startDate: { type: Date, default: Date.now },
-  endDate: { type: Date, default: null },
-  budget: { type: Number, default: 0 },
-  revenueGenerated: { type: Number, default: 0 }
+  name: { type: String }, // support backward compatibility
+  campaignName: { type: String, required: true },
+  minOrderValue: { type: Number, default: 0 },
+  maxOrderValue: { type: Number, default: null },
+  rewardBudget: { type: Number, required: true },
+  wheelProductCount: { type: Number, default: 8 },
+  campaignUsageLimit: { type: Number, default: null },
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  status: { type: String, enum: ['Active', 'Inactive', 'Completed'], default: 'Active', index: true }
 });
+CampaignSchema.index({ status: 1, startDate: 1, endDate: 1 });
 
 const AnalyticsSchema = new mongoose.Schema({
   event: { type: String, required: true }, // e.g., page_view, add_to_cart, checkout
@@ -296,39 +297,30 @@ const AnalyticsSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
-const LuckyRewardSchema = new mongoose.Schema({
-  rewardName: { type: String, required: true },
-  rewardType: { type: String, enum: ['product', 'coupon'], required: true },
-  productId: { type: Number, default: null }, // References Product.id
-  couponId: { type: String, default: null },  // References Coupon.code
-  chancePercentage: { type: Number, default: 0 },
-  luckyStock: { type: Number, default: 0 },
-  luckyPrice: { type: Number, default: 0 },
-  status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
-  startDate: { type: Date, default: null },
-  endDate: { type: Date, default: null }
-});
 
-const LuckySpinSchema = new mongoose.Schema({
-  userId: { type: String, default: null }, // User.id or null
-  rewardId: { type: mongoose.Schema.Types.ObjectId, ref: 'LuckyReward', default: null },
-  productId: { type: Number, default: null }, // Product.id if won a product
-  couponCode: { type: String, default: null }, // Coupon.code if won a coupon
-  rewardType: { type: String, enum: ['product', 'coupon', 'none'], default: 'none' },
-  spunAt: { type: Date, default: Date.now }
-});
 
-const LuckyRewardClaimSchema = new mongoose.Schema({
-  userId: { type: String, default: null },
-  rewardType: { type: String, enum: ['product', 'coupon'], required: true },
-  productId: { type: Number, default: null }, // Product.id
-  couponCode: { type: String, default: null }, // Coupon.code
-  rewardName: { type: String, required: true },
-  rewardValue: { type: Number, default: 0 }, // Discounted price or coupon discount
-  claimedAt: { type: Date, default: Date.now },
-  status: { type: String, enum: ['Pending', 'Claimed'], default: 'Pending' },
-  orderId: { type: String, default: null } // Order.id when order is placed
+const LuckySpinHistorySchema = new mongoose.Schema({
+  userId: { type: String, default: null, index: true }, // Maps to User string ID
+  user: { type: String, default: null }, // Storing User Name or User details as string
+  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', default: null, index: true },
+  campaign: { type: String, default: null }, // Storing Campaign Name
+  orderId: { type: String, default: null }, // Storing Order ID string
+  order: { type: String, default: null },
+  productId: { type: Number, default: null }, // Storing Product ID number
+  wonProduct: { type: String, default: null }, // Storing Won Product name
+  spinTime: { type: Date, default: Date.now },
+  claimStatus: { type: String, enum: ['Pending', 'Claimed'], default: 'Pending' },
+  
+  // Enhanced Analytics Fields
+  sessionId: { type: String, default: null },
+  cartTotal: { type: Number, default: 0 },
+  rewardBudget: { type: Number, default: 0 },
+  wonProductPrice: { type: Number, default: 0 },
+  luckyStockBefore: { type: Number, default: 0 },
+  luckyStockAfter: { type: Number, default: 0 },
+  spinDuration: { type: Number, default: 0 }
 });
+LuckySpinHistorySchema.index({ userId: 1, claimStatus: 1, orderId: 1 });
 
 const User = mongoose.model('User', UserSchema);
 const Product = mongoose.model('Product', ProductSchema);
@@ -381,77 +373,7 @@ async function seedStoreData() {
       console.log('✅ Coupon MITHRA100 seeded successfully');
     }
 
-    // Seed default lucky rewards
-    const existingRewards = await LuckyReward.findOne();
-    if (!existingRewards) {
-      await LuckyReward.create([
-        {
-          rewardName: 'Premium Leather Diary',
-          rewardType: 'product',
-          productId: 111,
-          chancePercentage: 20,
-          luckyStock: 50,
-          luckyPrice: 299,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        },
-        {
-          rewardName: 'Boho Necklace',
-          rewardType: 'product',
-          productId: 118,
-          chancePercentage: 15,
-          luckyStock: 40,
-          luckyPrice: 399,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        },
-        {
-          rewardName: 'Luxury Watch',
-          rewardType: 'product',
-          productId: 115,
-          chancePercentage: 10,
-          luckyStock: 10,
-          luckyPrice: 499,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        },
-        {
-          rewardName: '10% OFF Coupon',
-          rewardType: 'coupon',
-          couponId: 'LUCKY10',
-          chancePercentage: 25,
-          luckyStock: 200,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        },
-        {
-          rewardName: '₹100 OFF Coupon',
-          rewardType: 'coupon',
-          couponId: 'MITHRA100',
-          chancePercentage: 20,
-          luckyStock: 150,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        },
-        {
-          rewardName: 'Gift Box',
-          rewardType: 'product',
-          productId: 120,
-          chancePercentage: 10,
-          luckyStock: 30,
-          luckyPrice: 199,
-          status: 'Active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        }
-      ]);
-      console.log('✅ Default Lucky Rewards seeded successfully');
-    }
+
 
     const defaultFeatures = [
       { id: 1, key: 'hero', name: 'Hero Carousel', title: 'Curated Elegance', subtitle: 'Explore Mithira Shopy collections', status: 'Active', order: 1 },
@@ -1169,12 +1091,29 @@ const dbHelpers = {
   }
 };
 
+const LuckyWheelSessionSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true, unique: true },
+  userId: { type: String, default: null, index: true },
+  cartHash: { type: String, required: true },
+  wheelProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true, index: true },
+  campaignSnapshot: {
+    campaignName: { type: String },
+    rewardBudget: { type: Number },
+    wheelProductCount: { type: Number },
+    minOrderValue: { type: Number },
+    maxOrderValue: { type: Number }
+  },
+  createdAt: { type: Date, default: Date.now, expires: 3600 },
+  isUsed: { type: Boolean, default: false, index: true }
+});
+LuckyWheelSessionSchema.index({ userId: 1, cartHash: 1, campaignId: 1, isUsed: 1 });
+
 const Newsletter = mongoose.model('Newsletter', NewsletterSchema);
 const Campaign = mongoose.model('Campaign', CampaignSchema);
 const Analytics = mongoose.model('Analytics', AnalyticsSchema);
-const LuckyReward = mongoose.model('LuckyReward', LuckyRewardSchema);
-const LuckySpin = mongoose.model('LuckySpin', LuckySpinSchema);
-const LuckyRewardClaim = mongoose.model('LuckyRewardClaim', LuckyRewardClaimSchema);
+const LuckySpinHistory = mongoose.model('LuckySpinHistory', LuckySpinHistorySchema);
+const LuckyWheelSession = mongoose.model('LuckyWheelSession', LuckyWheelSessionSchema);
 
 module.exports = {
   dbHelpers,
@@ -1195,7 +1134,7 @@ module.exports = {
   Newsletter,
   Campaign,
   Analytics,
-  LuckyReward,
-  LuckySpin,
-  LuckyRewardClaim
+  LuckySpinHistory,
+  LuckyWheelSession
 };
+

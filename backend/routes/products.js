@@ -67,7 +67,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/products - Create a new product
 router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyChancePercentage, luckyStock, luckyActive, luckyPrice } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyStock } = req.body;
     if (!name || price === undefined || stock === undefined) {
       return res.status(400).json({ success: false, message: 'Product name, price and stock are required.' });
     }
@@ -106,10 +106,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
       attributes: formatAttributesForDatabase(attributes),
       variants: variants || [],
       includeInLuckyCharm: includeInLuckyCharm === true || includeInLuckyCharm === 'true',
-      luckyChancePercentage: parseFloat(luckyChancePercentage) || 0,
-      luckyStock: parseInt(luckyStock, 10) || 0,
-      luckyActive: luckyActive === true || luckyActive === 'true',
-      luckyPrice: parseFloat(luckyPrice) || 0
+      luckyStock: parseInt(luckyStock, 10) || 0
     });
 
     const responseProduct = newProduct.toObject();
@@ -128,7 +125,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyChancePercentage, luckyStock, luckyActive, luckyPrice } = req.body;
+    const { name, category, subCategory, catalogue, price, stock, status, image, description, images, attributes, variants, brand, rating, reviews, discount, originalPrice, badge, isNewArrival, isOffer, includeInLuckyCharm, luckyStock } = req.body;
 
     if (variants && Array.isArray(variants) && variants.length > 0) {
       if (variants.some(v => !v.image || !v.image.trim())) {
@@ -158,10 +155,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     if (attributes !== undefined) updateFields.attributes = formatAttributesForDatabase(attributes);
     if (variants !== undefined) updateFields.variants = variants;
     if (includeInLuckyCharm !== undefined) updateFields.includeInLuckyCharm = includeInLuckyCharm === true || includeInLuckyCharm === 'true';
-    if (luckyChancePercentage !== undefined) updateFields.luckyChancePercentage = parseFloat(luckyChancePercentage) || 0;
     if (luckyStock !== undefined) updateFields.luckyStock = parseInt(luckyStock, 10) || 0;
-    if (luckyActive !== undefined) updateFields.luckyActive = luckyActive === true || luckyActive === 'true';
-    if (luckyPrice !== undefined) updateFields.luckyPrice = parseFloat(luckyPrice) || 0;
 
     const updated = await Product.findOneAndUpdate(
       { id },

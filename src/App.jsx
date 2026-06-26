@@ -16,6 +16,7 @@ import CelebrityView from './components/CelebrityView';
 import WhyChooseUs from './components/WhyChooseUs';
 import UserAccount from './components/UserAccount';
 import LuckyCharmModal from './components/LuckyCharmModal';
+import LuckyCharmPage from './components/LuckyCharmPage';
 import { ToastProvider } from './components/ToastProvider';
 import { verifySession, getStoredUser, logout } from './services/authService';
 import CustomFeatureSection from './components/CustomFeatureSection';
@@ -109,6 +110,8 @@ function App() {
         setCurrentView('new-arrivals');
       } else if (path.includes('/celebrity')) {
         setCurrentView('celebrity');
+      } else if (path.includes('/lucky-charms')) {
+        setCurrentView('lucky-charms');
       } else {
         setCurrentView('home');
       }
@@ -154,7 +157,7 @@ function App() {
 
   return (
     <ToastProvider>
-      {currentView !== 'admin' && (
+      {currentView !== 'admin' && currentView !== 'lucky-charms' && (
         <Navbar authUser={authUser} setAuthUser={setAuthUser} onNavigate={handleNavigate} />
       )}
       {currentView === 'home' && (
@@ -178,6 +181,7 @@ function App() {
       {currentView === 'offers' && <OffersView />}
       {currentView === 'new-arrivals' && <NewArrivalsView />}
       {currentView === 'celebrity' && <CelebrityView />}
+      {currentView === 'lucky-charms' && <LuckyCharmPage authUser={authUser} setAuthUser={setAuthUser} onNavigate={handleNavigate} />}
       {currentView === 'account' && (
         <UserAccount
           authUser={authUser}
@@ -185,7 +189,7 @@ function App() {
           onNavigate={handleNavigate}
         />
       )}
-      <Footer />
+      {currentView !== 'lucky-charms' && <Footer />}
       <LuckyCharmModal />
 
       {/* ── Floating WhatsApp Button ─────────────────────────────── */}

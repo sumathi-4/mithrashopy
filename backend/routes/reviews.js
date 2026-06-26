@@ -12,9 +12,6 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Fetch reviews error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews.' });
-  } catch (err) {
-    console.error('Fetch reviews error:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch reviews.' });
   }
 });
 

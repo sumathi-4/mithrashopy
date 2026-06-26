@@ -1,5 +1,5 @@
 const express = require('express');
-const { Order, Product, LuckyRewardClaim } = require('../db/database');
+const { Order, Product, LuckySpinHistory } = require('../db/database');
 const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -268,14 +268,14 @@ router.post('/', authenticate, async (req, res) => {
       isLuckyCharmOrder
     });
 
-    // Update pending lucky reward claims if any
+    // Update pending lucky spin history records if any
     if (isLuckyCharmOrder) {
       for (const item of orderItems) {
         if (item.variant && item.variant.isLuckyCharm === true) {
-          await LuckyRewardClaim.findOneAndUpdate(
-            { productId: item.productId, status: 'Pending', ...(req.user ? { userId: req.user.id } : {}) },
-            { $set: { status: 'Claimed', orderId: orderId } },
-            { sort: { claimedAt: -1 } }
+          await LuckySpinHistory.findOneAndUpdate(
+            { productId: item.productId, claimStatus: 'Pending', ...(req.user ? { userId: req.user.id } : {}) },
+            { $set: { claimStatus: 'Claimed', orderId: orderId, order: orderId } },
+            { sort: { spinTime: -1 } }
           );
         }
       }
@@ -332,14 +332,14 @@ router.post('/verify', authenticate, async (req, res) => {
     // Update order status to Processing
     await Order.updateOne({ id: orderId }, { $set: { status: 'Processing' } });
 
-    // Update pending lucky reward claims if any
+    // Update pending lucky spin history records if any
     if (order.isLuckyCharmOrder) {
       for (const item of order.items || []) {
         if (item.variant && item.variant.isLuckyCharm === true) {
-          await LuckyRewardClaim.findOneAndUpdate(
-            { productId: item.productId, status: 'Pending', ...(req.user ? { userId: req.user.id } : {}) },
-            { $set: { status: 'Claimed', orderId: orderId } },
-            { sort: { claimedAt: -1 } }
+          await LuckySpinHistory.findOneAndUpdate(
+            { productId: item.productId, claimStatus: 'Pending', ...(req.user ? { userId: req.user.id } : {}) },
+            { $set: { claimStatus: 'Claimed', orderId: orderId, order: orderId } },
+            { sort: { spinTime: -1 } }
           );
         }
       }
@@ -386,9 +386,9 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
     if (order.isLuckyCharmOrder) {
       for (const item of order.items || []) {
         if (item.variant && item.variant.isLuckyCharm === true) {
-          await LuckyRewardClaim.findOneAndUpdate(
-            { orderId: orderId, status: 'Claimed' },
-            { $set: { status: 'Pending', orderId: null } }
+          await LuckySpinHistory.findOneAndUpdate(
+            { orderId: orderId, claimStatus: 'Claimed' },
+            { $set: { claimStatus: 'Pending', orderId: null, order: null } }
           );
         }
       }
@@ -423,9 +423,9 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
       if (order.isLuckyCharmOrder) {
         for (const item of order.items || []) {
           if (item.variant && item.variant.isLuckyCharm === true) {
-            await LuckyRewardClaim.findOneAndUpdate(
-              { orderId: orderId, status: 'Claimed' },
-              { $set: { status: 'Pending', orderId: null } }
+            await LuckySpinHistory.findOneAndUpdate(
+              { orderId: orderId, claimStatus: 'Claimed' },
+              { $set: { claimStatus: 'Pending', orderId: null, order: null } }
             );
           }
         }
@@ -439,10 +439,10 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
       if (order.isLuckyCharmOrder) {
         for (const item of order.items || []) {
           if (item.variant && item.variant.isLuckyCharm === true) {
-            await LuckyRewardClaim.findOneAndUpdate(
-              { productId: item.productId, status: 'Pending', ...(order.userId ? { userId: order.userId } : {}) },
-              { $set: { status: 'Claimed', orderId: orderId } },
-              { sort: { claimedAt: -1 } }
+            await LuckySpinHistory.findOneAndUpdate(
+              { productId: item.productId, claimStatus: 'Pending', ...(order.userId ? { userId: order.userId } : {}) },
+              { $set: { claimStatus: 'Claimed', orderId: orderId, order: orderId } },
+              { sort: { spinTime: -1 } }
             );
           }
         }
