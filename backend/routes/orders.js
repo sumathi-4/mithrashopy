@@ -204,7 +204,12 @@ router.post('/', authenticate, async (req, res) => {
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         items: orderItems,
         catalogueDetails: catalogueDetails || {},
-        isLuckyCharmOrder
+        isLuckyCharmOrder,
+        shippingAddress: req.body.shippingAddress || {},
+        subtotal: req.body.subtotal,
+        gst: req.body.gst,
+        shipping: req.body.shipping,
+        discount: req.body.discount
       });
 
       // If Razorpay instance is active, create real order
@@ -265,7 +270,12 @@ router.post('/', authenticate, async (req, res) => {
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       items: orderItems,
       catalogueDetails: catalogueDetails || {},
-      isLuckyCharmOrder
+      isLuckyCharmOrder,
+      shippingAddress: req.body.shippingAddress || {},
+      subtotal: req.body.subtotal,
+      gst: req.body.gst,
+      shipping: req.body.shipping,
+      discount: req.body.discount
     });
 
     // Update pending lucky spin history records if any

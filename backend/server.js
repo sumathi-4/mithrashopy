@@ -20,9 +20,13 @@ const allowedOrigins = [
   'http://localhost:5173',  // Vite dev server
   'http://localhost:4173',  // Vite preview
   'http://localhost:3000',
-  'http://localhost:5174',
+  'http://localhost:5174',  // Vendor Management
+  'http://localhost:5175',  // Customer Website
+  'http://localhost:5176',  // Seller Portal
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175',
+  'http://127.0.0.1:5176',
   process.env.FRONTEND_ORIGIN
 ].filter(Boolean);
 
@@ -75,6 +79,8 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/features', require('./routes/features'));
 app.use('/api/lucky-charms', require('./routes/luckyCharm'));
+app.use('/api/vendors', require('./routes/vendors'));
+app.use('/api/admin', require('./routes/admin'));
 
 const fs = require('fs');
 const path = require('path');

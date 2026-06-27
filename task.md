@@ -16,8 +16,10 @@
   - [x] Copy and adjust `AdminDashboard.jsx` in `admin-panel/src/components/`
   - [x] Copy services (`apiService.js`, `authService.js`) and helpers (`imageHelper.js`)
 - [x] Verification
-  - [x] Run build checks on both user and admin websites
-  - [x] Perform end-to-end flow checks
+  - [x] Run backend and verify new routes
+  - [x] Run seller-portal dev server
+  - [x] Run admin-panel dev server
+  - [x] End-to-end flow testchecks
 - [x] Backend route enhancements
   - [x] Implement `PUT /api/orders/:id/cancel` in `backend/routes/orders.js` (with stock re-incrementation)
   - [x] Update `POST /api/reviews` to save `userId` and auto-set `verifiedPurchase` in `backend/routes/reviews.js`

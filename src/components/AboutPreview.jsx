@@ -12,7 +12,7 @@ export default function AboutPreview() {
         <div className="about-preview-layout">
           
           <div className="about-preview-content">
-            <span className="section-tag-mini" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#E94FA8', letterSpacing: '0.15em', textTransform: 'uppercase' }}>OUR STORY</span>
+            <span className="section-tag-mini" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#D4AF37', letterSpacing: '0.15em', textTransform: 'uppercase' }}>OUR STORY</span>
             <h2 className="about-preview-title">Elegant Heritage, Contemporary Style</h2>
             <p className="about-preview-text">
               Welcome to Mithra Shopy, your boutique destination for curated fashion, premium stationery, luxury gifts, and stylish accessories. We combine authentic craftsmanship with modern trends to bring you collections that inspire confidence and bring joy.

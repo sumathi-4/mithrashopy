@@ -36,7 +36,10 @@ import {
   CreditCard,
   Share2,
   Globe,
-  Sparkles
+  Sparkles,
+  Store,
+  ClipboardCheck,
+  AlertTriangle
 } from 'lucide-react';
 import logoImg from '../../../src/assets/logo.png';
 import { resolveProductImage, isRealImg } from '../utils/imageHelper';
@@ -89,6 +92,26 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('May 28, 2025 - Jun 28, 2025');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
+
+  // ─── Vendor Management State ─────────────────────────────────────────────────
+  const [vendors, setVendors] = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [vendorStatusFilter, setVendorStatusFilter] = useState('All');
+  const [vendorSearch, setVendorSearch] = useState('');
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [showRejectVendorModal, setShowRejectVendorModal] = useState(false);
+  const [rejectVendorTarget, setRejectVendorTarget] = useState(null);
+  const [rejectVendorReason, setRejectVendorReason] = useState('');
+  const [rejectVendorNotes, setRejectVendorNotes] = useState('');
+
+  const [vendorProducts, setVendorProducts] = useState([]);
+  const [vendorProductsLoading, setVendorProductsLoading] = useState(false);
+  const [vpStatusFilter, setVpStatusFilter] = useState('Pending');
+  const [showRejectProductModal, setShowRejectProductModal] = useState(false);
+  const [rejectProductTarget, setRejectProductTarget] = useState(null);
+  const [rejectProductReason, setRejectProductReason] = useState('');
+  const [rejectProductNotes, setRejectProductNotes] = useState('');
 
   // Profile Section Sub-tab States
   const [profileSubTab, setProfileSubTab] = useState('profile-info');
@@ -2024,6 +2047,85 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     prodCurrentPage * itemsPerPage
   );
 
+  // ─── Vendor Management Handlers ────────────────────────────────────────────
+  const loadVendors = async () => {
+    setVendorsLoading(true);
+    try {
+      const data = await apiService.getVendors();
+      setVendors(data || []);
+    } catch (err) {
+      console.error('Failed to load vendors:', err);
+    } finally {
+      setVendorsLoading(false);
+    }
+  };
+
+  const loadVendorProducts = async () => {
+    setVendorProductsLoading(true);
+    try {
+      const data = await apiService.getAdminVendorProducts(vpStatusFilter);
+      setVendorProducts(data || []);
+    } catch (err) {
+      console.error('Failed to load vendor products:', err);
+    } finally {
+      setVendorProductsLoading(false);
+    }
+  };
+
+  const handleApproveVendor = async (vendorId) => {
+    try {
+      await apiService.updateVendorStatus(vendorId, { status: 'Approved' });
+      setVendors(v => v.map(x => x.id === vendorId ? { ...x, status: 'Approved' } : x));
+    } catch (err) {
+      alert('Failed to approve vendor.');
+    }
+  };
+
+  const handleRejectVendorConfirm = async () => {
+    if (!rejectVendorReason.trim()) { alert('Please enter a rejection reason.'); return; }
+    try {
+      await apiService.updateVendorStatus(rejectVendorTarget.id, {
+        status: 'Rejected',
+        rejectReason: rejectVendorReason.trim(),
+        adminNotes: rejectVendorNotes.trim()
+      });
+      setVendors(v => v.map(x => x.id === rejectVendorTarget.id ? { ...x, status: 'Rejected', rejectReason: rejectVendorReason.trim() } : x));
+      setShowRejectVendorModal(false);
+      setRejectVendorTarget(null);
+      setRejectVendorReason('');
+      setRejectVendorNotes('');
+    } catch (err) {
+      alert('Failed to reject vendor.');
+    }
+  };
+
+  const handleApproveProduct = async (productId) => {
+    try {
+      await apiService.updateVendorProductStatus(productId, { status: 'Active' });
+      setVendorProducts(p => p.map(x => x.id === productId ? { ...x, status: 'Active' } : x));
+    } catch (err) {
+      alert('Failed to approve product.');
+    }
+  };
+
+  const handleRejectProductConfirm = async () => {
+    if (!rejectProductReason.trim()) { alert('Please enter a rejection reason.'); return; }
+    try {
+      await apiService.updateVendorProductStatus(rejectProductTarget.id, {
+        status: 'Rejected',
+        rejectReason: rejectProductReason.trim(),
+        adminNotes: rejectProductNotes.trim()
+      });
+      setVendorProducts(p => p.map(x => x.id === rejectProductTarget.id ? { ...x, status: 'Rejected', rejectReason: rejectProductReason.trim() } : x));
+      setShowRejectProductModal(false);
+      setRejectProductTarget(null);
+      setRejectProductReason('');
+      setRejectProductNotes('');
+    } catch (err) {
+      alert('Failed to reject product.');
+    }
+  };
+
   // Nav Items
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -2035,6 +2137,8 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     { label: 'Offers & Coupons', icon: <Tag size={18} /> },
     { label: 'Marketing', icon: <TrendingUp size={18} /> },
     { label: 'Reviews', icon: <Star size={18} /> },
+    { label: 'Vendor Requests', icon: <Store size={18} />, badge: vendors.filter(v => v.status === 'Pending').length || null },
+    { label: 'Product Approvals', icon: <ClipboardCheck size={18} />, badge: vendorProducts.filter(p => p.status === 'Pending').length || null },
     { label: 'Manage Features', icon: <Globe size={18} /> },
     { label: 'Settings', icon: <Settings size={18} /> },
     { label: 'Profile', icon: <User size={18} /> }
@@ -2060,10 +2164,17 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               onClick={() => {
                 setActiveTab(item.label);
                 setSearchQuery('');
+                if (item.label === 'Vendor Requests') loadVendors();
+                if (item.label === 'Product Approvals') loadVendorProducts();
               }}
             >
               {item.icon}
               <span className="admin-re-nav-label">{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', borderRadius: '9999px', fontSize: '11px', fontWeight: 700, padding: '1px 7px', minWidth: '20px', textAlign: 'center' }}>
+                  {item.badge}
+                </span>
+              )}
             </button>
           ))}
           
@@ -5302,7 +5413,209 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             );
           })()}
 
-          {/* TAB 12: LOGOUT CONFIRMATION VIEW */}
+          {/* TAB: VENDOR REQUESTS */}
+          {activeTab === 'Vendor Requests' && (
+            <div className="admin-view-tab-content">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#051838' }}>Vendor Requests</h2>
+                  <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '4px' }}>Review and approve or reject vendor applications</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['All','Pending','Approved','Rejected'].map(s => (
+                    <button key={s} onClick={() => setVendorStatusFilter(s)}
+                      style={{ padding: '6px 16px', borderRadius: '9999px', border: '1.5px solid', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                        background: vendorStatusFilter === s ? '#051838' : 'transparent',
+                        color: vendorStatusFilter === s ? '#fff' : '#051838',
+                        borderColor: '#051838' }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <input value={vendorSearch} onChange={e => setVendorSearch(e.target.value)}
+                  placeholder="Search by business name or email..."
+                  style={{ padding: '10px 16px', border: '1.5px solid #e2e8f0', borderRadius: '10px', width: '100%', maxWidth: '400px', fontSize: '0.875rem' }} />
+              </div>
+              {vendorsLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>Loading vendors...</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                        {['Business Name','Owner','Email','Phone','GSTIN','Registered','Status','Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendors
+                        .filter(v => (vendorStatusFilter === 'All' || v.status === vendorStatusFilter) &&
+                          (vendorSearch === '' || v.businessName?.toLowerCase().includes(vendorSearch.toLowerCase()) || v.email?.toLowerCase().includes(vendorSearch.toLowerCase())))
+                        .map(v => (
+                          <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {v.logo ? <img src={v.logo} alt="logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }} /> :
+                                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#051838', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dfb743', fontWeight: 700, fontSize: '14px' }}>
+                                    {v.businessName?.slice(0,2).toUpperCase()}
+                                  </div>
+                                }
+                                <div>
+                                  <div style={{ fontWeight: 600, color: '#1e293b' }}>{v.businessName}</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{v.businessCategory || 'General'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.ownerName}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.email}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.phone}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.gstin || '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.8rem' }}>{v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                                background: v.status === 'Approved' ? '#dcfce7' : v.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                                color: v.status === 'Approved' ? '#166534' : v.status === 'Rejected' ? '#991b1b' : '#92400e' }}>
+                                {v.status}
+                              </span>
+                              {v.status === 'Rejected' && v.rejectReason && (
+                                <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '4px', maxWidth: '120px' }} title={v.rejectReason}>
+                                  {v.rejectReason.slice(0, 40)}{v.rejectReason.length > 40 ? '...' : ''}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button onClick={() => { setSelectedVendor(v); setShowVendorModal(true); }}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: '1.5px solid #94a3b8', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: '#374151' }}>
+                                  View
+                                </button>
+                                {v.status !== 'Approved' && (
+                                  <button onClick={() => handleApproveVendor(v.id)}
+                                    style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    Approve
+                                  </button>
+                                )}
+                                {v.status !== 'Rejected' && (
+                                  <button onClick={() => { setRejectVendorTarget(v); setRejectVendorReason(''); setRejectVendorNotes(''); setShowRejectVendorModal(true); }}
+                                    style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    Reject
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {vendors.filter(v => (vendorStatusFilter === 'All' || v.status === vendorStatusFilter)).length === 0 && !vendorsLoading && (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+                      <Store size={48} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <p>No vendors found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: PRODUCT APPROVALS */}
+          {activeTab === 'Product Approvals' && (
+            <div className="admin-view-tab-content">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#051838' }}>Product Approvals</h2>
+                  <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '4px' }}>Review vendor-submitted products before they go live</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['Pending','Active','Rejected','All'].map(s => (
+                    <button key={s} onClick={() => { setVpStatusFilter(s); }}
+                      style={{ padding: '6px 16px', borderRadius: '9999px', border: '1.5px solid', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                        background: vpStatusFilter === s ? '#051838' : 'transparent',
+                        color: vpStatusFilter === s ? '#fff' : '#051838',
+                        borderColor: '#051838' }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {vendorProductsLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>Loading products...</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                        {['Image','Product Name','Vendor','Category','Price','Stock','Status','Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendorProducts.map(p => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px 16px' }}>
+                            {p.images?.[0] || p.image ? (
+                              <img src={p.images?.[0] || p.image} alt={p.name}
+                                style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                            ) : (
+                              <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Package size={20} style={{ color: '#94a3b8' }} />
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ fontWeight: 600, color: '#1e293b' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ID: {p.id}</div>
+                          </td>
+                          <td style={{ padding: '12px 16px', color: '#374151' }}>{p.vendorBusinessName || '—'}</td>
+                          <td style={{ padding: '12px 16px', color: '#374151' }}>{p.category}</td>
+                          <td style={{ padding: '12px 16px', color: '#374151', fontWeight: 600 }}>₹{p.price?.toLocaleString('en-IN')}</td>
+                          <td style={{ padding: '12px 16px', color: '#374151' }}>{p.stock}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                              background: p.status === 'Active' ? '#dcfce7' : p.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                              color: p.status === 'Active' ? '#166534' : p.status === 'Rejected' ? '#991b1b' : '#92400e' }}>
+                              {p.status}
+                            </span>
+                            {p.status === 'Rejected' && p.rejectReason && (
+                              <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '4px' }}>{p.rejectReason.slice(0, 40)}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              {p.status !== 'Active' && (
+                                <button onClick={() => handleApproveProduct(p.id)}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  Approve
+                                </button>
+                              )}
+                              {p.status !== 'Rejected' && (
+                                <button onClick={() => { setRejectProductTarget(p); setRejectProductReason(''); setRejectProductNotes(''); setShowRejectProductModal(true); }}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  Reject
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {vendorProducts.length === 0 && !vendorProductsLoading && (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+                      <ClipboardCheck size={48} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <p>No {vpStatusFilter === 'All' ? '' : vpStatusFilter.toLowerCase()+' '}products found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: LOGOUT */}
           {activeTab === 'Logout' && (
             <div className="admin-view-tab-content logout-tab-container">
               <div className="logout-confirm-card">
@@ -7071,6 +7384,39 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {viewOrderItem.status}
                     </span>
                   </div>
+                  {viewOrderItem.shippingAddress && viewOrderItem.shippingAddress.name && (
+                    <div className="spec-row" style={{ height: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px 0' }}>
+                      <span className="spec-lbl" style={{ margin: 0 }}>Shipping Address:</span>
+                      <span className="spec-val bold" style={{ fontSize: '0.85rem', lineHeight: '1.4', color: '#555', paddingLeft: '4px' }}>
+                        <strong>{viewOrderItem.shippingAddress.name}</strong> ({viewOrderItem.shippingAddress.phone})<br/>
+                        {viewOrderItem.shippingAddress.street}
+                        {viewOrderItem.shippingAddress.locality ? `, ${viewOrderItem.shippingAddress.locality}` : ''}<br/>
+                        {viewOrderItem.shippingAddress.city}, {viewOrderItem.shippingAddress.state} - {viewOrderItem.shippingAddress.pincode}
+                      </span>
+                    </div>
+                  )}
+                  {viewOrderItem.subtotal !== undefined && (
+                    <>
+                      <div className="spec-row">
+                        <span className="spec-lbl">Subtotal:</span>
+                        <span className="spec-val">₹{viewOrderItem.subtotal.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-lbl">GST (18%):</span>
+                        <span className="spec-val">₹{viewOrderItem.gst.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-lbl">Shipping Fee:</span>
+                        <span className="spec-val">{viewOrderItem.shipping === 0 ? 'FREE' : `₹${viewOrderItem.shipping}`}</span>
+                      </div>
+                      {viewOrderItem.discount > 0 && (
+                        <div className="spec-row" style={{ color: '#2E7D32' }}>
+                          <span className="spec-lbl">Discount:</span>
+                          <span className="spec-val">-₹{viewOrderItem.discount.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   {viewOrderItem.items && Array.isArray(viewOrderItem.items) && (
                     <div style={{ marginTop: '16px', background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df' }}>
                       <span className="spec-lbl" style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#C59B6C' }}>Items / Selected Variants Details:</span>
@@ -8001,7 +8347,180 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         </div>
       )}
 
+      {/* ─── REJECT VENDOR MODAL ───────────────────────────────────────────────── */}
+      {showRejectVendorModal && rejectVendorTarget && (
+        <div className="admin-modal-overlay" onClick={() => setShowRejectVendorModal(false)}>
+          <div className="admin-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-hdr">
+              <h3 style={{ color: '#dc2626' }}>Reject Vendor Application</h3>
+              <button className="close-btn" onClick={() => setShowRejectVendorModal(false)}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', marginBottom: '20px' }}>
+                <p style={{ margin: 0, fontWeight: 600, color: '#1e293b' }}>{rejectVendorTarget.businessName}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#64748b' }}>{rejectVendorTarget.email}</p>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>
+                  Rejection Reason <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select value={rejectVendorReason} onChange={e => setRejectVendorReason(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem', marginBottom: '8px' }}>
+                  <option value="">Select a reason...</option>
+                  <option value="Incomplete documentation">Incomplete documentation</option>
+                  <option value="Invalid GSTIN/PAN">Invalid GSTIN/PAN</option>
+                  <option value="Business category not supported">Business category not supported</option>
+                  <option value="Suspicious or duplicate application">Suspicious or duplicate application</option>
+                  <option value="Invalid bank details">Invalid bank details</option>
+                  <option value="Platform policy violation">Platform policy violation</option>
+                  <option value="Other">Other</option>
+                </select>
+                {rejectVendorReason === 'Other' && (
+                  <input value={rejectVendorNotes} onChange={e => setRejectVendorNotes(e.target.value)}
+                    placeholder="Specify reason..." className="modal-input" style={{ marginTop: '8px' }} />
+                )}
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>Admin Notes (optional, visible internally)</label>
+                <textarea value={rejectVendorNotes} onChange={e => setRejectVendorNotes(e.target.value)}
+                  rows={3} placeholder="Internal notes for the team..."
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem', resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowRejectVendorModal(false)}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: 'transparent', cursor: 'pointer', fontWeight: 600 }}>
+                  Cancel
+                </button>
+                <button onClick={handleRejectVendorConfirm}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
+                  Reject Application
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── REJECT PRODUCT MODAL ─────────────────────────────────────────────── */}
+      {showRejectProductModal && rejectProductTarget && (
+        <div className="admin-modal-overlay" onClick={() => setShowRejectProductModal(false)}>
+          <div className="admin-modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-hdr">
+              <h3 style={{ color: '#dc2626' }}>Reject Product</h3>
+              <button className="close-btn" onClick={() => setShowRejectProductModal(false)}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {rejectProductTarget.image && (
+                  <img src={rejectProductTarget.image} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                )}
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, color: '#1e293b' }}>{rejectProductTarget.name}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>by {rejectProductTarget.vendorBusinessName} · ₹{rejectProductTarget.price?.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>
+                  Rejection Reason <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select value={rejectProductReason} onChange={e => setRejectProductReason(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem' }}>
+                  <option value="">Select a reason...</option>
+                  <option value="Images do not meet quality standards">Images do not meet quality standards</option>
+                  <option value="Inaccurate or misleading description">Inaccurate or misleading description</option>
+                  <option value="Price is unreasonably high or low">Price is unreasonably high or low</option>
+                  <option value="Product not allowed on platform">Product not allowed on platform</option>
+                  <option value="Duplicate listing">Duplicate listing</option>
+                  <option value="Missing required product details">Missing required product details</option>
+                  <option value="Copyright or IP violation">Copyright or IP violation</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>Admin Notes (optional)</label>
+                <textarea value={rejectProductNotes} onChange={e => setRejectProductNotes(e.target.value)}
+                  rows={3} placeholder="Additional notes for the vendor..."
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem', resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button onClick={() => setShowRejectProductModal(false)}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: 'transparent', cursor: 'pointer', fontWeight: 600 }}>
+                  Cancel
+                </button>
+                <button onClick={handleRejectProductConfirm}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
+                  Reject Product
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── VIEW VENDOR DETAIL MODAL ─────────────────────────────────────────── */}
+      {showVendorModal && selectedVendor && (
+        <div className="admin-modal-overlay" onClick={() => setShowVendorModal(false)}>
+          <div className="admin-modal-box wide" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="modal-hdr">
+              <h3>Vendor Details</h3>
+              <button className="close-btn" onClick={() => setShowVendorModal(false)}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '12px' }}>
+                {selectedVendor.logo ? (
+                  <img src={selectedVendor.logo} alt="logo" style={{ width: '64px', height: '64px', borderRadius: '12px', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '64px', height: '64px', borderRadius: '12px', background: '#051838', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dfb743', fontWeight: 700, fontSize: '22px' }}>
+                    {selectedVendor.businessName?.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <h4 style={{ margin: 0, color: '#051838', fontSize: '1.1rem' }}>{selectedVendor.businessName}</h4>
+                  <p style={{ margin: '4px 0 0', color: '#64748b' }}>{selectedVendor.businessCategory || 'General'}</p>
+                  <span style={{ padding: '3px 10px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700, background: selectedVendor.status === 'Approved' ? '#dcfce7' : selectedVendor.status === 'Rejected' ? '#fee2e2' : '#fef3c7', color: selectedVendor.status === 'Approved' ? '#166534' : selectedVendor.status === 'Rejected' ? '#991b1b' : '#92400e' }}>
+                    {selectedVendor.status}
+                  </span>
+                </div>
+              </div>
+              {[
+                ['Owner Name', selectedVendor.ownerName],
+                ['Email', selectedVendor.email],
+                ['Phone', selectedVendor.phone],
+                ['GSTIN', selectedVendor.gstin || '—'],
+                ['PAN', selectedVendor.pan || '—'],
+                ['Registered', selectedVendor.createdAt ? new Date(selectedVendor.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', padding: '10px 0' }}>
+                  <span style={{ width: '140px', color: '#64748b', fontSize: '0.875rem', flexShrink: 0 }}>{label}</span>
+                  <span style={{ color: '#1e293b', fontWeight: 500, fontSize: '0.875rem' }}>{value}</span>
+                </div>
+              ))}
+              {selectedVendor.businessDescription && (
+                <div style={{ marginTop: '16px' }}>
+                  <p style={{ fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>Business Description</p>
+                  <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.6 }}>{selectedVendor.businessDescription}</p>
+                </div>
+              )}
+              {selectedVendor.address?.city && (
+                <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                  <p style={{ fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '0.875rem' }}>Address</p>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
+                    {[selectedVendor.address.street, selectedVendor.address.city, selectedVendor.address.state, selectedVendor.address.pincode, selectedVendor.address.country].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              )}
+              {selectedVendor.rejectReason && (
+                <div style={{ marginTop: '16px', padding: '12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
+                  <p style={{ fontWeight: 600, color: '#dc2626', marginBottom: '4px', fontSize: '0.875rem' }}>Rejection Reason</p>
+                  <p style={{ margin: 0, color: '#374151', fontSize: '0.875rem' }}>{selectedVendor.rejectReason}</p>
+                  {selectedVendor.adminNotes && <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.8rem' }}>Admin Notes: {selectedVendor.adminNotes}</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-

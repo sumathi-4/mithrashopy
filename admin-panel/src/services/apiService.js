@@ -707,5 +707,51 @@ export const apiService = {
         { _id: 'mock_s1', user: 'Test User', campaign: 'Summer Bonanza', order: 'ORD-12345', wonProduct: 'Premium Leather Diary', spinTime: new Date().toISOString(), claimStatus: 'Pending' }
       ];
     }
+  },
+
+  // ─── Vendor Management Endpoints ─────────────────────────────────────────────
+  async getVendors(status) {
+    try {
+      const query = status && status !== 'All' ? `?status=${status}` : '';
+      const res = await apiRequest(`/api/admin/vendors${query}`);
+      return res.vendors || [];
+    } catch (err) {
+      console.error('Failed to fetch vendors:', err);
+      return [];
+    }
+  },
+
+  async updateVendorStatus(vendorId, payload) {
+    return await apiRequest(`/api/admin/vendors/${vendorId}/status`, 'PUT', payload);
+  },
+
+  async getAdminVendorProducts(status) {
+    try {
+      if (status === 'Pending') {
+        const res = await apiRequest('/api/admin/pending-products');
+        return res.products || [];
+      } else {
+        const query = status && status !== 'All' ? `?status=${status}` : '';
+        const res = await apiRequest(`/api/admin/all-vendor-products${query}`);
+        return res.products || [];
+      }
+    } catch (err) {
+      console.error('Failed to fetch vendor products:', err);
+      return [];
+    }
+  },
+
+  async updateVendorProductStatus(productId, payload) {
+    return await apiRequest(`/api/admin/products/${productId}/status`, 'PUT', payload);
+  },
+
+  async getAdminStats() {
+    try {
+      const res = await apiRequest('/api/admin/stats');
+      return res.stats || {};
+    } catch (err) {
+      return {};
+    }
   }
 };
+

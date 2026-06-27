@@ -6662,6 +6662,39 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       {viewOrderItem.status}
                     </span>
                   </div>
+                  {viewOrderItem.shippingAddress && viewOrderItem.shippingAddress.name && (
+                    <div className="spec-row" style={{ height: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px 0' }}>
+                      <span className="spec-lbl" style={{ margin: 0 }}>Shipping Address:</span>
+                      <span className="spec-val bold" style={{ fontSize: '0.85rem', lineHeight: '1.4', color: '#555', paddingLeft: '4px' }}>
+                        <strong>{viewOrderItem.shippingAddress.name}</strong> ({viewOrderItem.shippingAddress.phone})<br/>
+                        {viewOrderItem.shippingAddress.street}
+                        {viewOrderItem.shippingAddress.locality ? `, ${viewOrderItem.shippingAddress.locality}` : ''}<br/>
+                        {viewOrderItem.shippingAddress.city}, {viewOrderItem.shippingAddress.state} - {viewOrderItem.shippingAddress.pincode}
+                      </span>
+                    </div>
+                  )}
+                  {viewOrderItem.subtotal !== undefined && (
+                    <>
+                      <div className="spec-row">
+                        <span className="spec-lbl">Subtotal:</span>
+                        <span className="spec-val">₹{viewOrderItem.subtotal.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-lbl">GST (18%):</span>
+                        <span className="spec-val">₹{viewOrderItem.gst.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="spec-row">
+                        <span className="spec-lbl">Shipping Fee:</span>
+                        <span className="spec-val">{viewOrderItem.shipping === 0 ? 'FREE' : `₹${viewOrderItem.shipping}`}</span>
+                      </div>
+                      {viewOrderItem.discount > 0 && (
+                        <div className="spec-row" style={{ color: '#2E7D32' }}>
+                          <span className="spec-lbl">Discount:</span>
+                          <span className="spec-val">-₹{viewOrderItem.discount.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   {viewOrderItem.items && Array.isArray(viewOrderItem.items) && (
                     <div style={{ marginTop: '16px', background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df' }}>
                       <span className="spec-lbl" style={{ display: 'block', fontWeight: 600, marginBottom: '8px', color: '#C59B6C' }}>Items / Selected Variants Details:</span>

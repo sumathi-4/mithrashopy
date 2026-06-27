@@ -384,7 +384,12 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
 
           {/* Stacked Row 1 Right Actions */}
           <div className="nav-actions-meesho">
-            <a href="/supplier" className="action-text-link" onClick={(e) => handleLinkClick(e, '/supplier')}>
+            <a
+              href="http://localhost:5176"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="action-text-link"
+            >
               Become a Supplier
             </a>
             <span className="action-divider">|</span>

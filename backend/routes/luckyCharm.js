@@ -337,63 +337,47 @@ router.post('/check-eligibility', async (req, res) => {
 // POST /api/lucky-charms/spin - Spin the wheel and select a reward dynamically using session ID
 router.post('/spin', async (req, res) => {
   const startTime = Date.now();
-  const dbSession = await mongoose.startSession();
-  dbSession.startTransaction();
   try {
     const { sessionId } = req.body;
     const cartItems = await getCartItemsFromRequest(req);
 
     if (!sessionId) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.status(400).json({ success: false, message: 'Session ID is required.' });
     }
 
     // Find the session and verify it hasn't been used
-    const wheelSession = await LuckyWheelSession.findOne({ sessionId, isUsed: false }).session(dbSession);
+    const wheelSession = await LuckyWheelSession.findOne({ sessionId, isUsed: false });
     if (!wheelSession) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: false, message: 'Invalid, expired, or already used spin session.' });
     }
 
     // Revalidate cart hash to make sure cart didn't change
     const currentHash = generateCartHash(cartItems);
     if (currentHash !== wheelSession.cartHash) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: false, message: 'Cart contents have changed. Please re-verify eligibility.' });
     }
 
     // Find the campaign and revalidate it is still active
-    const activeCampaign = await Campaign.findById(wheelSession.campaignId).session(dbSession);
+    const activeCampaign = await Campaign.findById(wheelSession.campaignId);
     if (!activeCampaign || activeCampaign.status !== 'Active') {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: false, message: 'The campaign is no longer active.' });
     }
 
     const now = new Date();
     if (activeCampaign.startDate > now || activeCampaign.endDate < now) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: false, message: 'The campaign has expired.' });
     }
 
     // Calculate cart total for eligibility revalidation
     const cartTotal = await calculateCartTotal(cartItems);
     if (cartTotal < activeCampaign.minOrderValue || (activeCampaign.maxOrderValue !== null && cartTotal > activeCampaign.maxOrderValue)) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: false, message: 'Cart total does not satisfy campaign requirements.' });
     }
 
     // Revalidate usage limits
-    const spinCount = await LuckySpinHistory.countDocuments({ campaignId: activeCampaign._id }).session(dbSession);
+    const spinCount = await LuckySpinHistory.countDocuments({ campaignId: activeCampaign._id });
     if (activeCampaign.campaignUsageLimit !== null && activeCampaign.campaignUsageLimit !== undefined) {
       if (spinCount >= activeCampaign.campaignUsageLimit) {
-        await dbSession.abortTransaction();
-        dbSession.endSession();
         return res.json({ success: false, message: 'This campaign usage limit has been reached.' });
       }
     }
@@ -404,11 +388,9 @@ router.post('/spin', async (req, res) => {
       includeInLuckyCharm: true,
       luckyStock: { $gt: 0 },
       status: 'Active'
-    }).session(dbSession);
+    });
 
     if (candidateProducts.length === 0) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: true, won: false, message: 'None of the candidate products are available in stock.' });
     }
 
@@ -416,34 +398,31 @@ router.post('/spin', async (req, res) => {
     const randomIndex = Math.floor(Math.random() * candidateProducts.length);
     const selectedProduct = candidateProducts[randomIndex];
 
-    // Atomically decrement stock
+    // Atomically decrement lucky stock
     const wonProduct = await Product.findOneAndUpdate(
       { _id: selectedProduct._id, luckyStock: { $gt: 0 } },
       { $inc: { luckyStock: -1 } },
-      { new: true, session: dbSession }
+      { new: true }
     );
 
     if (!wonProduct) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
       return res.json({ success: true, won: false, message: 'Selected product is out of stock. Try again!' });
     }
 
     // Mark session as used
-    wheelSession.isUsed = true;
-    await wheelSession.save({ session: dbSession });
+    await LuckyWheelSession.findOneAndUpdate({ sessionId }, { isUsed: true });
 
     const userId = getUserIdFromRequest(req);
     let userName = 'Guest';
     if (userId) {
-      const userObj = await User.findOne({ id: userId }).session(dbSession);
+      const userObj = await User.findOne({ id: userId });
       if (userObj) {
         userName = userObj.name;
       }
     }
 
-    // Create spin history record with complete analytics and duration
-    const spinHistoryRecord = await LuckySpinHistory.create([{
+    // Create spin history record
+    const spinHistoryRecord = await LuckySpinHistory.create({
       userId,
       user: userName,
       campaignId: activeCampaign._id,
@@ -454,7 +433,6 @@ router.post('/spin', async (req, res) => {
       wonProduct: wonProduct.name,
       spinTime: new Date(),
       claimStatus: 'Pending',
-      
       sessionId: wheelSession.sessionId,
       cartTotal,
       rewardBudget: activeCampaign.rewardBudget,
@@ -462,10 +440,7 @@ router.post('/spin', async (req, res) => {
       luckyStockBefore: wonProduct.luckyStock + 1,
       luckyStockAfter: wonProduct.luckyStock,
       spinDuration: Date.now() - startTime
-    }], { session: dbSession });
-
-    await dbSession.commitTransaction();
-    dbSession.endSession();
+    });
 
     res.json({
       success: true,
@@ -479,13 +454,11 @@ router.post('/spin', async (req, res) => {
         rewardValue: 0,
         image: wonProduct.image
       },
-      claimId: spinHistoryRecord[0]._id,
+      claimId: spinHistoryRecord._id,
       message: 'Spin completed successfully.'
     });
   } catch (err) {
-    await dbSession.abortTransaction();
-    dbSession.endSession();
-    console.error('Spin transaction error:', err);
+    console.error('Spin error:', err);
     res.status(500).json({ success: false, message: 'Failed to process spin.' });
   }
 });

@@ -14,11 +14,17 @@ import {
   Star,
   Trophy,
   X,
-  CheckCircle
+  CheckCircle,
+  Printer,
+  CreditCard,
+  Truck,
+  Calendar
 } from 'lucide-react';
 import { resolveProductImage } from '../utils/imageHelper';
+import { useToast } from './ToastProvider';
 
 export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || 'dashboard';
@@ -44,6 +50,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
 
+  // Order Details Modal States
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+  const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
+
   // Hidden File Input for Avatar Uploads
   const fileInputRef = useRef(null);
 
@@ -54,23 +64,37 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       if (tab) {
         setActiveTab(tab);
       }
+      const orderId = params.get('orderId');
+      if (orderId && userOrders.length > 0) {
+        const match = userOrders.find(o => String(o.id) === String(orderId));
+        if (match) {
+          setSelectedOrderDetails(match);
+          setShowOrderDetailsModal(true);
+        }
+      } else if (!orderId) {
+        setShowOrderDetailsModal(false);
+        setSelectedOrderDetails(null);
+      }
     };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
-  }, []);
+  }, [userOrders]);
 
   useEffect(() => {
     const restrictedTabs = ['orders', 'addresses', 'profile', 'security', 'help', 'rewards', 'reviews'];
     if (restrictedTabs.includes(activeTab) && !authUser) {
-      setActiveTab('cart');
-      window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+      const hasToken = localStorage.getItem('mithira_auth_token');
+      if (!hasToken) {
+        setActiveTab('cart');
+        window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+      }
     }
   }, [activeTab, authUser]);
 
   const handleTabChange = (tabName) => {
     const restrictedTabs = ['orders', 'addresses', 'profile', 'security', 'help', 'rewards', 'reviews'];
     if (restrictedTabs.includes(tabName) && !authUser) {
-      alert(`Please log in to access ${tabName === 'help' ? 'account deletion' : tabName === 'profile' ? 'profile settings' : tabName === 'rewards' ? 'rewards and claims' : tabName === 'reviews' ? 'reviews and ratings' : tabName}.`);
+      addToast({ message: `Please log in to access ${tabName === 'help' ? 'account deletion' : tabName === 'profile' ? 'profile settings' : tabName === 'rewards' ? 'rewards and claims' : tabName === 'reviews' ? 'reviews and ratings' : tabName}.`, type: 'info' });
       window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
       return;
     }
@@ -130,11 +154,11 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     const minStr = coupon.minCart || '₹0';
     const minVal = Number(minStr.replace(/[^0-9]/g, ''));
     if (sub < minVal) {
-      alert(`Minimum spend of ₹${minVal} required for coupon ${coupon.code}`);
+      addToast({ message: `Minimum spend of ₹${minVal} required for coupon ${coupon.code}`, type: 'error' });
       return;
     }
     setAppliedCoupon(coupon);
-    alert(`Coupon ${coupon.code} applied successfully!`);
+    addToast({ message: `Coupon ${coupon.code} applied successfully!`, type: 'success' });
   };
 
   const handleApplyPromoCode = () => {
@@ -143,7 +167,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     if (match) {
       applyCouponObject(match);
     } else {
-      alert('Invalid or inactive coupon code.');
+      addToast({ message: 'Invalid or inactive coupon code.', type: 'error' });
     }
   };
 
@@ -242,12 +266,12 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const handlePlaceOrder = () => {
     if (cartItemsDetailed.length === 0) return;
     if (!authUser) {
-      alert('Please log in to place your order.');
+      addToast({ message: 'Please log in to place your order.', type: 'info' });
       window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
       return;
     }
     if (!selectedAddressId) {
-      alert('Please select a delivery address.');
+      addToast({ message: 'Please select a delivery address.', type: 'error' });
       return;
     }
 
@@ -276,18 +300,23 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       amount: String(calculateTotal()),
       payment: paymentMethod,
       items: orderItems,
-      catalogueDetails: catDetails
+      catalogueDetails: catDetails,
+      shippingAddress: selectedAddr || {},
+      subtotal: calculateSubtotal(),
+      gst: calculateGST(),
+      shipping: calculateShipping(),
+      discount: calculateDiscount()
     };
 
     apiService.createOrder(orderPayload).then(async (res) => {
       if (!res || !res.success) {
-        alert('Failed to place order. Please try again.');
+        addToast({ message: 'Failed to place order. Please try again.', type: 'error' });
         return;
       }
 
       // If COD or direct flow
       if (!res.requiresRazorpay) {
-        alert('Order placed successfully! Thank you for shopping with us.');
+        addToast({ message: 'Order placed successfully! Thank you for shopping with us.', type: 'success' });
         completeOrderCheckout(res.order);
         return;
       }
@@ -306,14 +335,14 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           };
           apiService.verifyPayment(verifyPayload).then(verifyRes => {
             if (verifyRes && verifyRes.success) {
-              alert('Mock payment successful! Order placed.');
+              addToast({ message: 'Mock payment successful! Order placed.', type: 'success' });
               completeOrderCheckout(verifyRes.order);
             } else {
-              alert('Mock payment verification failed.');
+              addToast({ message: 'Mock payment verification failed.', type: 'error' });
             }
           });
         } else {
-          alert('Payment cancelled.');
+          addToast({ message: 'Payment cancelled.', type: 'info' });
         }
         return;
       }
@@ -335,7 +364,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
       const loaded = await loadRazorpayScript();
       if (!loaded) {
-        alert('Failed to load Razorpay SDK. Please check your internet connection.');
+        addToast({ message: 'Failed to load Razorpay SDK. Please check your internet connection.', type: 'error' });
         return;
       }
 
@@ -356,14 +385,14 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             };
             const verifyRes = await apiService.verifyPayment(verifyPayload);
             if (verifyRes && verifyRes.success) {
-              alert('Payment successful and verified! Order placed.');
+              addToast({ message: 'Payment successful and verified! Order placed.', type: 'success' });
               completeOrderCheckout(verifyRes.order);
             } else {
-              alert('Payment verification failed.');
+              addToast({ message: 'Payment verification failed.', type: 'error' });
             }
           } catch (err) {
             console.error(err);
-            alert('Error verifying payment.');
+            addToast({ message: 'Error verifying payment.', type: 'error' });
           }
         },
         prefill: {
@@ -433,10 +462,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
   // Dynamic stats matching database values
   const stats = [
-    { label: 'Total Orders', value: String(userOrders.length), linkText: 'View all orders', tab: 'orders', color: '#8A72F6', icon: <ShoppingBag size={20} className="ua-card-icon-purple" /> },
-    { label: 'Wishlist', value: String(wishlistItems.length), linkText: 'View wishlist', tab: 'wishlist', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-pink" /> },
-    { label: 'Saved Addresses', value: String(addresses.length), linkText: 'Manage addresses', tab: 'addresses', color: '#E94FA8', icon: <Heart size={20} className="ua-card-icon-red" /> },
-    { label: 'Reward Points', value: String(250 + myClaims.filter(c => c.status === 'Claimed').length * 100), linkText: 'View rewards', tab: 'rewards', color: '#F2994A', icon: <Sparkles size={20} className="ua-card-icon-orange" /> }
+    { label: 'Total Orders', value: String(userOrders.length), linkText: 'View all orders', tab: 'orders', color: '#D4AF37', icon: <ShoppingBag size={20} className="ua-card-icon-gold" /> },
+    { label: 'Wishlist', value: String(wishlistItems.length), linkText: 'View wishlist', tab: 'wishlist', color: '#D4AF37', icon: <Heart size={20} className="ua-card-icon-gold" /> },
+    { label: 'Saved Addresses', value: String(addresses.length), linkText: 'Manage addresses', tab: 'addresses', color: '#D4AF37', icon: <MapPin size={20} className="ua-card-icon-gold" /> },
+    { label: 'Reward Points', value: String(250 + myClaims.filter(c => c.status === 'Claimed').length * 100), linkText: 'View rewards', tab: 'rewards', color: '#D4AF37', icon: <Sparkles size={20} className="ua-card-icon-gold" /> }
   ];
 
   useEffect(() => {
@@ -462,6 +491,15 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       apiService.getOrders().then(list => {
         if (list) {
           setUserOrders(list);
+          const params = new URLSearchParams(window.location.search);
+          const orderId = params.get('orderId');
+          if (orderId) {
+            const match = list.find(o => String(o.id) === String(orderId));
+            if (match) {
+              setSelectedOrderDetails(match);
+              setShowOrderDetailsModal(true);
+            }
+          }
         }
       });
       apiService.getMyClaims().then(claims => {
@@ -677,7 +715,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         setAuthUser(newUser);
         localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
       }
-      alert('Address deleted successfully!');
+      addToast({ message: 'Address deleted successfully!', type: 'success' });
     });
   };
 
@@ -692,7 +730,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           setAuthUser(newUser);
           localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
         }
-        alert('Address updated successfully!');
+        addToast({ message: 'Address updated successfully!', type: 'success' });
       });
     } else {
       apiService.addAddress(addressForm).then(updated => {
@@ -712,7 +750,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           setAuthUser(newUser);
           localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
         }
-        alert('Address added successfully!');
+        addToast({ message: 'Address added successfully!', type: 'success' });
       });
     }
     setIsAddressModalOpen(false);
@@ -787,7 +825,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           profileImage: profileForm.avatar
         }));
       }
-      alert('Profile updated successfully!');
+      addToast({ message: 'Profile updated successfully!', type: 'success' });
     });
   };
 
@@ -800,7 +838,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     if (passwordForm.new !== passwordForm.confirm) {
-      alert('New password and confirm password do not match.');
+      addToast({ message: 'New password and confirm password do not match.', type: 'error' });
       return;
     }
     apiService.changePassword({
@@ -808,10 +846,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       newPassword: passwordForm.new
     }).then(success => {
       if (success) {
-        alert('Password updated successfully!');
+        addToast({ message: 'Password updated successfully!', type: 'success' });
         setPasswordForm({ current: '', new: '', confirm: '' });
       } else {
-        alert('Failed to update password. Please verify current password.');
+        addToast({ message: 'Failed to update password. Please verify current password.', type: 'error' });
       }
     });
   };
@@ -859,7 +897,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         productId: selectedReviewProduct.productId
       });
       if (res) {
-        alert('Review submitted successfully! It will appear once approved by Admin.');
+        addToast({ message: 'Review submitted successfully! It will appear once approved by Admin.', type: 'success' });
         setIsReviewModalOpen(false);
         setReviewComment('');
         setReviewRating(5);
@@ -869,7 +907,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to submit review.');
+      addToast({ message: 'Failed to submit review.', type: 'error' });
     }
   };
 
@@ -884,7 +922,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert('File is too large. Maximum size is 2MB.');
+      addToast({ message: 'File is too large. Maximum size is 2MB.', type: 'error' });
       return;
     }
     const reader = new FileReader();
@@ -905,14 +943,14 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           if (res) {
             setAuthUser(res);
             localStorage.setItem('mithira_auth_user', JSON.stringify(res));
-            alert('Profile picture updated successfully!');
+            addToast({ message: 'Profile picture updated successfully!', type: 'success' });
           }
         } else {
-          alert('Photo uploaded. Click "Save Changes" on the form to save permanently.');
+          addToast({ message: 'Photo uploaded. Click "Save Changes" on the form to save permanently.', type: 'info' });
         }
       } catch (err) {
         console.error(err);
-        alert('Failed to upload image.');
+        addToast({ message: 'Failed to upload image.', type: 'error' });
       }
     };
     reader.readAsDataURL(file);
@@ -930,7 +968,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           discount: `${claim.rewardValue}% OFF`,
           minCart: '₹0'
         });
-        alert(`Coupon ${claim.couponCode} applied!`);
+        addToast({ message: `Coupon ${claim.couponCode} applied!`, type: 'success' });
       }
       return;
     }
@@ -940,7 +978,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         item.id === claim.productId && item.selectedVariant?.isLuckyCharm === true
       );
       if (itemInCart) {
-        alert('This reward item is already in your cart.');
+        addToast({ message: 'This reward item is already in your cart.', type: 'info' });
         return;
       }
       
@@ -968,11 +1006,377 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
             return newUser;
           });
-          alert(`${claim.rewardName} added to cart as a reward! Go to cart to checkout.`);
+          addToast({ message: `${claim.rewardName} added to cart as a reward! Go to cart to checkout.`, type: 'success' });
           setActiveTab('cart');
         }
       });
     }
+  };
+
+  const handleOpenOrderDetails = (order) => {
+    setSelectedOrderDetails(order);
+    setShowOrderDetailsModal(true);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', 'orders');
+    params.set('orderId', order.id);
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+  };
+
+  const handleCloseOrderDetails = () => {
+    setShowOrderDetailsModal(false);
+    setSelectedOrderDetails(null);
+    const params = new URLSearchParams(window.location.search);
+    params.delete('orderId');
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+  };
+
+  const handleReorder = (rawOrder) => {
+    if (!rawOrder || !rawOrder.items || rawOrder.items.length === 0) return;
+    
+    const itemsToAdd = rawOrder.items.map(item => {
+      const match = allProducts.find(p => String(p.id) === String(item.productId) || String(p._id) === String(item.productId));
+      if (match) {
+        return {
+          productId: match.id || match._id,
+          quantity: item.quantity || 1,
+          variant: item.variant || { size: null, color: null, variantId: null, sku: null }
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (itemsToAdd.length === 0) {
+      addToast({ message: 'These products are no longer available in the store.', type: 'error' });
+      return;
+    }
+
+    let currentCartItems = [];
+    let currentCartIds = [];
+    try {
+      currentCartItems = authUser ? (authUser.cartItems || []) : JSON.parse(localStorage.getItem('mithira_guest_cart_items') || '[]');
+      currentCartIds = authUser ? (authUser.cart || []) : JSON.parse(localStorage.getItem('mithira_guest_cart') || '[]');
+    } catch {
+      currentCartItems = [];
+      currentCartIds = [];
+    }
+
+    itemsToAdd.forEach(newItem => {
+      const existingIndex = currentCartItems.findIndex(existing => 
+        String(existing.productId) === String(newItem.productId) &&
+        (!existing.variant || !newItem.variant || (existing.variant.size === newItem.variant.size && existing.variant.color === newItem.variant.color))
+      );
+
+      if (existingIndex > -1) {
+        currentCartItems[existingIndex].quantity += newItem.quantity;
+      } else {
+        currentCartItems.push(newItem);
+        currentCartIds.push(String(newItem.productId));
+      }
+    });
+
+    const uniqueIds = Array.from(new Set(currentCartIds));
+    
+    if (authUser) {
+      apiService.syncCart(uniqueIds, currentCartItems).then(res => {
+        if (res && setAuthUser) {
+          setAuthUser(prev => {
+            const newUser = { ...prev, cart: res.cart || uniqueIds, cartItems: res.cartItems || currentCartItems };
+            localStorage.setItem('mithira_auth_user', JSON.stringify(newUser));
+            return newUser;
+          });
+          addToast({ message: 'All items from this order have been added to your cart!', type: 'success' });
+          handleTabChange('cart');
+        }
+      });
+    } else {
+      localStorage.setItem('mithira_guest_cart', JSON.stringify(uniqueIds));
+      localStorage.setItem('mithira_guest_cart_items', JSON.stringify(currentCartItems));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('mithira_cart_update'));
+      addToast({ message: 'All items from this order have been added to your cart!', type: 'success' });
+      handleTabChange('cart');
+    }
+  };
+
+  const handleDownloadInvoice = (rawOrder) => {
+    if (!rawOrder) return;
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    
+    const itemsRows = (rawOrder.items || []).map((item, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>
+          <strong>${item.name}</strong>
+          ${item.variant && (item.variant.size || item.variant.color) ? `
+            <div style="font-size: 11px; color: #555; margin-top: 3px;">
+              Variant: ${item.variant.size ? `Size ${item.variant.size}` : ''} ${item.variant.color ? `| Color ${item.variant.color}` : ''}
+            </div>
+          ` : ''}
+        </td>
+        <td style="text-align: center;">${item.quantity}</td>
+        <td style="text-align: right;">₹${(item.price || 0).toLocaleString('en-IN')}</td>
+        <td style="text-align: right;">₹${((item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</td>
+      </tr>
+    `).join('');
+
+    const addr = rawOrder.shippingAddress || {};
+    const addressHtml = addr.name ? `
+      <strong>${addr.name}</strong><br/>
+      ${addr.street || ''}, ${addr.locality || ''}<br/>
+      ${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}<br/>
+      Phone: ${addr.phone || ''}
+    ` : `
+      <strong>${rawOrder.customer || ''}</strong><br/>
+      Address details are not available.
+    `;
+
+    const totalAmount = parseFloat(String(rawOrder.amount).replace(/[₹,]/g, '').trim()) || 0;
+    const subtotal = rawOrder.subtotal || Math.round(totalAmount / 1.18);
+    const gst = rawOrder.gst || Math.round(subtotal * 0.18);
+    const shipping = rawOrder.shipping !== undefined ? rawOrder.shipping : (subtotal < 999 && subtotal > 0 ? 99 : 0);
+    const discount = rawOrder.discount || 0;
+
+    const htmlContent = `
+      <html>
+      <head>
+        <title>Invoice - Mithira Shopy - ${rawOrder.id}</title>
+        <style>
+          body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #111; padding: 40px; line-height: 1.6; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #D4AF37; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo { font-size: 24px; font-weight: 800; color: #051838; }
+          .logo span { color: #D4AF37; }
+          .invoice-title { text-align: right; }
+          .invoice-title h1 { margin: 0; font-size: 28px; color: #051838; }
+          .details-row { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 14px; }
+          .details-box { width: 45%; }
+          .details-box h3 { border-bottom: 1px solid #eae6df; padding-bottom: 5px; color: #051838; margin-top: 0; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+          th { background: #faf9f6; color: #051838; border-bottom: 2px solid #eae6df; padding: 12px; font-weight: 600; text-align: left; }
+          td { border-bottom: 1px solid #eae6df; padding: 12px; vertical-align: top; }
+          .summary-table { width: 40%; margin-left: auto; border: none; }
+          .summary-table td { border: none; padding: 6px 12px; }
+          .summary-table .total-row { border-top: 1px solid #eae6df; font-weight: 700; color: #D4AF37; font-size: 16px; }
+          .footer { text-align: center; margin-top: 60px; font-size: 12px; color: #777; border-top: 1px solid #eae6df; padding-top: 20px; }
+          .seal { display: inline-block; border: 2px dashed #2E7D32; color: #2E7D32; padding: 6px 12px; border-radius: 4px; font-weight: 700; text-transform: uppercase; font-size: 12px; transform: rotate(-5deg); margin-top: 15px; }
+          @media print {
+            body { padding: 20px; }
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+          <button onclick="window.print()" style="background: #D4AF37; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer;">Print Invoice</button>
+          <button onclick="window.close()" style="background: #eae6df; color: #333; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer;">Close Window</button>
+        </div>
+        <div class="header">
+          <div class="logo">Mithira <span>Shopy</span></div>
+          <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <div style="margin-top: 5px;">Invoice No: <strong>INV-${rawOrder.id.replace('#', '')}</strong></div>
+          </div>
+        </div>
+        
+        <div class="details-row">
+          <div class="details-box">
+            <h3>Vendor Details</h3>
+            <strong>Mithira Shopy Official Ltd.</strong><br/>
+            12-4/A, Jubilee Hills, Metro Pillar Road<br/>
+            Hyderabad, Telangana - 500033<br/>
+            Email: support@mithirashoppy.com<br/>
+            GSTIN: 36AAAAA1111A1Z1
+          </div>
+          <div class="details-box">
+            <h3>Shipping Details</h3>
+            ${addressHtml}
+            <br/>
+            Date Ordered: ${rawOrder.date}<br/>
+            Payment Method: ${rawOrder.payment}
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 8%;">S.No</th>
+              <th style="width: 50%;">Product Details</th>
+              <th style="text-align: center; width: 10%;">Qty</th>
+              <th style="text-align: right; width: 15%;">Unit Price</th>
+              <th style="text-align: right; width: 17%;">Total Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsRows}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div class="seal">Payment Received</div>
+          </div>
+          <table class="summary-table">
+            <tr>
+              <td>Subtotal:</td>
+              <td style="text-align: right;">₹${subtotal.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td>GST (18%):</td>
+              <td style="text-align: right;">₹${gst.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td>Shipping Charges:</td>
+              <td style="text-align: right;">₹${shipping === 0 ? 'FREE' : `₹${shipping}`}</td>
+            </tr>
+            ${discount > 0 ? `
+            <tr style="color: #2E7D32;">
+              <td>Discount:</td>
+              <td style="text-align: right;">-₹${discount.toLocaleString('en-IN')}</td>
+            </tr>
+            ` : ''}
+            <tr class="total-row">
+              <td>Grand Total:</td>
+              <td style="text-align: right;">₹${totalAmount.toLocaleString('en-IN')}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for shopping with Mithira Shopy! For customer support, reach out to us at <strong>support@mithirashoppy.com</strong>.</p>
+          <p>This is a computer generated invoice and does not require a physical signature.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+  const getTimelineSteps = (status) => {
+    const s = status ? status.toLowerCase() : '';
+    if (s === 'cancelled') {
+      return (
+        <div className="tracking-timeline cancelled-timeline">
+          <div className="timeline-step completed cancelled">
+            <div className="timeline-circle"><X size={14} /></div>
+            <div className="timeline-label">Cancelled</div>
+          </div>
+        </div>
+      );
+    }
+
+    const steps = [
+      { key: 'placed', label: 'Order Placed', active: true, done: true },
+      { key: 'processing', label: 'Processing', active: ['processing', 'shipped', 'delivered'].includes(s), done: ['shipped', 'delivered'].includes(s) },
+      { key: 'shipped', label: 'Shipped', active: ['shipped', 'delivered'].includes(s), done: ['delivered'].includes(s) },
+      { key: 'delivered', label: 'Delivered', active: s === 'delivered', done: s === 'delivered' }
+    ];
+
+    return (
+      <div className="tracking-timeline">
+        {steps.map((step, idx) => {
+          let stepClass = '';
+          if (step.done) stepClass = 'completed';
+          else if (step.active) stepClass = 'active';
+          else stepClass = 'upcoming';
+
+          return (
+            <React.Fragment key={step.key}>
+              <div className={`timeline-step ${stepClass}`}>
+                <div className="timeline-circle">
+                  {step.done ? <CheckCircle size={14} /> : (idx + 1)}
+                </div>
+                <div className="timeline-label">{step.label}</div>
+              </div>
+              {idx < steps.length - 1 && (
+                <div className={`timeline-line ${step.done ? 'completed' : 'upcoming'}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderShippingAddressDetails = (order) => {
+    const addr = order.shippingAddress || {};
+    if (!addr.name) {
+      return (
+        <div className="address-display-placeholder">
+          <p><strong>{order.customer}</strong></p>
+          <p style={{ fontStyle: 'italic', color: '#777' }}>Detailed shipping address is not available for this legacy order.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="address-display-details">
+        <p><strong>{addr.name}</strong></p>
+        <p>{addr.street}{addr.locality ? `, ${addr.locality}` : ''}</p>
+        <p>{addr.city}, {addr.state} - {addr.pincode}</p>
+        <p style={{ marginTop: '5px' }}>Phone: <strong>{addr.phone}</strong></p>
+      </div>
+    );
+  };
+
+  const renderBillingDetails = (order) => {
+    const totalAmount = parseFloat(String(order.amount).replace(/[₹,]/g, '').trim()) || 0;
+    const subtotal = order.subtotal || Math.round(totalAmount / 1.18);
+    const gst = order.gst || Math.round(subtotal * 0.18);
+    const shipping = order.shipping !== undefined ? order.shipping : (subtotal < 999 && subtotal > 0 ? 99 : 0);
+    const discount = order.discount || 0;
+
+    return (
+      <div className="billing-details-breakdown">
+        <div className="billing-row">
+          <span>Subtotal</span>
+          <span>₹{subtotal.toLocaleString('en-IN')}</span>
+        </div>
+        <div className="billing-row">
+          <span>GST (18%)</span>
+          <span>₹{gst.toLocaleString('en-IN')}</span>
+        </div>
+        <div className="billing-row">
+          <span>Shipping Fee</span>
+          <span>{shipping === 0 ? <span style={{ color: '#2E7D32', fontWeight: 600 }}>FREE</span> : `₹${shipping}`}</span>
+        </div>
+        {discount > 0 && (
+          <div className="billing-row discount-row" style={{ color: '#2E7D32' }}>
+            <span>Promo Discount</span>
+            <span>-₹{discount.toLocaleString('en-IN')}</span>
+          </div>
+        )}
+        <div className="billing-row total-row" style={{ borderTop: '1px solid #eae6df', paddingTop: '10px', marginTop: '10px', fontWeight: 700, fontSize: '1.05rem', color: '#051838' }}>
+          <span>Grand Total</span>
+          <span style={{ color: '#D4AF37' }}>₹{totalAmount.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOrderItems = (order) => {
+    return (order.items || []).map((item, index) => {
+      const match = allProducts.find(p => String(p.id) === String(item.productId) || String(p._id) === String(item.productId));
+      const image = match ? resolveProductImage(match) : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
+      
+      return (
+        <div key={index} className="order-details-item-row">
+          <img src={image} alt={item.name} className="item-thumbnail" />
+          <div className="item-details">
+            <h5 className="item-name">{item.name}</h5>
+            {item.variant && (item.variant.size || item.variant.color) && (
+              <div className="item-variant">
+                {item.variant.size ? `Size: ${item.variant.size} ` : ''}
+                {item.variant.color ? `| Color: ${item.variant.color}` : ''}
+              </div>
+            )}
+            <div className="item-price-qty">
+              <span>₹{(item.price || 0).toLocaleString('en-IN')} × {item.quantity}</span>
+              <span className="item-row-total">₹{((item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+      );
+    });
   };
 
   return (
@@ -1410,7 +1814,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                           <ShoppingBag size={20} className="ua-order-icon-svg" />
                         </div>
                         <div>
-                          <h4 className="ua-order-number">Order #{order.id}</h4>
+                          <h4 className="ua-order-number">Order {order.id.startsWith('#') ? order.id : '#' + order.id}</h4>
                           <p className="ua-order-date">Placed on {order.date}</p>
                         </div>
                       </div>
@@ -1436,11 +1840,11 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
                       <div className="ua-order-actions">
                         {order.status === 'Shipped' ? (
-                          <button className="ua-btn-secondary tracking-btn" onClick={() => handleTabChange('orders')}>
+                          <button className="ua-btn-secondary tracking-btn" onClick={() => handleOpenOrderDetails(order.rawOrder)}>
                             Track Order
                           </button>
                         ) : (
-                          <button className="ua-btn-secondary" onClick={() => handleTabChange('orders')}>
+                          <button className="ua-btn-secondary" onClick={() => handleOpenOrderDetails(order.rawOrder)}>
                             View Details
                           </button>
                         )}
@@ -1489,7 +1893,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                         <img src={order.image} alt={order.title} className="ua-od-img" />
                         <div className="ua-od-info">
                           <h4 className="ua-od-number">
-                            Order #{order.id}
+                           Order {order.id.startsWith('#') ? order.id : '#' + order.id}
                             {order.rawOrder?.isLuckyCharmOrder && (
                               <span style={{
                                 marginLeft: '10px',
@@ -1527,16 +1931,25 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
                       {/* Interactive Buttons */}
                       <div className="ua-od-right">
-                        <button className="ua-od-action-btn btn-view-details">
+                        <button 
+                          className="ua-od-action-btn btn-view-details"
+                          onClick={() => handleOpenOrderDetails(order.rawOrder)}
+                        >
                           View Details
                         </button>
 
                         {order.status === 'Delivered' && (
                           <>
-                            <button className="ua-od-action-btn btn-secondary-action">
+                            <button 
+                              className="ua-od-action-btn btn-secondary-action"
+                              onClick={() => handleDownloadInvoice(order.rawOrder)}
+                            >
                               Download Invoice
                             </button>
-                            <button className="ua-od-action-btn btn-reorder">
+                            <button 
+                              className="ua-od-action-btn btn-reorder"
+                              onClick={() => handleReorder(order.rawOrder)}
+                            >
                               Reorder
                             </button>
                           </>
@@ -1544,10 +1957,16 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
 
                         {order.status === 'Shipped' && (
                           <>
-                            <button className="ua-od-action-btn btn-secondary-action">
+                            <button 
+                              className="ua-od-action-btn btn-secondary-action"
+                              onClick={() => handleOpenOrderDetails(order.rawOrder)}
+                            >
                               Track Order
                             </button>
-                            <button className="ua-od-action-btn btn-reorder">
+                            <button 
+                              className="ua-od-action-btn btn-reorder"
+                              onClick={() => handleReorder(order.rawOrder)}
+                            >
                               Reorder
                             </button>
                           </>
@@ -1560,12 +1979,12 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                               const confirmCancel = window.confirm(`Are you sure you want to cancel order #${order.id}?`);
                               if (confirmCancel) {
                                 apiService.cancelOrder(order.id).then(() => {
-                                  alert('Order cancelled successfully!');
+                                  addToast({ message: 'Order cancelled successfully!', type: 'success' });
                                   apiService.getOrders().then(list => {
                                     if (list) setUserOrders(list);
                                   });
                                 }).catch(err => {
-                                  alert(err.message || 'Failed to cancel order.');
+                                  addToast({ message: err.message || 'Failed to cancel order.', type: 'error' });
                                 });
                               }
                             }}
@@ -1575,7 +1994,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                         )}
                         
                         {order.status === 'Cancelled' && (
-                          <button className="ua-od-action-btn btn-reorder">
+                          <button 
+                            className="ua-od-action-btn btn-reorder"
+                            onClick={() => handleReorder(order.rawOrder)}
+                          >
                             Reorder
                           </button>
                         )}
@@ -1612,7 +2034,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                             aria-label="Remove from Wishlist"
                             onClick={() => handleRemoveFromWishlist(item.id)}
                           >
-                            <Heart size={16} fill="#E94FA8" stroke="#E94FA8" />
+                            <Heart size={16} fill="#D4AF37" stroke="#D4AF37" />
                           </button>
                         </div>
                         <div className="ua-wl-info">
@@ -1637,7 +2059,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                                     }
                                   });
                                 }
-                                alert(`Added ${item.title} to cart!`);
+                                addToast({ message: `Added ${item.title} to cart!`, type: 'success' });
                               }
                             }}
                           >
@@ -2369,6 +2791,112 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         </main>
       </div>
 
+      {showOrderDetailsModal && selectedOrderDetails && (
+        <div className="ua-modal-overlay" onClick={handleCloseOrderDetails}>
+          <div className="ua-modal-card order-details-modal-card" onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div className="ua-modal-header-row">
+              <div>
+                <h3 className="ua-modal-title">Order Details</h3>
+                <p className="order-details-subtitle">Order #{selectedOrderDetails.id} • Placed on {selectedOrderDetails.date}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button 
+                  className="order-details-header-btn" 
+                  title="Print Invoice"
+                  onClick={() => handleDownloadInvoice(selectedOrderDetails)}
+                >
+                  <Printer size={15} />
+                  <span>Invoice</span>
+                </button>
+                <button className="ua-modal-close-btn" onClick={handleCloseOrderDetails}>
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="order-details-modal-body">
+              
+              {/* Order Status Visual Tracker */}
+              <div className="order-tracking-section">
+                <h4 className="order-details-section-title">Order Status</h4>
+                {getTimelineSteps(selectedOrderDetails.status)}
+              </div>
+
+              {/* Shipping Address & Payment Info Grid */}
+              <div className="order-info-grid">
+                <div className="order-info-block">
+                  <div className="block-title-row">
+                    <MapPin size={16} className="block-icon" />
+                    <h5>Shipping Address</h5>
+                  </div>
+                  <div className="block-content">
+                    {renderShippingAddressDetails(selectedOrderDetails)}
+                  </div>
+                </div>
+                
+                <div className="order-info-block">
+                  <div className="block-title-row">
+                    <CreditCard size={16} className="block-icon" />
+                    <h5>Payment & Billing</h5>
+                  </div>
+                  <div className="block-content">
+                    <div style={{ marginBottom: '8px' }}>
+                      Payment Method: <strong>{selectedOrderDetails.payment}</strong>
+                    </div>
+                    <div>
+                      Payment Status: <span style={{ 
+                        color: selectedOrderDetails.status?.toLowerCase() === 'pending payment' ? '#C62828' : 
+                               selectedOrderDetails.status?.toLowerCase() === 'cancelled' ? '#666' : '#2E7D32',
+                        fontWeight: 700 
+                      }}>
+                        {selectedOrderDetails.status?.toLowerCase() === 'pending payment' ? 'Pending' : 
+                         selectedOrderDetails.status?.toLowerCase() === 'cancelled' ? 'No Payment' : 'Paid'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="order-items-section">
+                <h4 className="order-details-section-title">Items Ordered</h4>
+                <div className="order-items-details-list">
+                  {renderOrderItems(selectedOrderDetails)}
+                </div>
+              </div>
+
+              {/* Summary and Grand Total */}
+              <div className="order-billing-summary-block">
+                <h4 className="order-details-section-title">Billing Summary</h4>
+                {renderBillingDetails(selectedOrderDetails)}
+              </div>
+
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="ua-modal-actions order-details-footer">
+              <button 
+                type="button" 
+                className="ua-modal-btn btn-cancel" 
+                onClick={handleCloseOrderDetails}
+              >
+                Close View
+              </button>
+              <button 
+                type="button" 
+                className="ua-modal-btn btn-save" 
+                onClick={() => handleReorder(selectedOrderDetails)}
+              >
+                Reorder Items
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {isReviewModalOpen && selectedReviewProduct && (
         <div className="ua-modal-overlay" onClick={() => setIsReviewModalOpen(false)}>
           <div className="ua-modal-card" onClick={e => e.stopPropagation()}>
@@ -2583,7 +3111,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         .ua-claim-value {
           font-size: 14px;
           font-weight: 700;
-          color: #E94FA8;
+          color: #D4AF37;
           margin: 0;
         }
         .ua-claim-actions {
@@ -2705,7 +3233,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         }
         .ua-rp-btn-review {
           align-self: flex-start;
-          background: #E94FA8;
+          background: #051838;
           color: #ffffff;
           border: none;
           padding: 6px 12px;
@@ -2716,7 +3244,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           transition: all 0.2s ease;
         }
         .ua-rp-btn-review:hover {
-          background: #d83d97;
+          background: #112d5a;
         }
 
         .ua-submitted-reviews-list {
@@ -2893,6 +3421,272 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         .ua-form-textarea:focus {
           outline: none;
           border-color: #051838;
+        }
+
+        /* Order Details Modal Styles */
+        .order-details-modal-card {
+          max-width: 680px;
+          width: 95%;
+          max-height: 90vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .order-details-subtitle {
+          font-size: 13px;
+          color: #828282;
+          margin-top: 3px;
+          margin-bottom: 0;
+        }
+        .order-details-header-btn {
+          background: #faf9f6;
+          border: 1px solid #eae6df;
+          color: #051838;
+          border-radius: 20px;
+          padding: 6px 14px;
+          font-size: 12px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .order-details-header-btn:hover {
+          background: #D4AF37;
+          border-color: #D4AF37;
+          color: #ffffff;
+        }
+        .order-details-modal-body {
+          max-height: 60vh;
+          overflow-y: auto;
+          padding: 10px 5px;
+          margin-bottom: 10px;
+        }
+        .order-details-section-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: #051838;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 0 0 15px 0;
+          border-left: 3px solid #D4AF37;
+          padding-left: 8px;
+        }
+        .order-tracking-section {
+          background: #faf9f6;
+          border: 1px solid #eae6df;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+        }
+        
+        /* Timeline Tracker Styles */
+        .tracking-timeline {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
+          margin: 15px 0 5px 0;
+          padding: 0 10px;
+        }
+        .cancelled-timeline {
+          justify-content: center;
+        }
+        .timeline-step {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: relative;
+          z-index: 2;
+          width: 80px;
+          text-align: center;
+        }
+        .timeline-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 700;
+          transition: all 0.3s ease;
+        }
+        .timeline-label {
+          font-size: 11px;
+          font-weight: 600;
+          margin-top: 8px;
+          color: #828282;
+        }
+        .timeline-line {
+          flex-grow: 1;
+          height: 3px;
+          background: #eae6df;
+          margin: 0 -20px;
+          position: relative;
+          top: -19px;
+          z-index: 1;
+          transition: all 0.3s ease;
+        }
+        
+        /* Timeline States */
+        .timeline-step.completed .timeline-circle {
+          background: #E8F5E9;
+          color: #2E7D32;
+          border: 2px solid #2E7D32;
+        }
+        .timeline-step.completed .timeline-label {
+          color: #2E7D32;
+        }
+        .timeline-step.active .timeline-circle {
+          background: #051838;
+          color: #ffffff;
+          border: 2px solid #051838;
+          box-shadow: 0 0 0 4px rgba(5, 24, 56, 0.15);
+          animation: timelinePulse 2s infinite;
+        }
+        .timeline-step.active .timeline-label {
+          color: #051838;
+          font-weight: 700;
+        }
+        .timeline-step.upcoming .timeline-circle {
+          background: #ffffff;
+          color: #828282;
+          border: 2px solid #eae6df;
+        }
+        .timeline-line.completed {
+          background: #2E7D32;
+        }
+        .timeline-line.upcoming {
+          background: #eae6df;
+        }
+        
+        .timeline-step.completed.cancelled .timeline-circle {
+          background: #FFEBEE;
+          color: #C62828;
+          border: 2px solid #C62828;
+        }
+        .timeline-step.completed.cancelled .timeline-label {
+          color: #C62828;
+        }
+
+        @keyframes timelinePulse {
+          0% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0.4); }
+          70% { box-shadow: 0 0 0 6px rgba(5, 24, 56, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0); }
+        }
+
+        /* Address & Payment Info Grid */
+        .order-info-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        .order-info-block {
+          border: 1px solid #eae6df;
+          border-radius: 12px;
+          padding: 16px;
+          background: #ffffff;
+        }
+        .block-title-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border-bottom: 1px solid #eae6df;
+          padding-bottom: 8px;
+          margin-bottom: 12px;
+        }
+        .block-icon {
+          color: #D4AF37;
+        }
+        .block-title-row h5 {
+          margin: 0;
+          font-size: 12px;
+          font-weight: 700;
+          color: #051838;
+          text-transform: uppercase;
+        }
+        .block-content {
+          font-size: 13px;
+          line-height: 1.5;
+          color: #4f4f4f;
+        }
+        
+        /* Items Details */
+        .order-items-details-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+        .order-details-item-row {
+          display: flex;
+          gap: 15px;
+          align-items: center;
+          padding: 12px;
+          border: 1px solid #eae6df;
+          border-radius: 10px;
+          background: #ffffff;
+          transition: background-color 0.2s ease;
+        }
+        .order-details-item-row:hover {
+          background-color: #faf9f6;
+        }
+        .item-thumbnail {
+          width: 55px;
+          height: 55px;
+          border-radius: 8px;
+          object-fit: cover;
+          border: 1px solid #eae6df;
+        }
+        .item-details {
+          flex-grow: 1;
+        }
+        .item-name {
+          margin: 0 0 2px 0;
+          font-size: 13px;
+          font-weight: 600;
+          color: #051838;
+        }
+        .item-variant {
+          font-size: 11px;
+          color: #D4AF37;
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+        .item-price-qty {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+          color: #777;
+        }
+        .item-row-total {
+          font-weight: 700;
+          color: #051838;
+        }
+        
+        /* Billing Details Breakdown */
+        .billing-details-breakdown {
+          border-top: 1px solid #eae6df;
+          padding-top: 15px;
+          margin-top: 5px;
+        }
+        .billing-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 13px;
+          color: #555;
+          margin-bottom: 8px;
+        }
+        .discount-row {
+          font-weight: 600;
+        }
+        .order-details-footer {
+          border-top: 1px solid #eae6df;
+          padding-top: 15px;
+          margin-top: 0;
         }
       ` }} />
     </div>

@@ -99,6 +99,25 @@ export default function LuckyCharmModal() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, [fetchActiveRewards]);
 
+  // ── Open directly to spinning step from LuckyCharmPage ─────────────────────
+  useEffect(() => {
+    const handleOpenWheel = (e) => {
+      const { sessionId: sid, rewards: rwds } = e.detail || {};
+      if (sid && Array.isArray(rwds) && rwds.length > 0) {
+        setSessionId(sid);
+        setRewards(rwds);
+        setIsAvailable(true);
+        setErrorMessage('');
+        setStep('spinning');
+        setWonReward(null);
+        setSpinDeg(0);
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener('mithira_open_lucky_wheel', handleOpenWheel);
+    return () => window.removeEventListener('mithira_open_lucky_wheel', handleOpenWheel);
+  }, []);
+
   // ── Listen to cart updates (debounced) ─────────────────────────────────────
   useEffect(() => {
     const handleCartUpdate = () => {

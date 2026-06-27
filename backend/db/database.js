@@ -12,9 +12,17 @@ mongoose.connect(MONGODB_URI)
       // await mongoose.connection.db.dropDatabase();
       // console.log('🗑️ Database dropped/cleared successfully');
       // Brief delay to let MongoDB finalize dropped collections and indices
-      await new Promise(resolve => setTimeout(resolve, 1000));
       await seedAdmin();
       await seedStoreData();
+      // Auto-migrate/sync approvalStatus for existing products to prevent mismatch
+      await mongoose.model('Product').updateMany(
+        { status: 'Active', $or: [{ approvalStatus: 'Pending' }, { approvalStatus: { $exists: false } }, { approvalStatus: null }] },
+        { $set: { approvalStatus: 'Approved' } }
+      );
+      await mongoose.model('Product').updateMany(
+        { status: 'Rejected', $or: [{ approvalStatus: 'Pending' }, { approvalStatus: { $exists: false } }, { approvalStatus: null }] },
+        { $set: { approvalStatus: 'Rejected' } }
+      );
     } catch (dbErr) {
       console.error('❌ Error dropping database:', dbErr);
     }
@@ -104,7 +112,13 @@ const ProductSchema = new mongoose.Schema({
   },
   // Lucky Charm Fields
   includeInLuckyCharm: { type: Boolean, default: false },
-  luckyStock: { type: Number, default: 0 }
+  luckyStock: { type: Number, default: 0 },
+  // Vendor Fields
+  vendorId: { type: String, default: null, index: true, ref: 'Vendor' }, // null = platform product
+  approvalStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending', index: true },
+  approvedBy: { type: String, default: null, ref: 'User' },
+  approvedAt: { type: Date, default: null },
+  rejectReason: { type: String, default: '' } // Admin rejection note
 });
 
 // Auto-populate the images array with the main image if empty
@@ -116,6 +130,60 @@ ProductSchema.pre('save', function () {
     this.isLowStock = true;
   } else {
     this.isLowStock = false;
+  }
+
+  // Synchronize status and approvalStatus
+  if (this.isModified('status')) {
+    if (this.status === 'Pending') {
+      this.approvalStatus = 'Pending';
+    } else if (this.status === 'Active') {
+      this.approvalStatus = 'Approved';
+    } else if (this.status === 'Rejected') {
+      this.approvalStatus = 'Rejected';
+    }
+  } else if (this.isModified('approvalStatus')) {
+    if (this.approvalStatus === 'Pending') {
+      this.status = 'Pending';
+    } else if (this.approvalStatus === 'Approved') {
+      this.status = 'Active';
+    } else if (this.approvalStatus === 'Rejected') {
+      this.status = 'Rejected';
+    }
+  } else {
+    // Sync status to approvalStatus by default (e.g. for new documents)
+    if (this.status === 'Pending') {
+      this.approvalStatus = 'Pending';
+    } else if (this.status === 'Active') {
+      this.approvalStatus = 'Approved';
+    } else if (this.status === 'Rejected') {
+      this.approvalStatus = 'Rejected';
+    }
+  }
+});
+
+ProductSchema.pre('findOneAndUpdate', function () {
+  const update = this.getUpdate();
+  if (update && update.$set) {
+    const status = update.$set.status;
+    const approvalStatus = update.$set.approvalStatus;
+
+    if (status !== undefined) {
+      if (status === 'Pending') {
+        update.$set.approvalStatus = 'Pending';
+      } else if (status === 'Active') {
+        update.$set.approvalStatus = 'Approved';
+      } else if (status === 'Rejected') {
+        update.$set.approvalStatus = 'Rejected';
+      }
+    } else if (approvalStatus !== undefined) {
+      if (approvalStatus === 'Pending') {
+        update.$set.status = 'Pending';
+      } else if (approvalStatus === 'Approved') {
+        update.$set.status = 'Active';
+      } else if (approvalStatus === 'Rejected') {
+        update.$set.status = 'Rejected';
+      }
+    }
   }
 });
 
@@ -160,7 +228,8 @@ const OrderItemSchema = new mongoose.Schema({
   variant: { type: mongoose.Schema.Types.Mixed, default: {} },
   catalogue: { type: String, default: null },
   quantity: { type: Number, default: 1 },
-  price: { type: Number, required: true }
+  price: { type: Number, required: true },
+  vendorId: { type: String, default: null, index: true, ref: 'Vendor' }
 });
 
 const OrderSchema = new mongoose.Schema({
@@ -170,11 +239,16 @@ const OrderSchema = new mongoose.Schema({
   product: { type: String, required: true }, // Backwards compatibility: Summary string of products
   amount: { type: String, required: true },
   payment: { type: String, default: 'Razorpay' },
-  status: { type: String, default: 'Pending' },
+  status: { type: String, default: 'Pending', index: true },
   date: { type: String, required: true },
   items: { type: [OrderItemSchema], default: [] }, // Detailed order items containing variants and catalogue details
   catalogueDetails: { type: Map, of: String }, // Key-value catalogue info for analytics
-  isLuckyCharmOrder: { type: Boolean, default: false }
+  isLuckyCharmOrder: { type: Boolean, default: false },
+  shippingAddress: { type: mongoose.Schema.Types.Mixed, default: {} },
+  subtotal: { type: Number },
+  gst: { type: Number },
+  shipping: { type: Number },
+  discount: { type: Number }
 });
 
 const CouponSchema = new mongoose.Schema({
@@ -269,6 +343,51 @@ const FeatureSchema = new mongoose.Schema({
 });
 
 
+// ─── Vendor Schemas ─────────────────────────────────────────────────────────
+const VendorSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true, index: true },
+  businessName: { type: String, required: true },
+  ownerName: { type: String, required: true },
+  email: { type: String, required: true, unique: true, index: true, lowercase: true },
+  password: { type: String, required: true },
+  phone: { type: String, required: true },
+  gstin: { type: String, default: '' },
+  pan: { type: String, default: '' },
+  businessCategory: { type: String, default: '' },
+  businessDescription: { type: String, default: '' },
+  logo: { type: String, default: '' },
+  panDocument: { type: String, default: '' },       // base64 / URL
+  cancelledCheque: { type: String, default: '' },   // base64 / URL
+  status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Suspended'], default: 'Pending', index: true },
+  rejectReason: { type: String, default: '' },
+  adminNotes: { type: String, default: '' },
+  approvedBy: { type: String, default: null, ref: 'User' },
+  approvedAt: { type: Date, default: null },
+  lastLoginAt: { type: Date, default: null },
+  address: {
+    street: { type: String, default: '' },
+    city:   { type: String, default: '' },
+    state:  { type: String, default: '' },
+    pincode:{ type: String, default: '' },
+    country:{ type: String, default: 'India' }
+  },
+  bankDetails: {
+    accountHolder: { type: String, default: '' },
+    accountNumber: { type: String, default: '' },
+    ifscCode:      { type: String, default: '' },
+    bankName:      { type: String, default: '' }
+  }
+}, { timestamps: true });
+
+const VendorNotificationSchema = new mongoose.Schema({
+  vendorId:  { type: String, required: true, index: true, ref: 'Vendor' },
+  type:      { type: String, required: true },  // 'vendor_approved'|'vendor_rejected'|'product_approved'|'product_rejected'|'new_order'|'low_stock'|'system'
+  title:     { type: String, required: true },
+  message:   { type: String, required: true },
+  metadata:  { type: mongoose.Schema.Types.Mixed, default: {} },
+  isRead:    { type: Boolean, default: false, index: true }
+}, { timestamps: true });
+
 // ─── Future-Ready Schemas ───────────────────────────────────────────────────
 const NewsletterSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -334,6 +453,8 @@ const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 const ContactQuery = mongoose.model('ContactQuery', ContactQuerySchema);
 const Settings = mongoose.model('Settings', SettingsSchema);
 const Feature = mongoose.model('Feature', FeatureSchema);
+const Vendor = mongoose.model('Vendor', VendorSchema);
+const VendorNotification = mongoose.model('VendorNotification', VendorNotificationSchema);
 
 // ─── Seed Data ───────────────────────────────────────────────────────────────
 async function seedStoreData() {
@@ -1135,6 +1256,8 @@ module.exports = {
   Campaign,
   Analytics,
   LuckySpinHistory,
-  LuckyWheelSession
+  LuckyWheelSession,
+  Vendor,
+  VendorNotification
 };
 
