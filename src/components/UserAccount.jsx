@@ -482,6 +482,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   }, []);
 
   useEffect(() => {
+    let ordersPollInterval;
     if (authUser) {
       apiService.getAddresses().then(data => {
         if (data) {
@@ -502,6 +503,23 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           }
         }
       });
+
+      // Poll for order updates every 10 seconds to sync vendor status updates automatically
+      ordersPollInterval = setInterval(() => {
+        apiService.getOrders().then(list => {
+          if (list) {
+            setUserOrders(list);
+            setSelectedOrderDetails(prev => {
+              if (prev) {
+                const updatedMatch = list.find(o => String(o.id) === String(prev.id));
+                return updatedMatch || prev;
+              }
+              return prev;
+            });
+          }
+        }).catch(err => console.warn('Order polling error:', err));
+      }, 10000);
+
       apiService.getMyClaims().then(claims => {
         if (claims) {
           setMyClaims(claims);
@@ -524,6 +542,12 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       setMyClaims([]);
       setMyReviews([]);
     }
+
+    return () => {
+      if (ordersPollInterval) {
+        clearInterval(ordersPollInterval);
+      }
+    };
   }, [authUser?.id]);
 
   useEffect(() => {

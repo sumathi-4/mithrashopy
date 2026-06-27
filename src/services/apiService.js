@@ -24,10 +24,6 @@ setInterval(checkBackendStatus, 15000);
 
 // Base fetch wrapper
 async function apiRequest(endpoint, method = 'GET', body = null) {
-  if (!isBackendReachable) {
-    throw new Error('Backend server is offline.');
-  }
-
   const token = getStoredToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -42,6 +38,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, options);
+    isBackendReachable = true;
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'API request failed.');

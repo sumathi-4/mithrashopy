@@ -26255,3 +26255,9 @@ body .shop-product-detail-page-view.theme-accessories .product-detail-qty-contro
 
 
 
+
+/* Vendor Management Drawer Animation */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

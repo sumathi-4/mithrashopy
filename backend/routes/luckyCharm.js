@@ -138,7 +138,8 @@ router.get('/campaign-products', async (req, res) => {
     // Fetch active products
     const activeProducts = await Product.find({
       includeInLuckyCharm: true,
-      luckyStock: { $gt: 0 }
+      luckyStock: { $gt: 0 },
+      status: 'Active'
     }).limit(limit).lean();
 
     const unifiedList = activeProducts.map(p => ({

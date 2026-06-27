@@ -30,7 +30,7 @@ export const createVendorProduct = (data) => api.post('/api/vendors/products', d
 export const updateVendorProduct = (id, data) => api.put(`/api/vendors/products/${id}`, data)
 export const deleteVendorProduct = (id) => api.delete(`/api/vendors/products/${id}`)
 export const getVendorOrders = () => api.get('/api/vendors/orders')
-export const updateOrderStatus = (id, status) => api.put(`/api/vendors/orders/${id}/status`, { status })
+export const updateOrderStatus = (id, status) => api.put(`/api/vendors/orders/${encodeURIComponent(id)}/status`, { status })
 export const changeVendorPassword = (data) => api.put('/api/vendors/change-password', data)
 export const updateVendorProfile = (data) => api.put('/api/vendors/profile', data)
 export const getNotifications = () => api.get('/api/vendors/notifications')

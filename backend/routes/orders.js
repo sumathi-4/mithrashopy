@@ -465,6 +465,18 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
       { new: true }
     ).lean();
 
+    // Send email notification to customer
+    try {
+      const { User } = require('../db/database');
+      const user = await User.findOne({ id: updated.userId }).lean();
+      if (user && user.email) {
+        const { sendOrderStatusEmail } = require('../services/emailService');
+        await sendOrderStatusEmail(user.email, user.name || updated.customer, updated);
+      }
+    } catch (mailErr) {
+      console.error('Failed to send order status email:', mailErr);
+    }
+
     res.json({ success: true, message: 'Order status updated successfully!', order: updated });
   } catch (err) {
     console.error('Update order error:', err);

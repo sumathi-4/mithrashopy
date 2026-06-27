@@ -654,6 +654,19 @@ router.put('/orders/:id/status', authenticateVendor, async (req, res) => {
     ).lean();
 
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+
+    // Send email notification to customer
+    try {
+      const { User } = require('../db/database');
+      const user = await User.findOne({ id: order.userId }).lean();
+      if (user && user.email) {
+        const { sendOrderStatusEmail } = require('../services/emailService');
+        await sendOrderStatusEmail(user.email, user.name || order.customer, order);
+      }
+    } catch (mailErr) {
+      console.error('Failed to send order status email:', mailErr);
+    }
+
     return res.json({ success: true, order });
   } catch (err) {
     console.error('Vendor update order status error:', err);

@@ -98,9 +98,6 @@ export async function loginAdmin({ email, password }) {
   return { success: ok && data.success, message: data.message, user: data.user };
 }
 
-/**
- * Verify current token and get fresh user data from server
- */
 export async function verifySession() {
   const token = getStoredToken();
   if (!token) return null;
@@ -115,9 +112,10 @@ export async function verifySession() {
     // Token is invalid/expired — clear session
     clearSession();
     return null;
-  } catch {
-    clearSession();
-    return null;
+  } catch (err) {
+    // Network error — preserve existing session rather than logging the user out
+    console.warn('verifySession network error, preserving local session:', err);
+    return getStoredUser();
   }
 }
 

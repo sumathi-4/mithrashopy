@@ -48,12 +48,12 @@ router.get('/vendors/:id', async (req, res) => {
   }
 });
 
-// PUT /api/admin/vendors/:id/status — approve or reject a vendor
+// PUT /api/admin/vendors/:id/status — approve, reject, or suspend a vendor
 router.put('/vendors/:id/status', async (req, res) => {
   try {
     const { status, rejectReason, adminNotes } = req.body;
-    if (!['Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Status must be Approved or Rejected.' });
+    if (!['Approved', 'Rejected', 'Suspended'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status must be Approved, Rejected, or Suspended.' });
     }
 
     const update = { status };
@@ -76,6 +76,21 @@ router.put('/vendors/:id/status', async (req, res) => {
         `Congratulations! Your vendor application for "${vendor.businessName}" has been approved. You can now log in to your seller portal and start listing products.`,
         { status: 'Approved' }
       );
+
+      // Send approval email
+      try {
+        const { sendVendorApprovalEmail } = require('../services/emailService');
+        await sendVendorApprovalEmail(vendor.email, vendor.businessName);
+      } catch (mailErr) {
+        console.error('Failed to send vendor approval email:', mailErr);
+      }
+    } else if (status === 'Suspended') {
+      await notifyVendor(
+        vendor.id, 'vendor_suspended',
+        '⚠️ Account Suspended',
+        `Your vendor account "${vendor.businessName}" has been suspended by an administrator. Please contact support.`,
+        { status: 'Suspended' }
+      );
     } else {
       await notifyVendor(
         vendor.id, 'vendor_rejected',
@@ -89,6 +104,68 @@ router.put('/vendors/:id/status', async (req, res) => {
   } catch (err) {
     console.error('Admin update vendor status error:', err);
     return res.status(500).json({ success: false, message: 'Failed to update vendor status.' });
+  }
+});
+
+// PUT /api/admin/vendors/:id — update any vendor details
+router.put('/vendors/:id', async (req, res) => {
+  try {
+    const { businessName, ownerName, phone, status, gstin, pan, bankDetails, address, businessCategory, businessDescription } = req.body;
+    
+    // Check if phone unique if updated
+    if (phone) {
+      const existingPhone = await Vendor.findOne({ phone, id: { $ne: req.params.id } }).lean();
+      if (existingPhone) {
+        return res.status(409).json({ success: false, message: 'Phone number already registered by another vendor.' });
+      }
+    }
+
+    const updateFields = {};
+    if (businessName !== undefined) updateFields.businessName = businessName.trim();
+    if (ownerName !== undefined) updateFields.ownerName = ownerName.trim();
+    if (phone !== undefined) updateFields.phone = phone.trim();
+    if (status !== undefined) {
+      if (!['Pending', 'Approved', 'Rejected', 'Suspended'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status.' });
+      }
+      updateFields.status = status;
+    }
+    if (gstin !== undefined) updateFields.gstin = gstin.trim();
+    if (pan !== undefined) updateFields.pan = pan.trim();
+    if (businessCategory !== undefined) updateFields.businessCategory = businessCategory;
+    if (businessDescription !== undefined) updateFields.businessDescription = businessDescription;
+    
+    if (bankDetails !== undefined) {
+      updateFields.bankDetails = {
+        accountHolder: bankDetails.accountHolder || '',
+        accountNumber: bankDetails.accountNumber || '',
+        ifscCode: bankDetails.ifscCode || '',
+        bankName: bankDetails.bankName || ''
+      };
+    }
+    
+    if (address !== undefined) {
+      updateFields.address = {
+        street: address.street || '',
+        city: address.city || '',
+        state: address.state || '',
+        pincode: address.pincode || '',
+        country: address.country || 'India'
+      };
+    }
+
+    const vendor = await Vendor.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: updateFields },
+      { new: true }
+    ).select('-password').lean();
+
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found.' });
+
+    return res.json({ success: true, message: 'Vendor updated successfully.', vendor });
+  } catch (err) {
+    console.error('Admin edit vendor error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to update vendor.' });
   }
 });
 
@@ -182,6 +259,17 @@ router.put('/products/:id/status', async (req, res) => {
           `Your product "${product.name}" was not approved. Reason: ${rejectReason || 'Not specified'}. ${adminNotes ? `Admin notes: ${adminNotes}` : ''} Please update the product and resubmit.`,
           { productId, productName: product.name, rejectReason }
         );
+      }
+
+      // Send product status update email to vendor
+      try {
+        const vendorDoc = await Vendor.findOne({ id: product.vendorId }).lean();
+        if (vendorDoc && vendorDoc.email) {
+          const { sendVendorProductApprovalEmail } = require('../services/emailService');
+          await sendVendorProductApprovalEmail(vendorDoc.email, vendorDoc.businessName, product, status, rejectReason);
+        }
+      } catch (mailErr) {
+        console.error('Failed to send vendor product approval email:', mailErr);
       }
     }
 

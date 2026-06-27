@@ -31,7 +31,26 @@ const formatAttributesForDatabase = (attributesObj) => {
 // GET /api/products - Get all products
 router.get('/', async (req, res) => {
   try {
-    const rawProducts = await Product.find().lean();
+    let isAdmin = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.role === 'admin') {
+          isAdmin = true;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const filter = {};
+    if (!isAdmin) {
+      filter.status = 'Active';
+    }
+
+    const rawProducts = await Product.find(filter).lean();
     const products = rawProducts.map(p => ({
       ...p,
       attributes: formatAttributesForFrontend(p.attributes)
@@ -49,7 +68,26 @@ router.get('/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid product ID.' });
 
-    const rawProduct = await Product.findOne({ id }).lean();
+    let isAdmin = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.role === 'admin') {
+          isAdmin = true;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const filter = { id };
+    if (!isAdmin) {
+      filter.status = 'Active';
+    }
+
+    const rawProduct = await Product.findOne(filter).lean();
     if (!rawProduct) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }

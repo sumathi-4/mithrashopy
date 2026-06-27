@@ -105,6 +105,36 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [rejectVendorReason, setRejectVendorReason] = useState('');
   const [rejectVendorNotes, setRejectVendorNotes] = useState('');
 
+  // ─── Vendor Management Extra State ──────────────────────────────────────────
+  const [vendorMgmtTab, setVendorMgmtTab] = useState('Approved');
+  const [editingVendor, setEditingVendor] = useState(null);
+  const [showEditVendorModal, setShowEditVendorModal] = useState(false);
+  const [vendorViewProducts, setVendorViewProducts] = useState(null);
+  const [showVendorProductsModal, setShowVendorProductsModal] = useState(false);
+  const [vendorProductsList, setVendorProductsList] = useState([]);
+  const [vendorViewOrders, setVendorViewOrders] = useState(null);
+  const [showVendorOrdersModal, setShowVendorOrdersModal] = useState(false);
+  const [vendorOrdersList, setVendorOrdersList] = useState([]);
+
+  const [editForm, setEditForm] = useState({
+    businessName: '',
+    ownerName: '',
+    phone: '',
+    status: '',
+    gstin: '',
+    pan: '',
+    businessCategory: '',
+    businessDescription: '',
+    bankAccountHolder: '',
+    bankAccountNumber: '',
+    bankIfscCode: '',
+    bankName: '',
+    addressStreet: '',
+    addressCity: '',
+    addressState: '',
+    addressPincode: ''
+  });
+
   const [vendorProducts, setVendorProducts] = useState([]);
   const [vendorProductsLoading, setVendorProductsLoading] = useState(false);
   const [vpStatusFilter, setVpStatusFilter] = useState('Pending');
@@ -352,8 +382,12 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       rawProducts = [
         { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
       ];
-      localStorage.setItem('mithra_admin_products', JSON.stringify(rawProducts));
-      localStorage.setItem('mithra_products_cleared_v2', 'true');
+      try {
+        localStorage.setItem('mithra_admin_products', JSON.stringify(rawProducts));
+        localStorage.setItem('mithra_products_cleared_v2', 'true');
+      } catch (err) {
+        console.warn('Failed to initialize default products in localStorage:', err.message);
+      }
     }
     
     if (!rawProducts || rawProducts.length === 0) {
@@ -786,65 +820,73 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
+  const safeSetLocalStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (err) {
+      console.warn(`Failed to save ${key} to localStorage:`, err.message);
+    }
+  };
+
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('mithra_admin_products', JSON.stringify(products));
+    safeSetLocalStorage('mithra_admin_products', JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_orders', JSON.stringify(orders));
+    safeSetLocalStorage('mithra_admin_orders', JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_customers', JSON.stringify(customers));
+    safeSetLocalStorage('mithra_admin_customers', JSON.stringify(customers));
   }, [customers]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_coupons', JSON.stringify(coupons));
+    safeSetLocalStorage('mithra_admin_coupons', JSON.stringify(coupons));
   }, [coupons]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_categories', JSON.stringify(categories));
+    safeSetLocalStorage('mithra_admin_categories', JSON.stringify(categories));
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_expanded_categories', JSON.stringify(expandedCategories));
+    safeSetLocalStorage('mithra_expanded_categories', JSON.stringify(expandedCategories));
   }, [expandedCategories]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_catalogues', JSON.stringify(catalogues));
+    safeSetLocalStorage('mithra_admin_catalogues', JSON.stringify(catalogues));
   }, [catalogues]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_subscribers', JSON.stringify(subscribers));
+    safeSetLocalStorage('mithra_admin_subscribers', JSON.stringify(subscribers));
   }, [subscribers]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_total_subscribers_count', totalSubscribersCount.toString());
+    safeSetLocalStorage('mithra_total_subscribers_count', totalSubscribersCount.toString());
   }, [totalSubscribersCount]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_this_month_subscribers_count', thisMonthSubscribersCount.toString());
+    safeSetLocalStorage('mithra_this_month_subscribers_count', thisMonthSubscribersCount.toString());
   }, [thisMonthSubscribersCount]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_banners', JSON.stringify(banners));
+    safeSetLocalStorage('mithra_admin_banners', JSON.stringify(banners));
   }, [banners]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_announcements', JSON.stringify(announcements));
+    safeSetLocalStorage('mithra_admin_announcements', JSON.stringify(announcements));
   }, [announcements]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_contact_queries', JSON.stringify(contactQueries));
+    safeSetLocalStorage('mithra_admin_contact_queries', JSON.stringify(contactQueries));
   }, [contactQueries]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_reviews', JSON.stringify(reviews));
+    safeSetLocalStorage('mithra_admin_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
   useEffect(() => {
-    localStorage.setItem('mithra_admin_features', JSON.stringify(featuresList));
+    safeSetLocalStorage('mithra_admin_features', JSON.stringify(featuresList));
   }, [featuresList]);
 
   // Sync state with backend database on mount
@@ -2099,6 +2141,119 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
+  const handleStartEditVendor = (v) => {
+    setEditingVendor(v);
+    setEditForm({
+      businessName: v.businessName || '',
+      ownerName: v.ownerName || '',
+      phone: v.phone || '',
+      status: v.status || '',
+      gstin: v.gstin || '',
+      pan: v.pan || '',
+      businessCategory: v.businessCategory || '',
+      businessDescription: v.businessDescription || '',
+      bankAccountHolder: v.bankDetails?.accountHolder || '',
+      bankAccountNumber: v.bankDetails?.accountNumber || '',
+      bankIfscCode: v.bankDetails?.ifscCode || '',
+      bankName: v.bankDetails?.bankName || '',
+      addressStreet: v.address?.street || '',
+      addressCity: v.address?.city || '',
+      addressState: v.address?.state || '',
+      addressPincode: v.address?.pincode || ''
+    });
+    setShowEditVendorModal(true);
+  };
+
+  const handleSaveVendor = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        businessName: editForm.businessName,
+        ownerName: editForm.ownerName,
+        phone: editForm.phone,
+        status: editForm.status,
+        gstin: editForm.gstin,
+        pan: editForm.pan,
+        businessCategory: editForm.businessCategory,
+        businessDescription: editForm.businessDescription,
+        bankDetails: {
+          accountHolder: editForm.bankAccountHolder,
+          accountNumber: editForm.bankAccountNumber,
+          ifscCode: editForm.bankIfscCode,
+          bankName: editForm.bankName
+        },
+        address: {
+          street: editForm.addressStreet,
+          city: editForm.addressCity,
+          state: editForm.addressState,
+          pincode: editForm.addressPincode
+        }
+      };
+
+      const res = await apiService.updateVendor(editingVendor.id, payload);
+      if (res.success) {
+        // Refresh local list
+        loadVendors();
+        setShowEditVendorModal(false);
+        setEditingVendor(null);
+        alert('Vendor details updated successfully!');
+      } else {
+        alert(res.message || 'Failed to update vendor.');
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update vendor.');
+    }
+  };
+
+  const handleViewVendorProducts = async (v) => {
+    setVendorViewProducts(v);
+    setShowVendorProductsModal(true);
+    setVendorProductsList([]);
+    try {
+      const allVendorProducts = await apiService.getAdminVendorProducts('All');
+      const filtered = allVendorProducts.filter(p => p.vendorId === v.id);
+      setVendorProductsList(filtered);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleViewVendorOrders = async (v) => {
+    setVendorViewOrders(v);
+    setShowVendorOrdersModal(true);
+    setVendorOrdersList([]);
+    try {
+      const allOrders = await apiService.getOrders();
+      const filtered = allOrders.filter(order => 
+        order.items && order.items.some(item => item.vendorId === v.id)
+      );
+      setVendorOrdersList(filtered);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSuspendVendor = async (vendorId) => {
+    if (!confirm('Are you sure you want to suspend this vendor?')) return;
+    try {
+      await apiService.updateVendorStatus(vendorId, { status: 'Suspended' });
+      setVendors(v => v.map(x => x.id === vendorId ? { ...x, status: 'Suspended' } : x));
+      alert('Vendor suspended successfully.');
+    } catch (err) {
+      alert('Failed to suspend vendor.');
+    }
+  };
+
+  const handleActivateVendor = async (vendorId) => {
+    try {
+      await apiService.updateVendorStatus(vendorId, { status: 'Approved' });
+      setVendors(v => v.map(x => x.id === vendorId ? { ...x, status: 'Approved' } : x));
+      alert('Vendor activated/approved successfully.');
+    } catch (err) {
+      alert('Failed to activate vendor.');
+    }
+  };
+
   const handleApproveProduct = async (productId) => {
     try {
       await apiService.updateVendorProductStatus(productId, { status: 'Active' });
@@ -2138,6 +2293,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     { label: 'Marketing', icon: <TrendingUp size={18} /> },
     { label: 'Reviews', icon: <Star size={18} /> },
     { label: 'Vendor Requests', icon: <Store size={18} />, badge: vendors.filter(v => v.status === 'Pending').length || null },
+    { label: 'Vendor Management', icon: <Store size={18} /> },
     { label: 'Product Approvals', icon: <ClipboardCheck size={18} />, badge: vendorProducts.filter(p => p.status === 'Pending').length || null },
     { label: 'Manage Features', icon: <Globe size={18} /> },
     { label: 'Settings', icon: <Settings size={18} /> },
@@ -2164,7 +2320,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               onClick={() => {
                 setActiveTab(item.label);
                 setSearchQuery('');
-                if (item.label === 'Vendor Requests') loadVendors();
+                if (item.label === 'Vendor Requests' || item.label === 'Vendor Management') loadVendors();
                 if (item.label === 'Product Approvals') loadVendorProducts();
               }}
             >
@@ -5521,6 +5677,122 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             </div>
           )}
 
+          {/* TAB: VENDOR MANAGEMENT */}
+          {activeTab === 'Vendor Management' && (
+            <div className="admin-view-tab-content">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#051838' }}>Vendor Management</h2>
+                  <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '4px' }}>Monitor approved and suspended vendors, view products/orders, and edit vendor details.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['Approved', 'Suspended'].map(s => (
+                    <button key={s} onClick={() => setVendorMgmtTab(s)}
+                      style={{ padding: '6px 16px', borderRadius: '9999px', border: '1.5px solid', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                        background: vendorMgmtTab === s ? '#051838' : 'transparent',
+                        color: vendorMgmtTab === s ? '#fff' : '#051838',
+                        borderColor: '#051838' }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <input value={vendorSearch} onChange={e => setVendorSearch(e.target.value)}
+                  placeholder="Search by business name or email..."
+                  style={{ padding: '10px 16px', border: '1.5px solid #e2e8f0', borderRadius: '10px', width: '100%', maxWidth: '400px', fontSize: '0.875rem' }} />
+              </div>
+
+              {vendorsLoading ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>Loading vendors...</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                        {['Business Name','Owner','Email','Phone','GSTIN','Registered','Status','Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendors
+                        .filter(v => v.status === vendorMgmtTab &&
+                          (vendorSearch === '' || v.businessName?.toLowerCase().includes(vendorSearch.toLowerCase()) || v.email?.toLowerCase().includes(vendorSearch.toLowerCase())))
+                        .map(v => (
+                          <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {v.logo ? <img src={v.logo} alt="logo" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }} /> :
+                                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#051838', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dfb743', fontWeight: 700, fontSize: '14px' }}>
+                                    {v.businessName?.slice(0,2).toUpperCase()}
+                                  </div>
+                                }
+                                <div>
+                                  <div style={{ fontWeight: 600, color: '#1e293b' }}>{v.businessName}</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{v.businessCategory || 'General'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.ownerName}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.email}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.phone}</td>
+                            <td style={{ padding: '12px 16px', color: '#374151' }}>{v.gstin || '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.8rem' }}>{v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                                background: v.status === 'Approved' ? '#dcfce7' : v.status === 'Suspended' ? '#fee2e2' : '#fef3c7',
+                                color: v.status === 'Approved' ? '#166534' : v.status === 'Suspended' ? '#991b1b' : '#92400e' }}>
+                                {v.status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <button onClick={() => { setSelectedVendor(v); setShowVendorModal(true); }}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: '1.5px solid #94a3b8', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: '#374151' }}>
+                                  View Details
+                                </button>
+                                <button onClick={() => handleStartEditVendor(v)}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#051838', color: '#dfb743', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  Edit
+                                </button>
+                                <button onClick={() => handleViewVendorProducts(v)}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: '1.5px solid #051838', background: 'transparent', color: '#051838', cursor: 'pointer', fontSize: '0.75rem' }}>
+                                  Products
+                                </button>
+                                <button onClick={() => handleViewVendorOrders(v)}
+                                  style={{ padding: '5px 10px', borderRadius: '7px', border: '1.5px solid #051838', background: 'transparent', color: '#051838', cursor: 'pointer', fontSize: '0.75rem' }}>
+                                  Orders
+                                </button>
+                                {v.status === 'Approved' ? (
+                                  <button onClick={() => handleSuspendVendor(v.id)}
+                                    style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    Suspend
+                                  </button>
+                                ) : (
+                                  <button onClick={() => handleActivateVendor(v.id)}
+                                    style={{ padding: '5px 10px', borderRadius: '7px', border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    Activate
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {vendors.filter(v => v.status === vendorMgmtTab).length === 0 && !vendorsLoading && (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+                      <Store size={48} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <p>No vendors found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TAB: PRODUCT APPROVALS */}
           {activeTab === 'Product Approvals' && (
             <div className="admin-view-tab-content">
@@ -8516,6 +8788,214 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   {selectedVendor.adminNotes && <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.8rem' }}>Admin Notes: {selectedVendor.adminNotes}</p>}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT VENDOR DETAIL MODAL ─────────────────────────────────────────── */}
+      {showEditVendorModal && editingVendor && (
+        <div className="admin-modal-overlay" onClick={() => { setShowEditVendorModal(false); setEditingVendor(null); }}>
+          <div className="admin-modal-box wide" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-hdr">
+              <h3>Edit Vendor Details</h3>
+              <button className="close-btn" onClick={() => { setShowEditVendorModal(false); setEditingVendor(null); }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSaveVendor} style={{ padding: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Business Name *</label>
+                  <input value={editForm.businessName} onChange={e => setEditForm({ ...editForm, businessName: e.target.value })} required className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Owner Name *</label>
+                  <input value={editForm.ownerName} onChange={e => setEditForm({ ...editForm, ownerName: e.target.value })} required className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Phone Number *</label>
+                  <input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} required className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Business Category</label>
+                  <input value={editForm.businessCategory} onChange={e => setEditForm({ ...editForm, businessCategory: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>GSTIN</label>
+                  <input value={editForm.gstin} onChange={e => setEditForm({ ...editForm, gstin: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>PAN</label>
+                  <input value={editForm.pan} onChange={e => setEditForm({ ...editForm, pan: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Business Description</label>
+                <textarea value={editForm.businessDescription} onChange={e => setEditForm({ ...editForm, businessDescription: e.target.value })} rows={3} style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.875rem' }} />
+              </div>
+
+              <h4 style={{ color: '#051838', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 700 }}>Bank Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Account Holder</label>
+                  <input value={editForm.bankAccountHolder} onChange={e => setEditForm({ ...editForm, bankAccountHolder: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Account Number</label>
+                  <input value={editForm.bankAccountNumber} onChange={e => setEditForm({ ...editForm, bankAccountNumber: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>IFSC Code</label>
+                  <input value={editForm.bankIfscCode} onChange={e => setEditForm({ ...editForm, bankIfscCode: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Bank Name</label>
+                  <input value={editForm.bankName} onChange={e => setEditForm({ ...editForm, bankName: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+              </div>
+
+              <h4 style={{ color: '#051838', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '12px', fontSize: '0.95rem', fontWeight: 700 }}>Address</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Street Address</label>
+                  <input value={editForm.addressStreet} onChange={e => setEditForm({ ...editForm, addressStreet: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>City</label>
+                  <input value={editForm.addressCity} onChange={e => setEditForm({ ...editForm, addressCity: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>State</label>
+                  <input value={editForm.addressState} onChange={e => setEditForm({ ...editForm, addressState: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#374151', marginBottom: '4px', fontSize: '0.85rem' }}>Pincode</label>
+                  <input value={editForm.addressPincode} onChange={e => setEditForm({ ...editForm, addressPincode: e.target.value })} className="modal-input" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => { setShowEditVendorModal(false); setEditingVendor(null); }}
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: 'transparent', cursor: 'pointer', fontWeight: 600 }}>
+                  Cancel
+                </button>
+                <button type="submit"
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#051838', color: '#dfb743', cursor: 'pointer', fontWeight: 700 }}>
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── VIEW VENDOR PRODUCTS MODAL ─────────────────────────────────────────── */}
+      {showVendorProductsModal && vendorViewProducts && (
+        <div className="admin-modal-overlay" onClick={() => { setShowVendorProductsModal(false); setVendorViewProducts(null); }}>
+          <div className="admin-modal-box wide" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="modal-hdr">
+              <h3>Products by {vendorViewProducts.businessName}</h3>
+              <button className="close-btn" onClick={() => { setShowVendorProductsModal(false); setVendorViewProducts(null); }}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      {['ID', 'Image', 'Name', 'Category', 'Price', 'Stock', 'Status'].map(h => (
+                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendorProductsList.map(p => (
+                      <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 16px', color: '#64748b' }}>#{p.id}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <img src={p.image || 'https://via.placeholder.com/40'} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1e293b' }}>{p.name}</td>
+                        <td style={{ padding: '12px 16px', color: '#374151' }}>{p.category}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#051838' }}>₹{p.price?.toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '12px 16px', color: p.stock > 0 ? '#166534' : '#991b1b', fontWeight: 600 }}>
+                          {p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ padding: '3px 10px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                            background: p.status === 'Active' ? '#dcfce7' : p.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                            color: p.status === 'Active' ? '#166534' : p.status === 'Rejected' ? '#991b1b' : '#92400e' }}>
+                            {p.status === 'Active' ? 'Approved' : p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {vendorProductsList.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                    No products found for this vendor.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── VIEW VENDOR ORDERS MODAL ───────────────────────────────────────────── */}
+      {showVendorOrdersModal && vendorViewOrders && (
+        <div className="admin-modal-overlay" onClick={() => { setShowVendorOrdersModal(false); setVendorViewOrders(null); }}>
+          <div className="admin-modal-box wide" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="modal-hdr">
+              <h3>Orders containing items from {vendorViewOrders.businessName}</h3>
+              <button className="close-btn" onClick={() => { setShowVendorOrdersModal(false); setVendorViewOrders(null); }}><X size={18} /></button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      {['Order ID', 'Customer', 'Vendor Items', 'Total Amount', 'Status', 'Date'].map(h => (
+                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendorOrdersList.map(o => {
+                      const vendorItems = (o.items || []).filter(item => item.vendorId === vendorViewOrders.id);
+                      return (
+                        <tr key={o.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 600, color: '#051838' }}>{o.id}</td>
+                          <td style={{ padding: '12px 16px', color: '#374151' }}>{o.customer}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {vendorItems.map((item, idx) => (
+                                <div key={idx} style={{ fontSize: '0.8rem', color: '#1e293b' }}>
+                                  • {item.name} <span style={{ color: '#64748b' }}>x {item.quantity}</span> (₹{item.price})
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px 16px', fontWeight: 600 }}>{o.amount}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span style={{ padding: '3px 10px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                              background: o.status === 'Delivered' ? '#dcfce7' : o.status === 'Cancelled' ? '#fee2e2' : '#fef3c7',
+                              color: o.status === 'Delivered' ? '#166534' : o.status === 'Cancelled' ? '#991b1b' : '#92400e' }}>
+                              {o.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.8rem' }}>{o.date}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {vendorOrdersList.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                    No orders found containing products from this vendor.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

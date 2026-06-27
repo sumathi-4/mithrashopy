@@ -725,6 +725,10 @@ export const apiService = {
     return await apiRequest(`/api/admin/vendors/${vendorId}/status`, 'PUT', payload);
   },
 
+  async updateVendor(vendorId, payload) {
+    return await apiRequest(`/api/admin/vendors/${vendorId}`, 'PUT', payload);
+  },
+
   async getAdminVendorProducts(status) {
     try {
       if (status === 'Pending') {
