@@ -227,6 +227,43 @@ async function runTests() {
       throw new Error('Vendor product rejection email reason verification failed.');
     }
 
+    // ─── 4. TEST VENDOR REJECTION EMAIL ───────────────────────────────────────
+    console.log('\n--- 4. Testing Vendor Rejection Email ---');
+
+    const testVendorIdReject = 'v-notify-reject-' + testTime;
+    await Vendor.create({
+      id: testVendorIdReject,
+      businessName: 'Rejected Vendor Corp',
+      ownerName: 'Rejected Owner',
+      email: 'vendor-reject@domain.com',
+      password: 'Password123!',
+      phone: '9999900000',
+      status: 'Pending'
+    });
+
+    const vendorRejectReq = {
+      params: { id: testVendorIdReject },
+      body: { status: 'Rejected', rejectReason: 'Invalid GSTIN document.' }
+    };
+    const vendorRejectRes = mockRes();
+    await updateVendorStatusHandler(vendorRejectReq, vendorRejectRes);
+
+    console.log(`- API Update status code: ${vendorRejectRes.statusCode} (Expected: 200)`);
+    if (vendorRejectRes.statusCode !== 200) throw new Error('Vendor rejection status update failed.');
+
+    sent = readSentEmails();
+    const rejectionEmail = sent.find(e => e.type === 'vendor_rejection');
+
+    console.log(`- Email logged to JSON: ${rejectionEmail ? '✅ Yes' : '❌ No'}`);
+    if (!rejectionEmail) throw new Error('Vendor rejection email was not generated.');
+
+    console.log(`- Recipient email matches: ${rejectionEmail.to === 'vendor-reject@domain.com' ? '✅ Yes' : '❌ No'}`);
+    console.log(`- Body contains reject reason: ${rejectionEmail.body.includes('Invalid GSTIN document.') ? '✅ Yes' : '❌ No'}`);
+
+    if (rejectionEmail.to !== 'vendor-reject@domain.com' || !rejectionEmail.body.includes('Invalid GSTIN document.')) {
+      throw new Error('Vendor rejection email verification failed.');
+    }
+
     // Clean up
     await User.deleteMany({ id: { $regex: /^u-notify-/ } });
     await Vendor.deleteMany({ id: { $regex: /^v-notify-/ } });

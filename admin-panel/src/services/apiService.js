@@ -325,7 +325,7 @@ export const apiService = {
 
   async updateOrderStatus(id, status) {
     try {
-      const res = await apiRequest(`/api/orders/${id}`, 'PUT', { status });
+      const res = await apiRequest(`/api/orders/${encodeURIComponent(id)}`, 'PUT', { status });
       return res.order;
     } catch (err) {
       if (isBackendReachable) throw err;
@@ -335,7 +335,7 @@ export const apiService = {
 
   async deleteOrder(id) {
     try {
-      await apiRequest(`/api/orders/${id}`, 'DELETE');
+      await apiRequest(`/api/orders/${encodeURIComponent(id)}`, 'DELETE');
       return true;
     } catch (err) {
       if (isBackendReachable) throw err;

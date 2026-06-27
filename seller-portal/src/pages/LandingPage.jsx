@@ -567,36 +567,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white text-slate-400 py-10 px-6 md:px-16 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2 select-none">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm bg-gradient-to-br from-[#DFB743] to-[#C29B27] text-[#051838]">
-                M
-              </div>
-              <span className="text-[#08214D] font-extrabold text-base tracking-tight">
-                Mithra<span className="text-[#DFB743]">Shoppy</span>
-              </span>
-            </div>
-            <div className="flex gap-6 flex-wrap justify-center text-xs font-semibold tracking-wide">
-              {['About', 'Privacy Policy', 'Terms of Service', 'Support', 'Contact'].map((link) => (
-                <a
-                  key={link}
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="text-slate-400 hover:text-[#08214D] transition-colors"
-                >
-                  {link.toUpperCase()}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div className="border-t border-slate-50 pt-5 text-center text-[10px] font-bold text-slate-400 select-none">
-            © {new Date().getFullYear()} MITHRASHOPPY. ALL RIGHTS RESERVED. MADE WITH ❤️ IN INDIA.
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

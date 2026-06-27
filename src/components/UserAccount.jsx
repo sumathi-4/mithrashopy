@@ -2994,281 +2994,380 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
+        /* Rewards & Reviews Tabs Redesign - Glassmorphism & SaaS Accents */
         .ua-rewards-view, .ua-reviews-view {
-          padding: 10px;
-        }
-        .ua-rewards-header, .ua-reviews-header {
-          margin-bottom: 25px;
-        }
-        .ua-rewards-title, .ua-reviews-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #051838;
-          margin-bottom: 5px;
-        }
-        .ua-rewards-sub, .ua-reviews-sub {
-          font-size: 14px;
-          color: #828282;
+          padding: 10px 5px;
+          animation: ua-fade-in 0.4s ease forwards;
         }
 
+        .ua-rewards-header, .ua-reviews-header {
+          margin-bottom: 28px;
+        }
+
+        .ua-rewards-title, .ua-reviews-title {
+          font-family: var(--font-serif);
+          font-size: 1.8rem;
+          font-weight: 800;
+          color: #051838;
+          margin-bottom: 6px;
+        }
+
+        .ua-rewards-sub, .ua-reviews-sub {
+          font-size: 0.9rem;
+          color: #666;
+          font-weight: 500;
+        }
+
+        /* Points Balance Card - Premium gradient with glow */
         .ua-rewards-points-card {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: linear-gradient(135deg, #051838 0%, #1e3c72 100%);
-          padding: 25px;
-          border-radius: 12px;
+          background: linear-gradient(135deg, #051838 0%, #aa7c11 100%);
+          padding: 28px;
+          border-radius: 20px;
           color: #ffffff;
-          margin-bottom: 30px;
-          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.15);
+          margin-bottom: 36px;
+          box-shadow: 0 10px 30px rgba(5, 24, 56, 0.15), 0 0 15px rgba(212, 175, 55, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.12);
         }
+
         .ua-rewards-points-left {
           display: flex;
           align-items: center;
           gap: 20px;
         }
+
         .ua-trophy-icon {
           color: #F2C94C;
+          filter: drop-shadow(0 2px 8px rgba(242, 201, 76, 0.4));
         }
+
         .ua-points-title {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0 0 5px 0;
+          font-family: var(--font-serif);
+          font-size: 1.35rem;
+          font-weight: 750;
+          margin: 0 0 6px 0;
         }
+
         .ua-points-sub {
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.8);
+          font-size: 0.84rem;
+          color: rgba(255, 255, 255, 0.85);
           margin: 0;
+          font-weight: 500;
         }
+
         .ua-rewards-points-right {
           text-align: center;
-          background: rgba(255, 255, 255, 0.1);
-          padding: 10px 20px;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.12);
+          padding: 12px 24px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          backdrop-filter: blur(4px);
         }
+
         .ua-points-number {
           display: block;
-          font-size: 32px;
-          font-weight: 800;
+          font-size: 2.2rem;
+          font-weight: 850;
           color: #F2C94C;
           line-height: 1;
+          filter: drop-shadow(0 2px 6px rgba(242, 201, 76, 0.3));
         }
+
         .ua-points-lbl {
-          font-size: 12px;
+          font-size: 0.7rem;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.08em;
+          font-weight: 700;
+          margin-top: 4px;
         }
 
         .ua-claims-section-title {
-          font-size: 18px;
-          font-weight: 600;
+          font-family: var(--font-serif);
+          font-size: 1.3rem;
+          font-weight: 800;
           color: #051838;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
         }
 
         .ua-claims-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 20px;
+          gap: 24px;
         }
+
+        /* Claim Cards */
         .ua-claim-card {
           background: #ffffff;
-          border: 1px solid #e0e0e0;
-          border-radius: 12px;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          border-radius: 20px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.015);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .ua-claim-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+          transform: translateY(-5px);
+          border-color: rgba(212, 175, 55, 0.35);
+          box-shadow: 0 12px 30px rgba(212, 175, 55, 0.1);
         }
+
         .ua-claim-img-wrapper {
           position: relative;
-          height: 180px;
-          background: #f9f9f9;
+          height: 190px;
+          background: #faf9f6;
+          overflow: hidden;
         }
+
         .ua-claim-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: transform 0.5s ease;
         }
+
+        .ua-claim-card:hover .ua-claim-img {
+          transform: scale(1.04);
+        }
+
         .ua-claim-status-badge {
           position: absolute;
           top: 12px;
           right: 12px;
-          padding: 4px 10px;
+          padding: 5px 12px;
           border-radius: 20px;
-          font-size: 11px;
-          font-weight: 700;
+          font-size: 0.68rem;
+          font-weight: 750;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.04em;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
+
         .ua-claim-status-badge.pending {
           background: #FFF9E6;
           color: #D4AF37;
           border: 1px solid rgba(212, 175, 55, 0.3);
         }
+
         .ua-claim-status-badge.claimed {
           background: #E8F5E9;
           color: #2E7D32;
           border: 1px solid rgba(46, 125, 50, 0.3);
         }
+
         .ua-claim-info {
-          padding: 15px;
+          padding: 18px;
           flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
+
         .ua-claim-name {
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 0.94rem;
+          font-weight: 750;
           color: #051838;
-          margin: 0 0 5px 0;
           line-height: 1.4;
         }
+
         .ua-claim-meta {
-          font-size: 12px;
+          font-size: 0.78rem;
           color: #828282;
-          margin: 0 0 10px 0;
+          font-weight: 500;
         }
+
         .ua-claim-value {
-          font-size: 14px;
-          font-weight: 700;
+          font-size: 0.9rem;
+          font-weight: 800;
           color: #D4AF37;
-          margin: 0;
+          margin-top: 4px;
         }
+
         .ua-claim-actions {
-          padding: 0 15px 15px 15px;
+          padding: 0 18px 18px 18px;
         }
+
         .ua-claim-btn-action {
           width: 100%;
           padding: 10px;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 600;
+          border-radius: 30px;
+          font-size: 0.8rem;
+          font-weight: 750;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
           display: flex;
           align-items: center;
           justify-content: center;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
+
         .claim-pending-btn {
-          background: #051838;
+          background: linear-gradient(135deg, #D4AF37, #B38F2D);
           color: #ffffff;
           border: none;
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2);
         }
+
         .claim-pending-btn:hover {
-          background: #112d5a;
-          transform: scale(1.02);
+          background: linear-gradient(135deg, #B38F2D, #aa7c11);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 14px rgba(212, 175, 55, 0.3);
         }
+
         .claim-done-btn {
-          background: #f2f2f2;
-          color: #828282;
-          border: 1px solid #e0e0e0;
+          background: #f7f6f3;
+          color: #888;
+          border: 1px solid #eae6df;
           cursor: not-allowed;
         }
 
         .ua-claims-empty-state, .ua-reviews-empty-state {
           text-align: center;
-          padding: 50px 20px;
+          padding: 60px 20px;
           background: #ffffff;
-          border-radius: 12px;
-          border: 1px solid #e0e0e0;
-        }
-        .empty-sparkles-icon, .empty-reviews-icon {
-          color: #E0E0E0;
-          margin-bottom: 15px;
-        }
-        .ua-claims-empty-state p, .ua-reviews-empty-state p {
-          color: #828282;
-          font-size: 14px;
-          margin-bottom: 20px;
+          border-radius: 20px;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
         }
 
+        .empty-sparkles-icon, .empty-reviews-icon {
+          color: rgba(212, 175, 55, 0.2);
+          margin-bottom: 5px;
+        }
+
+        .ua-claims-empty-state p, .ua-reviews-empty-state p {
+          color: #666;
+          font-size: 0.94rem;
+          margin-bottom: 12px;
+          font-weight: 500;
+        }
+
+        /* Review tabs subfilter headers */
         .ua-reviews-tabs {
           display: flex;
-          gap: 15px;
-          border-bottom: 1px solid #e0e0e0;
-          margin-bottom: 25px;
+          gap: 8px;
+          border-bottom: 2px solid rgba(212, 175, 55, 0.12);
+          margin-bottom: 32px;
+          overflow-x: auto;
         }
+
         .ua-review-tab-btn {
           background: none;
           border: none;
           padding: 12px 20px;
-          font-size: 14px;
+          font-size: 0.88rem;
           font-weight: 600;
-          color: #828282;
+          color: #666;
           cursor: pointer;
           position: relative;
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
+          white-space: nowrap;
         }
+
         .ua-review-tab-btn:hover {
-          color: #051838;
+          color: #D4AF37;
         }
+
         .ua-review-tab-btn.active {
-          color: #051838;
+          color: #D4AF37;
+          font-weight: 750;
         }
+
         .ua-review-tab-btn.active::after {
           content: '';
           position: absolute;
-          bottom: -1px;
+          bottom: -2px;
           left: 0;
           right: 0;
-          height: 2px;
-          background: #051838;
+          height: 3px;
+          background: #D4AF37;
+          border-radius: 3px;
         }
 
         .ua-reviews-product-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 24px;
         }
+
         .ua-review-pending-card {
           background: #ffffff;
-          border: 1px solid #e0e0e0;
-          border-radius: 12px;
-          padding: 15px;
+          border: 1px solid rgba(212, 175, 55, 0.12);
+          border-radius: 18px;
+          padding: 18px;
           display: flex;
-          gap: 15px;
+          gap: 16px;
           align-items: center;
+          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.01);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .ua-review-pending-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(212, 175, 55, 0.3);
+          box-shadow: 0 10px 24px rgba(212, 175, 55, 0.08);
+        }
+
         .ua-rp-img {
-          width: 70px;
-          height: 70px;
-          border-radius: 8px;
+          width: 72px;
+          height: 72px;
+          border-radius: 12px;
           object-fit: cover;
+          border: 1px solid rgba(212, 175, 55, 0.15);
         }
+
         .ua-rp-info {
           flex-grow: 1;
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
+
         .ua-rp-name {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 0.88rem;
+          font-weight: 750;
           color: #051838;
-          margin: 0 0 3px 0;
+          margin: 0 0 4px 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
+
         .ua-rp-meta {
-          font-size: 11px;
+          font-size: 0.74rem;
           color: #828282;
           margin-bottom: 8px;
+          font-weight: 500;
         }
+
         .ua-rp-btn-review {
           align-self: flex-start;
-          background: #051838;
+          background: linear-gradient(135deg, #D4AF37, #B38F2D);
           color: #ffffff;
           border: none;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 11px;
-          font-weight: 600;
+          padding: 6px 14px;
+          border-radius: 30px;
+          font-size: 0.72rem;
+          font-weight: 750;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          box-shadow: 0 2px 6px rgba(212, 175, 55, 0.2);
         }
+
         .ua-rp-btn-review:hover {
-          background: #112d5a;
+          background: linear-gradient(135deg, #B38F2D, #aa7c11);
+          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+          transform: translateY(-1px);
         }
 
         .ua-submitted-reviews-list {
@@ -3276,175 +3375,232 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           flex-direction: column;
           gap: 20px;
         }
+
         .ua-review-item-card {
           background: #ffffff;
-          border: 1px solid #e0e0e0;
-          border-radius: 12px;
-          padding: 20px;
+          border: 1px solid rgba(212, 175, 55, 0.12);
+          border-radius: 20px;
+          padding: 24px;
+          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.01);
+          transition: all 0.3s ease;
         }
+
+        .ua-review-item-card:hover {
+          border-color: rgba(212, 175, 55, 0.25);
+          box-shadow: 0 8px 24px rgba(212, 175, 55, 0.05);
+        }
+
         .ua-rev-header {
           display: flex;
           align-items: center;
-          gap: 15px;
-          margin-bottom: 15px;
+          gap: 16px;
+          margin-bottom: 16px;
         }
+
         .ua-rev-img {
-          width: 50px;
-          height: 50px;
-          border-radius: 6px;
+          width: 54px;
+          height: 54px;
+          border-radius: 10px;
           object-fit: cover;
+          border: 1px solid rgba(212, 175, 55, 0.15);
         }
+
         .ua-rev-meta {
           flex-grow: 1;
         }
+
         .ua-rev-product-name {
-          font-size: 15px;
-          font-weight: 600;
+          font-size: 0.94rem;
+          font-weight: 750;
           color: #051838;
           margin: 0 0 4px 0;
         }
+
         .ua-rev-stars-row {
           display: flex;
           align-items: center;
           gap: 4px;
         }
+
         .ua-rev-date {
-          font-size: 12px;
+          font-size: 0.76rem;
           color: #828282;
           margin-left: 8px;
+          font-weight: 500;
         }
+
         .ua-rev-status-badge {
-          padding: 4px 10px;
+          padding: 4px 12px;
           border-radius: 20px;
-          font-size: 11px;
-          font-weight: 600;
+          font-size: 0.68rem;
+          font-weight: 750;
           text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
+
         .ua-rev-status-badge.pending {
           background: #FFF9E6;
           color: #D4AF37;
+          border: 1px solid rgba(212, 175, 55, 0.2);
         }
+
         .ua-rev-status-badge.approved {
           background: #E8F5E9;
           color: #2E7D32;
+          border: 1px solid rgba(46, 125, 50, 0.2);
         }
+
         .ua-rev-status-badge.rejected {
           background: #FFEBEE;
           color: #C62828;
+          border: 1px solid rgba(198, 40, 40, 0.2);
         }
+
         .ua-rev-comment {
-          font-size: 14px;
+          font-size: 0.88rem;
           color: #4f4f4f;
           line-height: 1.5;
-          margin-bottom: 15px;
+          margin-bottom: 16px;
+          font-weight: 500;
         }
+
         .ua-verified-purchase-badge {
           display: inline-block;
-          font-size: 11px;
+          font-size: 0.7rem;
           color: #2E7D32;
-          font-weight: 600;
+          font-weight: 750;
           background: #E8F5E9;
-          padding: 2px 6px;
+          padding: 3px 8px;
           border-radius: 4px;
-          margin-top: 5px;
+          margin-top: 6px;
+          border: 1px solid rgba(46, 125, 50, 0.2);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
         }
+
         .ua-rev-admin-reply {
-          background: #f9f9f9;
-          border-left: 3px solid #051838;
-          padding: 12px 15px;
-          border-radius: 0 8px 8px 0;
-          margin-top: 15px;
+          background: #faf9f6;
+          border-left: 3px solid #D4AF37;
+          padding: 14px 18px;
+          border-radius: 0 12px 12px 0;
+          margin-top: 16px;
+          border: 1px solid rgba(212, 175, 55, 0.08);
+          border-left-width: 3.5px;
         }
+
         .ua-reply-title {
-          font-size: 12px;
-          font-weight: 700;
+          font-size: 0.74rem;
+          font-weight: 800;
           color: #051838;
           margin: 0 0 5px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
+
         .ua-reply-text {
-          font-size: 13px;
+          font-size: 0.84rem;
           font-style: italic;
-          color: #4f4f4f;
+          color: #555;
           margin: 0;
+          font-weight: 500;
         }
 
         .ua-modal-header-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-bottom: 1px solid #e0e0e0;
-          padding-bottom: 15px;
-          margin-bottom: 15px;
+          border-bottom: 1.5px solid rgba(212, 175, 55, 0.12);
+          padding-bottom: 16px;
+          margin-bottom: 20px;
         }
+
         .ua-modal-close-btn {
           background: none;
           border: none;
           cursor: pointer;
           color: #828282;
-          padding: 4px;
+          padding: 6px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: all 0.2s ease;
         }
+
         .ua-modal-close-btn:hover {
-          background: #f2f2f2;
+          background: #f7f6f3;
           color: #051838;
+          transform: scale(1.05);
         }
+
         .ua-review-modal-product-summary {
           display: flex;
           align-items: center;
-          gap: 15px;
-          background: #f9f9f9;
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 20px;
+          gap: 16px;
+          background: #faf9f6;
+          padding: 16px;
+          border-radius: 12px;
+          margin-bottom: 24px;
+          border: 1px solid rgba(212, 175, 55, 0.1);
         }
+
         .ua-rmps-img {
           width: 60px;
           height: 60px;
-          border-radius: 6px;
+          border-radius: 10px;
           object-fit: cover;
+          border: 1px solid rgba(212, 175, 55, 0.12);
         }
+
         .ua-review-modal-product-summary h4 {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 0.94rem;
+          font-weight: 750;
           color: #051838;
-          margin: 0 0 3px 0;
+          margin: 0 0 4px 0;
         }
+
         .ua-review-modal-product-summary p {
-          font-size: 11px;
+          font-size: 0.76rem;
           color: #828282;
           margin: 0;
+          font-weight: 500;
         }
+
         .ua-star-rating-selector {
           display: flex;
-          gap: 8px;
-          margin: 10px 0;
+          gap: 10px;
+          margin: 12px 0;
         }
+
         .ua-star-selector-btn {
           background: none;
           border: none;
           cursor: pointer;
           padding: 2px;
-          transition: transform 0.2s ease;
+          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
         .ua-star-selector-btn:hover {
-          transform: scale(1.15);
+          transform: scale(1.25);
         }
+
         .ua-form-textarea {
           width: 100%;
-          border: 1px solid #e0e0e0;
-          border-radius: 8px;
-          padding: 12px;
+          border: 1.5px solid #eae6df;
+          border-radius: 10px;
+          padding: 14px 18px;
           font-family: inherit;
-          font-size: 14px;
+          font-size: 0.9rem;
           line-height: 1.5;
           resize: vertical;
+          background: #fff;
+          transition: all 0.3s ease;
         }
+
         .ua-form-textarea:focus {
           outline: none;
-          border-color: #051838;
+          border-color: #D4AF37;
+          box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.12);
         }
 
         /* Order Details Modal Styles */
@@ -3456,148 +3612,177 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           display: flex;
           flex-direction: column;
         }
+
         .order-details-subtitle {
-          font-size: 13px;
+          font-size: 0.82rem;
           color: #828282;
-          margin-top: 3px;
+          margin-top: 4px;
           margin-bottom: 0;
+          font-weight: 500;
         }
+
         .order-details-header-btn {
           background: #faf9f6;
-          border: 1px solid #eae6df;
+          border: 1.5px solid #eae6df;
           color: #051838;
-          border-radius: 20px;
-          padding: 6px 14px;
-          font-size: 12px;
-          font-weight: 600;
+          border-radius: 30px;
+          padding: 8px 16px;
+          font-size: 0.78rem;
+          font-weight: 750;
           display: flex;
           align-items: center;
           gap: 6px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .order-details-header-btn:hover {
-          background: #D4AF37;
-          border-color: #D4AF37;
+          background: linear-gradient(135deg, #D4AF37, #B38F2D);
+          border-color: transparent;
           color: #ffffff;
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
+          transform: translateY(-1px);
         }
+
         .order-details-modal-body {
           max-height: 60vh;
           overflow-y: auto;
           padding: 10px 5px;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
         }
+
         .order-details-section-title {
-          font-size: 13px;
-          font-weight: 700;
+          font-size: 0.78rem;
+          font-weight: 800;
           color: #051838;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin: 0 0 15px 0;
-          border-left: 3px solid #D4AF37;
-          padding-left: 8px;
+          letter-spacing: 0.06em;
+          margin: 0 0 16px 0;
+          border-left: 3.5px solid #D4AF37;
+          padding-left: 10px;
         }
+
         .order-tracking-section {
           background: #faf9f6;
-          border: 1px solid #eae6df;
-          border-radius: 12px;
-          padding: 20px;
-          margin-bottom: 20px;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: inset 0 0 10px rgba(0,0,0,0.01);
         }
-        
+
         /* Timeline Tracker Styles */
         .tracking-timeline {
           display: flex;
           align-items: center;
           justify-content: space-between;
           position: relative;
-          margin: 15px 0 5px 0;
-          padding: 0 10px;
+          margin: 20px 0 10px 0;
+          padding: 0 16px;
         }
+
         .cancelled-timeline {
           justify-content: center;
         }
+
         .timeline-step {
           display: flex;
           flex-direction: column;
           align-items: center;
           position: relative;
           z-index: 2;
-          width: 80px;
+          width: 84px;
           text-align: center;
         }
+
         .timeline-circle {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
-          font-weight: 700;
-          transition: all 0.3s ease;
+          font-size: 13px;
+          font-weight: 750;
+          transition: all 0.35s ease;
+          border: 2.5px solid #eae6df;
         }
+
         .timeline-label {
-          font-size: 11px;
-          font-weight: 600;
-          margin-top: 8px;
-          color: #828282;
+          font-size: 0.74rem;
+          font-weight: 700;
+          margin-top: 10px;
+          color: #888;
+          transition: color 0.3s ease;
         }
+
         .timeline-line {
           flex-grow: 1;
-          height: 3px;
+          height: 4px;
           background: #eae6df;
-          margin: 0 -20px;
+          margin: 0 -22px;
           position: relative;
-          top: -19px;
+          top: -23px;
           z-index: 1;
-          transition: all 0.3s ease;
+          transition: all 0.35s ease;
+          border-radius: 4px;
         }
-        
+
         /* Timeline States */
         .timeline-step.completed .timeline-circle {
           background: #E8F5E9;
           color: #2E7D32;
-          border: 2px solid #2E7D32;
+          border-color: #2E7D32;
+          box-shadow: 0 3px 8px rgba(46, 125, 50, 0.15);
         }
+
         .timeline-step.completed .timeline-label {
           color: #2E7D32;
         }
+
         .timeline-step.active .timeline-circle {
           background: #051838;
           color: #ffffff;
-          border: 2px solid #051838;
-          box-shadow: 0 0 0 4px rgba(5, 24, 56, 0.15);
+          border-color: #051838;
+          box-shadow: 0 0 0 5px rgba(5, 24, 56, 0.15);
           animation: timelinePulse 2s infinite;
         }
+
         .timeline-step.active .timeline-label {
           color: #051838;
-          font-weight: 700;
+          font-weight: 800;
         }
+
         .timeline-step.upcoming .timeline-circle {
           background: #ffffff;
           color: #828282;
-          border: 2px solid #eae6df;
+          border-color: #eae6df;
         }
+
         .timeline-line.completed {
           background: #2E7D32;
         }
+
         .timeline-line.upcoming {
           background: #eae6df;
         }
-        
+
         .timeline-step.completed.cancelled .timeline-circle {
           background: #FFEBEE;
           color: #C62828;
-          border: 2px solid #C62828;
+          border-color: #C62828;
+          box-shadow: 0 3px 8px rgba(198, 40, 40, 0.15);
         }
+
         .timeline-step.completed.cancelled .timeline-label {
           color: #C62828;
         }
 
         @keyframes timelinePulse {
-          0% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0.4); }
-          70% { box-shadow: 0 0 0 6px rgba(5, 24, 56, 0); }
+          0% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0.45); }
+          70% { box-shadow: 0 0 0 8px rgba(5, 24, 56, 0); }
           100% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0); }
         }
 
@@ -3605,114 +3790,137 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         .order-info-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 20px;
-          margin-bottom: 20px;
+          gap: 24px;
         }
+
         .order-info-block {
-          border: 1px solid #eae6df;
-          border-radius: 12px;
-          padding: 16px;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          border-radius: 16px;
+          padding: 20px;
           background: #ffffff;
+          box-shadow: 0 4px 10px rgba(5, 24, 56, 0.01);
         }
+
         .block-title-row {
           display: flex;
           align-items: center;
-          gap: 8px;
-          border-bottom: 1px solid #eae6df;
-          padding-bottom: 8px;
-          margin-bottom: 12px;
+          gap: 10px;
+          border-bottom: 1.5px solid rgba(212, 175, 55, 0.08);
+          padding-bottom: 10px;
+          margin-bottom: 14px;
         }
+
         .block-icon {
           color: #D4AF37;
         }
+
         .block-title-row h5 {
           margin: 0;
-          font-size: 12px;
-          font-weight: 700;
+          font-size: 0.78rem;
+          font-weight: 800;
           color: #051838;
           text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
+
         .block-content {
-          font-size: 13px;
+          font-size: 0.86rem;
           line-height: 1.5;
           color: #4f4f4f;
+          font-weight: 500;
         }
-        
+
         /* Items Details */
         .order-items-details-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          margin-bottom: 20px;
+          gap: 14px;
         }
+
         .order-details-item-row {
           display: flex;
-          gap: 15px;
+          gap: 18px;
           align-items: center;
-          padding: 12px;
-          border: 1px solid #eae6df;
-          border-radius: 10px;
+          padding: 16px;
+          border: 1px solid rgba(212, 175, 55, 0.12);
+          border-radius: 14px;
           background: #ffffff;
-          transition: background-color 0.2s ease;
+          transition: all 0.25s ease;
         }
+
         .order-details-item-row:hover {
-          background-color: #faf9f6;
+          background-color: rgba(212, 175, 55, 0.03);
+          border-color: rgba(212, 175, 55, 0.25);
         }
+
         .item-thumbnail {
-          width: 55px;
-          height: 55px;
-          border-radius: 8px;
+          width: 60px;
+          height: 60px;
+          border-radius: 10px;
           object-fit: cover;
-          border: 1px solid #eae6df;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          box-shadow: 0 2px 6px rgba(5,24,56,0.03);
         }
+
         .item-details {
           flex-grow: 1;
         }
+
         .item-name {
-          margin: 0 0 2px 0;
-          font-size: 13px;
-          font-weight: 600;
+          margin: 0 0 4px 0;
+          font-size: 0.88rem;
+          font-weight: 750;
           color: #051838;
         }
+
         .item-variant {
-          font-size: 11px;
+          font-size: 0.74rem;
           color: #D4AF37;
-          font-weight: 600;
-          margin-bottom: 4px;
+          font-weight: 700;
+          margin-bottom: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
         }
+
         .item-price-qty {
           display: flex;
           justify-content: space-between;
-          font-size: 12px;
-          color: #777;
+          font-size: 0.82rem;
+          color: #666;
+          font-weight: 500;
         }
+
         .item-row-total {
-          font-weight: 700;
+          font-weight: 800;
           color: #051838;
         }
-        
+
         /* Billing Details Breakdown */
         .billing-details-breakdown {
-          border-top: 1px solid #eae6df;
-          padding-top: 15px;
-          margin-top: 5px;
+          border-top: 1.5px solid rgba(212, 175, 55, 0.08);
+          padding-top: 18px;
+          margin-top: 6px;
         }
+
         .billing-row {
           display: flex;
           justify-content: space-between;
-          font-size: 13px;
+          font-size: 0.86rem;
           color: #555;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
+          font-weight: 500;
         }
+
         .discount-row {
-          font-weight: 600;
+          font-weight: 700;
         }
+
         .order-details-footer {
-          border-top: 1px solid #eae6df;
-          padding-top: 15px;
+          border-top: 1.5px solid rgba(212, 175, 55, 0.12);
+          padding-top: 18px;
           margin-top: 0;
         }
-      ` }} />
+` }} />
     </div>
   );
 }

@@ -98,6 +98,14 @@ router.put('/vendors/:id/status', async (req, res) => {
         `Your vendor application for "${vendor.businessName}" was not approved. Reason: ${rejectReason || 'Not specified'}. ${adminNotes ? `Admin notes: ${adminNotes}` : ''} Please contact support if you have questions.`,
         { status: 'Rejected', rejectReason }
       );
+
+      // Send rejection email
+      try {
+        const { sendVendorRejectionEmail } = require('../services/emailService');
+        await sendVendorRejectionEmail(vendor.email, vendor.businessName, rejectReason);
+      } catch (mailErr) {
+        console.error('Failed to send vendor rejection email:', mailErr);
+      }
     }
 
     return res.json({ success: true, message: `Vendor ${status.toLowerCase()}.`, vendor });

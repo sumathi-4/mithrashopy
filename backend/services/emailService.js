@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 // Scratch file path to persist sent emails for test verification
 const SENT_EMAILS_FILE = path.join(__dirname, '../scratch/sent_emails.json');
@@ -29,6 +30,52 @@ function logSentEmail(emailPayload) {
     fs.writeFileSync(SENT_EMAILS_FILE, JSON.stringify(sentEmails, null, 2), 'utf8');
   } catch (err) {
     console.error('Failed to log sent email:', err);
+  }
+}
+
+// ─── Nodemailer Transporter Setup ─────────────────────────────────────────────
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  secure: process.env.SMTP_PORT === '465',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+/**
+ * Helper: Send email via SMTP
+ */
+async function sendMailHelper({ to, subject, text, extraMetadata = {} }) {
+  // 1. Always log locally first for verification tests
+  logSentEmail({
+    to,
+    subject,
+    body: text,
+    ...extraMetadata
+  });
+
+  // 2. Check if SMTP credentials are set
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn(`⚠️ SMTP credentials not set in .env. Skipping real delivery to ${to}`);
+    return;
+  }
+
+  // 3. Perform real SMTP delivery
+  try {
+    const mailOptions = {
+      from: process.env.SMTP_FROM || `"MithraShoppy" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      text
+    };
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✉️ Real email sent to ${to}. Message ID: ${info.messageId}`);
+    return info;
+  } catch (err) {
+    console.error(`❌ SMTP delivery failed to ${to}:`, err.message);
   }
 }
 
@@ -64,20 +111,15 @@ Thank you for shopping with us!
 MithraShoppy Team
   `.trim();
 
-  // Log for local console
-  console.log(`\n📨 [Email Sent to Customer] To: ${customerEmail} | Subject: ${subject}`);
-  console.log('--------------------------------------------------');
-  console.log(body);
-  console.log('--------------------------------------------------\n');
-
-  // Persist for test assertion
-  logSentEmail({
+  await sendMailHelper({
     to: customerEmail,
     subject,
-    type: 'customer_order_status',
-    body,
-    orderId: order.id,
-    status: order.status
+    text: body,
+    extraMetadata: {
+      type: 'customer_order_status',
+      orderId: order.id,
+      status: order.status
+    }
   });
 }
 
@@ -101,19 +143,14 @@ Welcome aboard!
 MithraShoppy Onboarding Team
   `.trim();
 
-  // Log for local console
-  console.log(`\n📨 [Email Sent to Vendor] To: ${vendorEmail} | Subject: ${subject}`);
-  console.log('--------------------------------------------------');
-  console.log(body);
-  console.log('--------------------------------------------------\n');
-
-  // Persist for test assertion
-  logSentEmail({
+  await sendMailHelper({
     to: vendorEmail,
     subject,
-    type: 'vendor_approval',
-    body,
-    businessName
+    text: body,
+    extraMetadata: {
+      type: 'vendor_approval',
+      businessName
+    }
   });
 }
 
@@ -149,27 +186,57 @@ Best regards,
 MithraShoppy Catalog Team
   `.trim();
 
-  // Log for local console
-  console.log(`\n📨 [Email Sent to Vendor] To: ${vendorEmail} | Subject: ${subject}`);
-  console.log('--------------------------------------------------');
-  console.log(body);
-  console.log('--------------------------------------------------\n');
-
-  // Persist for test assertion
-  logSentEmail({
+  await sendMailHelper({
     to: vendorEmail,
     subject,
-    type: 'vendor_product_approval',
-    body,
-    productId: product.id,
-    productName: product.name,
-    status: statusName,
-    rejectReason
+    text: body,
+    extraMetadata: {
+      type: 'vendor_product_approval',
+      productId: product.id,
+      productName: product.name,
+      status: statusName,
+      rejectReason
+    }
+  });
+}
+
+/**
+ * Sends a vendor rejection confirmation email.
+ */
+async function sendVendorRejectionEmail(vendorEmail, businessName, rejectReason = '') {
+  if (!vendorEmail) return;
+
+  const subject = '❌ Update on your Vendor Application';
+  const body = `
+Dear ${businessName},
+
+Thank you for your interest in registering as a vendor on MithraShoppy.
+
+We have processed the review of your application, and unfortunately, we are unable to approve your vendor account at this time.
+
+Reason for rejection: ${rejectReason || 'Not specified'}.
+
+Please contact our onboarding support team if you have any questions or would like to submit additional information.
+
+Best regards,
+MithraShoppy Onboarding Team
+  `.trim();
+
+  await sendMailHelper({
+    to: vendorEmail,
+    subject,
+    text: body,
+    extraMetadata: {
+      type: 'vendor_rejection',
+      businessName,
+      rejectReason
+    }
   });
 }
 
 module.exports = {
   sendOrderStatusEmail,
   sendVendorApprovalEmail,
+  sendVendorRejectionEmail,
   sendVendorProductApprovalEmail
 };
