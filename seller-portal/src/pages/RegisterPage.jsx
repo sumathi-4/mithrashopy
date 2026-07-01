@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { vendorRegister } from '../services/api'
+import { categoryConfigService } from '../services/categoryConfigService'
 import {
   HiOutlineEye,
   HiOutlineEyeOff,
@@ -10,16 +11,6 @@ import {
   HiOutlineUpload,
   HiOutlineExclamationCircle,
 } from 'react-icons/hi'
-
-const CATEGORIES = [
-  'Clothing',
-  'Electronics',
-  'Home & Living',
-  'Stationery',
-  'Gifts',
-  'Accessories',
-  'Other',
-]
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -30,6 +21,20 @@ const fileToBase64 = (file) =>
   })
 
 const RegisterPage = () => {
+  const [categories, setCategories] = useState(['Clothing', 'Electronics', 'Home & Living', 'Stationery', 'Gifts', 'Accessories', 'Other'])
+  
+  useEffect(() => {
+    categoryConfigService.getCategories().then(catsList => {
+      if (catsList && catsList.length > 0) {
+        const topLevels = catsList.filter(c => (!c.parent || c.parent === '—') && c.status === 'Active').map(c => c.name);
+        if (!topLevels.includes('Other')) {
+          topLevels.push('Other');
+        }
+        setCategories(topLevels);
+      }
+    });
+  }, [])
+
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
@@ -424,7 +429,7 @@ const RegisterPage = () => {
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm"
                   >
                     <option value="">Select Category</option>
-                    {CATEGORIES.map((c) => (
+                    {categories.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>

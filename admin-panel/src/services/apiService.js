@@ -1,3 +1,4 @@
+import { categoryConfigService } from './categoryConfigService';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Helper: Get JWT token from local storage
@@ -109,8 +110,7 @@ export const apiService = {
       const res = await apiRequest('/api/categories');
       return res.categories;
     } catch (err) {
-      const local = localStorage.getItem('mithra_admin_categories');
-      return local ? JSON.parse(local) : [];
+      return await categoryConfigService.getCategories();
     }
   },
 

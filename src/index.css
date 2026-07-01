@@ -1,18 +1,18 @@
 /* Google Fonts imported in index.html */
 
 :root {
-  --primary-rose: #D4AF37;      /* Brand Primary Green */
-  --primary-rose-dark: #B38F2D;
+  --primary-rose: hsla(225, 75%, 45%, 1);      /* Brand Primary Royal Blue */
+  --primary-rose-dark: hsla(225, 75%, 35%, 1);
   --bg-topbar: #1a1a1a;         /* Clean Dark Topbar */
-  --text-dark: #111111;         /* Zara/H&M style deep dark text */
-  --text-muted: #666666;        /* Muted gray text */
-  --gold-accent: #aa7c11;       /* Brand Secondary Orange Accent */
-  --bg-champagne: #FDFBF7;      /* Super soft brand warm white/peach */
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --text-dark: hsla(222, 47%, 11%, 1);         /* Deep Navy Charcoal */
+  --text-muted: hsla(215, 16%, 47%, 1);        /* Muted slate text */
+  --gold-accent: hsla(43, 90%, 52%, 1);       /* Brand Secondary Gold Accent */
+  --bg-champagne: hsla(34, 40%, 98%, 1);      /* Soft Cream page background */
+  --font-serif: 'Outfit', sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-sm: 0 4px 12px rgba(212, 175, 55, 0.08); /* Soft green shadow */
-  --shadow-md: 0 12px 36px rgba(212, 175, 55, 0.12); /* Soft green shadow */
+  --shadow-sm: 0 4px 12px rgba(5, 24, 56, 0.08); /* Soft blue shadow */
+  --shadow-md: 0 12px 36px rgba(5, 24, 56, 0.12); /* Soft blue shadow */
 }
 
 * {
@@ -628,16 +628,16 @@ ul {
 /* Category Theme Colors */
 /* Category Theme Colors */
 .theme-clothing {
-  --theme-color: #D4AF37;
+  --theme-color: var(--primary-rose);
 }
 .theme-stationery {
-  --theme-color: #D4AF37;
+  --theme-color: var(--primary-rose);
 }
 .theme-gifts {
-  --theme-color: #aa7c11;
+  --theme-color: var(--primary-rose);
 }
 .theme-accessories {
-  --theme-color: #aa7c11;
+  --theme-color: var(--primary-rose);
 }
 
 .theme-clothing .card-explore-btn {
@@ -3657,7 +3657,7 @@ ul {
   color: #D4AF37;
 }
 .stationery-group .category-group-title {
-  color: #4A90E2;
+  color: #051838;
 }
 .gifts-group .category-group-title {
   color: #8A2BE2;
@@ -3707,7 +3707,7 @@ ul {
 }
 
 .stationery-group .subcategory-bullet {
-  background-color: #4A90E2;
+  background-color: #051838;
 }
 
 .gifts-group .subcategory-bullet {
@@ -6092,7 +6092,7 @@ ul {
   padding: 40px;
   text-align: center;
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(185, 122, 126, 0.15);
+  border: 1px solid rgba(5, 24, 56, 0.15);
   position: relative;
   overflow: hidden;
   animation: pulseGlow 4s infinite alternate;
@@ -6107,13 +6107,13 @@ ul {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #f7eded;
+  background-color: hsla(225, 75%, 97%, 1);
   color: var(--primary-rose);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px auto;
-  box-shadow: 0 4px 15px rgba(185, 122, 126, 0.15);
+  box-shadow: 0 4px 15px rgba(5, 24, 56, 0.15);
 }
 
 .mystery-gift-icon.shaking {
@@ -6148,13 +6148,13 @@ ul {
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: var(--transition);
-  box-shadow: 0 4px 15px rgba(185, 122, 126, 0.3);
+  box-shadow: 0 4px 15px rgba(5, 24, 56, 0.3);
 }
 
 .scratch-reveal-btn:hover {
   background-color: var(--primary-rose-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(185, 122, 126, 0.4);
+  box-shadow: 0 6px 20px rgba(5, 24, 56, 0.4);
 }
 
 .revealed-code-box {
@@ -6216,7 +6216,7 @@ ul {
   padding: 50px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(185, 122, 126, 0.08);
+  border: 1px solid rgba(5, 24, 56, 0.08);
   position: relative;
 }
 
@@ -6224,7 +6224,7 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #f7eded;
+  background-color: hsla(225, 75%, 97%, 1);
   color: var(--primary-rose);
   font-size: 0.75rem;
   font-weight: 700;
@@ -6262,7 +6262,7 @@ ul {
   background-color: #faf7f5;
   border-radius: 12px;
   padding: 16px 0;
-  border: 1px solid rgba(185, 122, 126, 0.08);
+  border: 1px solid rgba(5, 24, 56, 0.08);
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.01);
 }
 
@@ -6324,7 +6324,7 @@ ul {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(185, 122, 126, 0.08);
+  border: 1px solid rgba(5, 24, 56, 0.08);
   height: 170px;
   position: relative;
   overflow: hidden;
@@ -6332,7 +6332,7 @@ ul {
 
 .coupon-ticket-left {
   flex: 0.85;
-  background-color: #b97a7e; /* theme primary rose */
+  background-color: var(--primary-rose); /* theme primary rose */
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -6394,7 +6394,7 @@ ul {
   right: 25px;
   bottom: 25px;
   background-color: #faf7f5;
-  border: 1px solid rgba(185, 122, 126, 0.2);
+  border: 1px solid rgba(5, 24, 56, 0.2);
   color: var(--text-dark);
   padding: 6px 14px;
   border-radius: 20px;
@@ -6433,14 +6433,14 @@ ul {
   top: -10px;
   left: 36.5%;
   transform: translateX(-50%);
-  box-shadow: inset 0 -3px 3px rgba(185,122,126,0.02);
+  box-shadow: inset 0 -3px 3px rgba(5,24,56,0.02);
 }
 
 .bottom-notch {
   bottom: -10px;
   left: 36.5%;
   transform: translateX(-50%);
-  box-shadow: inset 0 3px 3px rgba(185,122,126,0.02);
+  box-shadow: inset 0 3px 3px rgba(5,24,56,0.02);
 }
 
 /* 4. Sale items products section */
@@ -6459,14 +6459,14 @@ ul {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(185, 122, 126, 0.08);
+  border: 1px solid rgba(5, 24, 56, 0.08);
   transition: var(--transition);
 }
 
 .offer-product-item:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(185, 122, 126, 0.2);
+  border-color: rgba(5, 24, 56, 0.2);
 }
 
 .offer-img-box-wrapper {
@@ -6562,7 +6562,7 @@ ul {
 .offer-btn-examine {
   width: 100%;
   background-color: transparent;
-  border: 1px solid rgba(185, 122, 126, 0.4);
+  border: 1px solid rgba(5, 24, 56, 0.4);
   color: var(--primary-rose);
   padding: 12px 0;
   border-radius: 6px;
@@ -6576,7 +6576,7 @@ ul {
   background-color: var(--primary-rose);
   color: #ffffff;
   border-color: var(--primary-rose);
-  box-shadow: 0 4px 12px rgba(185, 122, 126, 0.15);
+  box-shadow: 0 4px 12px rgba(5, 24, 56, 0.15);
 }
 
 
@@ -9676,7 +9676,7 @@ ul {
 .quickview-split-layout .quickview-split-img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 /* Full Product Detail Gallery */
@@ -9753,7 +9753,7 @@ ul {
   max-height: 100% !important;
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 /* Quick View card class matching JSX */
@@ -13596,8 +13596,8 @@ ul {
 }
 .ua-status-shipped { 
   background: #E3F2FD !important;
-  color: #1565C0 !important; 
-  border: 1px solid rgba(21, 101, 192, 0.25) !important;
+  color: var(--primary-rose) !important; 
+  border: 1px solid rgba(5, 24, 56, 0.25) !important;
 }
 .ua-status-processing, .ua-status-pending { 
   background: #FFF3E0 !important;
@@ -17460,21 +17460,21 @@ ul {
   background: linear-gradient(180deg, #f0f7ff 0%, #ddeeff 100%);
 }
 .cat-card-stationery:hover {
-  box-shadow: 0 12px 30px rgba(21, 101, 192, 0.12);
-  border-color: rgba(21, 101, 192, 0.25);
+  box-shadow: 0 12px 30px rgba(5, 24, 56, 0.12);
+  border-color: rgba(5, 24, 56, 0.25);
 }
 .cat-card-stationery .clothing-discount-badge {
-  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
-  box-shadow: 0 3px 8px rgba(13, 71, 161, 0.3);
+  background: linear-gradient(135deg, var(--primary-rose) 0%, var(--primary-rose-dark) 100%);
+  box-shadow: 0 3px 8px rgba(5, 24, 56, 0.3);
 }
 .cat-card-stationery .clothing-rating-pill-green {
-  background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+  background: linear-gradient(90deg, var(--primary-rose) 0%, var(--primary-rose) 100%);
 }
 .cat-card-stationery .clothing-card-add-cart-btn {
-  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  background: linear-gradient(135deg, var(--primary-rose) 0%, var(--primary-rose) 100%);
 }
 .cat-card-stationery .clothing-card-add-cart-btn:hover {
-  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+  background: linear-gradient(135deg, var(--primary-rose-dark) 0%, var(--primary-rose) 100%);
 }
 
 /* Gifts cards: purple accent */
@@ -24873,7 +24873,7 @@ ul {
 .product-detail-main-image-wrapper .product-detail-main-img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 .trending-products-section {
@@ -25372,7 +25372,7 @@ body .product-detail-main-image-wrapper {
 body .product-detail-main-image-wrapper .product-detail-main-img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 
 body .product-detail-thumbnail-wrapper.active,

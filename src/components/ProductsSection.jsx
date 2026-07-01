@@ -294,7 +294,8 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       const prod = productsList.find(p => p.id === id || String(p.id) === String(id));
       const selectedVariant = getSelectedVariant(prod, color, size);
       const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
-      const sku = selectedVariant ? selectedVariant.sku : null;
+      const rawSku = selectedVariant ? selectedVariant.sku : null;
+      const sku = rawSku && rawSku.includes('||') ? rawSku.split('||')[0] : rawSku;
 
       updatedItems = [...prevItems.filter(item => item.productId !== id), {
         productId: id,
@@ -667,12 +668,10 @@ export default function ProductsSection({ authUser, setAuthUser }) {
             };
           });
           
-          // Filter to display all 13 exclusive products on the home page (IDs 104-116)
+          // Filter to display first 12 products and exclusive/new products on home page
           const exclusiveOnly = mapped.filter(p => {
             const pid = Number(p.id);
-            return pid === 104 || pid === 105 || pid === 106 || pid === 107 || pid === 108 ||
-                   pid === 109 || pid === 110 || pid === 111 || pid === 112 || pid === 113 ||
-                   pid === 114 || pid === 115 || pid === 116;
+            return pid <= 12 || pid >= 104;
           });
           setProductsList(exclusiveOnly);
         } else {
@@ -1106,7 +1105,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                           { name: 'Purple', value: '#8A2BE2' },
                           { name: 'Black', value: '#000000' },
                           { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                          { name: 'Blue', value: '#4A90E2' }
+                          { name: 'Blue', value: '#051838' }
                         ].map(color => {
                           const isChecked = selectedColors.includes(color.name);
                           return (
@@ -1768,7 +1767,7 @@ const getColorHex = (name) => {
     'yellow': '#fdd835',
     'green': '#43a047',
     'purple': '#8e24aa',
-    'blue': '#1e88e5',
+    'blue': 'hsla(225, 75%, 45%, 1)',
     'darkred': '#b71c1c',
     'crimson red': '#b32142',
     'champagne gold': '#D4AF37',
@@ -1781,7 +1780,7 @@ const getColorHex = (name) => {
     'peach': '#ffcc80',
     'cream': '#fff9c4',
     'aqua': '#80deea',
-    'navy': '#3949ab',
+    'navy': '#051838',
     'olive': '#2e7d32'
   };
   const key = name.toLowerCase().trim();
@@ -1973,7 +1972,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           <span className="modal-section-title">Ink Color: {modalColor || "Blue"}</span>
           <div className="modal-color-dots">
             {[
-              { name: 'Blue', hex: '#0d47a1' },
+              { name: 'Blue', hex: '#051838' },
               { name: 'Black', hex: '#212121' },
               { name: 'Red', hex: '#b71c1c' }
             ].map((c, idx) => (

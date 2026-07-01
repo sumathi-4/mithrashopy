@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import { setVendor } from '../store/authSlice'
 import { updateVendorProfile } from '../services/api'
+import { categoryConfigService } from '../services/categoryConfigService'
 import { HiOutlineUser, HiOutlineLocationMarker, HiOutlineCreditCard, HiOutlineDocumentText, HiOutlineUpload } from 'react-icons/hi'
 
 const TABS = [
@@ -11,8 +12,6 @@ const TABS = [
   { id: 'bank', label: 'Bank Details', icon: HiOutlineCreditCard },
   { id: 'documents', label: 'Documents', icon: HiOutlineDocumentText }
 ]
-
-const CATEGORIES = ['Clothing', 'Electronics', 'Home & Living', 'Stationery', 'Gifts', 'Accessories', 'Other']
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -23,6 +22,18 @@ const fileToBase64 = (file) =>
   })
 
 export default function ProfilePage() {
+  const [categories, setCategories] = useState(['Clothing', 'Electronics', 'Home & Living', 'Stationery', 'Gifts', 'Accessories', 'Other'])
+  useEffect(() => {
+    categoryConfigService.getCategories().then(catsList => {
+      if (catsList && catsList.length > 0) {
+        const topLevels = catsList.filter(c => (!c.parent || c.parent === '—') && c.status === 'Active').map(c => c.name);
+        if (!topLevels.includes('Other')) {
+          topLevels.push('Other');
+        }
+        setCategories(topLevels);
+      }
+    });
+  }, [])
   const dispatch = useDispatch()
   const vendor = useSelector(state => state.auth.vendor) || {}
   const [activeTab, setActiveTab] = useState('business')
@@ -213,7 +224,7 @@ export default function ProfilePage() {
                     {...register('businessCategory')}
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                   >
-                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
                 <div>

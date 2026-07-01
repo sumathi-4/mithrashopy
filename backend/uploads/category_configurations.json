@@ -1,0 +1,281 @@
+{
+  "Clothing": {
+    "attributes": [
+      "Brand",
+      "Material",
+      "Occasion",
+      "Fit",
+      "fabric",
+      "neck style"
+    ],
+    "variants": [
+      "Color",
+      "Size"
+    ],
+    "affectsPrice": true,
+    "affectsStock": true,
+    "requireImages": true,
+    "filters": [
+      "Price",
+      "Size",
+      "Color",
+      "Brand",
+      "brand"
+    ],
+    "specs": [
+      "Fabric care instructions",
+      "Style Code",
+      "Fit type",
+      "ornaments",
+      "brand"
+    ],
+    "shippingOptions": [
+      "Standard Shipping",
+      "Express Clothing Delivery"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 3
+      },
+      "price": {
+        "required": true,
+        "min": 100
+      },
+      "stock": {
+        "required": true,
+        "min": 0
+      }
+    }
+  },
+  "Kids Clothing": {
+    "attributes": [
+      "Brand",
+      "Material",
+      "Safety Grade",
+      "Age Group"
+    ],
+    "variants": [
+      "Color",
+      "Age"
+    ],
+    "affectsPrice": true,
+    "affectsStock": true,
+    "requireImages": true,
+    "filters": [
+      "Price",
+      "Color",
+      "Age",
+      "Brand"
+    ],
+    "specs": [
+      "Material",
+      "Wash care",
+      "Safety certification"
+    ],
+    "shippingOptions": [
+      "Standard Shipping",
+      "Next-Day Kids Care Delivery"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 3
+      },
+      "price": {
+        "required": true,
+        "min": 50
+      },
+      "stock": {
+        "required": true,
+        "min": 0
+      }
+    }
+  },
+  "Jewellery": {
+    "attributes": [
+      "Brand",
+      "Purity",
+      "Certificate",
+      "Design Type"
+    ],
+    "variants": [
+      "Metal",
+      "Stone",
+      "Length"
+    ],
+    "affectsPrice": true,
+    "affectsStock": true,
+    "requireImages": true,
+    "filters": [
+      "Price",
+      "Metal",
+      "Stone",
+      "Brand"
+    ],
+    "specs": [
+      "Metal purity",
+      "Stone weight (carat)",
+      "Certification body",
+      "Weight"
+    ],
+    "shippingOptions": [
+      "Insured Jewellery Shipping",
+      "Hand-Delivered Premium Courier"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 5
+      },
+      "price": {
+        "required": true,
+        "min": 1000
+      },
+      "stock": {
+        "required": true,
+        "min": 1
+      }
+    }
+  },
+  "Stationery": {
+    "attributes": [
+      "Brand",
+      "Pages",
+      "Paper Type",
+      "Ruling",
+      "Binding"
+    ],
+    "variants": [
+      "Pack Size",
+      "Ink Color"
+    ],
+    "affectsPrice": true,
+    "affectsStock": true,
+    "requireImages": false,
+    "filters": [
+      "Price",
+      "Pack Size",
+      "Ink Color",
+      "Brand"
+    ],
+    "specs": [
+      "Number of pages",
+      "Dimensions",
+      "Paper thickness (GSM)",
+      "Cover type"
+    ],
+    "shippingOptions": [
+      "Standard Shipping",
+      "Bulk Stationery Cargo"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 2
+      },
+      "price": {
+        "required": true,
+        "min": 10
+      },
+      "stock": {
+        "required": true,
+        "min": 0
+      }
+    }
+  },
+  "Gifts": {
+    "attributes": [
+      "Brand",
+      "Occasion Theme",
+      "Personalized"
+    ],
+    "variants": [
+      "Theme",
+      "Wrapping",
+      "Personalization"
+    ],
+    "affectsPrice": false,
+    "affectsStock": true,
+    "requireImages": true,
+    "filters": [
+      "Price",
+      "Occasion",
+      "Brand"
+    ],
+    "specs": [
+      "Material",
+      "Weight",
+      "Dimensions",
+      "Country of Origin"
+    ],
+    "shippingOptions": [
+      "Standard Gift Shipping",
+      "Same-Day Gift Delivery",
+      "Gift Wrapping Included"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 3
+      },
+      "price": {
+        "required": true,
+        "min": 50
+      },
+      "stock": {
+        "required": true,
+        "min": 0
+      }
+    }
+  },
+  "Kids": {
+    "attributes": [
+      "brand",
+      "Fabric",
+      "Material",
+      "Sleeve Type",
+      "Neck Type",
+      "Pattern",
+      "Fit"
+    ],
+    "variants": [
+      "color",
+      "age"
+    ],
+    "affectsPrice": true,
+    "affectsStock": true,
+    "requireImages": true,
+    "filters": [
+      "Brand",
+      "Price",
+      "Color",
+      "Size",
+      "Age Group"
+    ],
+    "specs": [
+      "Fabric",
+      "Material",
+      "Country of Origin",
+      "Pattern",
+      "Wash Care"
+    ],
+    "shippingOptions": [
+      "Standard Delivery"
+    ],
+    "validationRules": {
+      "name": {
+        "required": true,
+        "minLength": 3
+      },
+      "price": {
+        "required": true,
+        "min": 100
+      },
+      "stock": {
+        "required": true,
+        "min": 0
+      }
+    }
+  }
+}

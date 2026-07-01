@@ -1,10 +1,23 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-blue-50: hsla(225, 75%, 97%, 1);
+  --color-blue-100: hsla(225, 75%, 93%, 1);
+  --color-blue-200: hsla(225, 75%, 86%, 1);
+  --color-blue-300: hsla(225, 75%, 75%, 1);
+  --color-blue-400: hsla(225, 75%, 62%, 1);
+  --color-blue-500: hsla(225, 75%, 52%, 1);
+  --color-blue-600: hsla(225, 75%, 45%, 1);
+  --color-blue-700: hsla(225, 75%, 35%, 1);
+  --color-blue-800: hsla(225, 75%, 28%, 1);
+  --color-blue-900: hsla(225, 75%, 20%, 1);
+}
+
 :root {
-  --blue-deep: #051838;
-  --blue-mid: #08214d;
-  --gold: #dfb743;
-  --cream: #fcfaf2;
+  --blue-deep: hsla(225, 75%, 45%, 1);    /* Brand Royal Blue */
+  --blue-mid: hsla(225, 75%, 35%, 1);     /* Brand Royal Blue Hover */
+  --gold: hsla(43, 90%, 52%, 1);          /* Brand Warm Gold */
+  --cream: hsla(34, 40%, 98%, 1);         /* Brand Soft Cream background */
 }
 
 @layer base {

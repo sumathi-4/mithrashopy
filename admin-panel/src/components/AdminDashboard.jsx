@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
+import { categoryConfigService } from '../services/categoryConfigService';
+import ProductForm from './ProductForm';
 import { 
   LayoutDashboard, 
   Package, 
@@ -17,6 +19,7 @@ import {
   Bell, 
   MessageSquare, 
   ChevronDown, 
+  ChevronRight,
   Plus, 
   Trash2, 
   Edit3, 
@@ -39,7 +42,13 @@ import {
   Sparkles,
   Store,
   ClipboardCheck,
-  AlertTriangle
+  AlertTriangle,
+  Folder,
+  FolderOpen,
+  Move,
+  ToggleLeft,
+  ToggleRight,
+  Sliders
 } from 'lucide-react';
 import logoImg from '../../../src/assets/logo.png';
 import { resolveProductImage, isRealImg } from '../utils/imageHelper';
@@ -607,27 +616,111 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [querySearchFilter, setQuerySearchFilter] = useState('All');
 
   // Categories & Hierarchical State
-  const [categories, setCategories] = useState(() => {
-    const local = localStorage.getItem('mithra_admin_categories');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        // Fallback
-      }
+  const [categories, setCategories] = useState([]);
+
+  const [categoryConfigs, setCategoryConfigs] = useState({});
+
+  const [selectedConfigCategory, setSelectedConfigCategory] = useState('');
+  const [configAttributes, setConfigAttributes] = useState([]);
+  const [configVariants, setConfigVariants] = useState([]);
+  const [configAffectsPrice, setConfigAffectsPrice] = useState(false);
+  const [configAffectsStock, setConfigAffectsStock] = useState(false);
+  const [configRequireImages, setConfigRequireImages] = useState(false);
+  const [configFilters, setConfigFilters] = useState([]);
+  const [configSpecs, setConfigSpecs] = useState([]);
+  const [configShippingOptions, setConfigShippingOptions] = useState([]);
+
+  const [attrInput, setAttrInput] = useState('');
+  const [variantInput, setVariantInput] = useState('');
+  const [filterInput, setFilterInput] = useState('');
+  const [specInput, setSpecInput] = useState('');
+  const [shippingOptionInput, setShippingOptionInput] = useState('');
+
+  // Validation Rules states
+  const [valNameRequired, setValNameRequired] = useState(true);
+  const [valNameMinLength, setValNameMinLength] = useState(3);
+  const [valPriceRequired, setValPriceRequired] = useState(true);
+  const [valPriceMin, setValPriceMin] = useState(100);
+  const [valStockRequired, setValStockRequired] = useState(true);
+  const [valStockMin, setValStockMin] = useState(0);
+
+  const selectCategoryForConfig = (catName) => {
+    setSelectedConfigCategory(catName);
+    if (!catName) {
+      setConfigAttributes([]);
+      setConfigVariants([]);
+      setConfigAffectsPrice(false);
+      setConfigAffectsStock(false);
+      setConfigRequireImages(false);
+      setConfigFilters([]);
+      setConfigSpecs([]);
+      setConfigShippingOptions([]);
+      setValNameRequired(true);
+      setValNameMinLength(3);
+      setValPriceRequired(true);
+      setValPriceMin(100);
+      setValStockRequired(true);
+      setValStockMin(0);
+      return;
     }
-    return [
-      { name: 'Clothing', parent: '—', count: 58, status: 'Active' },
-      { name: 'Women', parent: 'Clothing', count: 18, status: 'Active' },
-      { name: 'Kurti', parent: 'Women', count: 8, status: 'Active' },
-      { name: 'Saree', parent: 'Women', count: 6, status: 'Active' },
-      { name: 'Men', parent: 'Clothing', count: 15, status: 'Active' },
-      { name: 'Kids', parent: 'Clothing', count: 12, status: 'Active' },
-      { name: 'Stationery', parent: '—', count: 25, status: 'Active' },
-      { name: 'Gifts', parent: '—', count: 20, status: 'Active' },
-      { name: 'Accessories', parent: '—', count: 15, status: 'Active' }
-    ];
-  });
+    const conf = categoryConfigs[catName] || {
+      attributes: [],
+      variants: [],
+      affectsPrice: false,
+      affectsStock: false,
+      requireImages: false,
+      filters: [],
+      specs: [],
+      shippingOptions: [],
+      validationRules: {
+        name: { required: true, minLength: 3 },
+        price: { required: true, min: 100 },
+        stock: { required: true, min: 0 }
+      }
+    };
+    setConfigAttributes(conf.attributes || []);
+    setConfigVariants(conf.variants || []);
+    setConfigAffectsPrice(!!conf.affectsPrice);
+    setConfigAffectsStock(!!conf.affectsStock);
+    setConfigRequireImages(!!conf.requireImages);
+    setConfigFilters(conf.filters || []);
+    setConfigSpecs(conf.specs || []);
+    setConfigShippingOptions(conf.shippingOptions || []);
+
+    const rules = conf.validationRules || {};
+    setValNameRequired(rules.name?.required !== false);
+    setValNameMinLength(rules.name?.minLength || 3);
+    setValPriceRequired(rules.price?.required !== false);
+    setValPriceMin(rules.price?.min || 100);
+    setValStockRequired(rules.stock?.required !== false);
+    setValStockMin(rules.stock?.min || 0);
+  };
+
+  const handleSaveCategoryConfig = async (e) => {
+    e.preventDefault();
+    if (!selectedConfigCategory) return;
+    const singleConfig = {
+      attributes: configAttributes,
+      variants: configVariants,
+      affectsPrice: configAffectsPrice,
+      affectsStock: configAffectsStock,
+      requireImages: configRequireImages,
+      filters: configFilters,
+      specs: configSpecs,
+      shippingOptions: configShippingOptions,
+      validationRules: {
+        name: { required: valNameRequired, minLength: valNameMinLength },
+        price: { required: valPriceRequired, min: valPriceMin },
+        stock: { required: valStockRequired, min: valStockMin }
+      }
+    };
+    setCategoryConfigs(prev => ({
+      ...prev,
+      [selectedConfigCategory]: singleConfig
+    }));
+    await categoryConfigService.saveConfiguration(selectedConfigCategory, singleConfig);
+    alert(`Configuration saved successfully for "${selectedConfigCategory}"!`);
+  };
 
   const [expandedCategories, setExpandedCategories] = useState(() => {
     const local = localStorage.getItem('mithra_expanded_categories');
@@ -672,12 +765,50 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
   // Form states & Modals states
   const [newProduct, setNewProduct] = useState({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false, includeInLuckyCharm: false, luckyStock: 0 });
+  
+  // Admin Cropping States
+  const [adminCropOpen, setAdminCropOpen] = useState(false);
+  const [adminCropSrc, setAdminCropSrc] = useState('');
+  const [adminCropType, setAdminCropType] = useState('new'); // 'new' | 'edit'
+  const [adminCropAspect, setAdminCropAspect] = useState(1.0);
+  const [adminCropZoom, setAdminCropZoom] = useState(1.0);
+  const [adminCropOffsetX, setAdminCropOffsetX] = useState(0);
+  const [adminCropOffsetY, setAdminCropOffsetY] = useState(0);
+
+  // Bulk Variant States
+  const [bulkInputs, setBulkInputs] = useState({});
+  const [newProductCategoryConfig, setNewProductCategoryConfig] = useState(null);
+  const [editProductCategoryConfig, setEditProductCategoryConfig] = useState(null);
+
+  useEffect(() => {
+    const fetchNewConfig = async () => {
+      const cat = newProduct.category || '';
+      if (cat) {
+        const config = await categoryConfigService.getCategoryConfig(cat);
+        setNewProductCategoryConfig(config);
+      }
+    };
+    fetchNewConfig();
+  }, [newProduct.category]);
+
+  useEffect(() => {
+    const fetchEditConfig = async () => {
+      const cat = editProductItem?.category || '';
+      if (cat) {
+        const config = await categoryConfigService.getCategoryConfig(cat);
+        setEditProductCategoryConfig(config);
+      }
+    };
+    fetchEditConfig();
+  }, [editProductItem?.category]);
+
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', type: 'Percentage', minCart: '', expiry: '', usageLimit: '500' });
   
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [editCategoryItem, setEditCategoryItem] = useState(null);
   const [viewCategoryItem, setViewCategoryItem] = useState(null);
-  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true });
+  const [moveCategoryItem, setMoveCategoryItem] = useState(null);
+  const [newCategory, setNewCategory] = useState({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true, displayOrder: 1, icon: '', slug: '' });
 
   const [showAddCatalogueModal, setShowAddCatalogueModal] = useState(false);
   const [editCatalogueItem, setEditCatalogueItem] = useState(null);
@@ -846,7 +977,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   }, [coupons]);
 
   useEffect(() => {
-    safeSetLocalStorage('mithra_admin_categories', JSON.stringify(categories));
+    if (categories && categories.length > 0) {
+      categoryConfigService.saveCategories(categories);
+    }
   }, [categories]);
 
   useEffect(() => {
@@ -895,6 +1028,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       try {
         const prodData = await apiService.getProducts();
         if (prodData && prodData.length > 0) setProducts(prodData);
+        
+        try {
+          const configData = await categoryConfigService.getCategoryConfigurations();
+          if (configData) setCategoryConfigs(configData);
+        } catch (configErr) {
+          console.error('Error fetching configurations:', configErr);
+        }
         
         const catData = await apiService.getCategories();
         if (catData && catData.length > 0) {
@@ -962,6 +1102,14 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               enableExpress: settingsData.enableExpress !== undefined ? settingsData.enableExpress : true,
               enableInternational: settingsData.enableInternational !== undefined ? settingsData.enableInternational : false,
             });
+            setEmailSettings({
+              senderName: settingsData.senderName || 'Mithra Shopy',
+              senderEmail: settingsData.senderEmail || 'info@mithrashopy.com',
+              smtpHost: settingsData.smtpHost || 'smtp.gmail.com',
+              smtpPort: settingsData.smtpPort !== undefined ? String(settingsData.smtpPort) : '587',
+              smtpUsername: settingsData.smtpUsername || 'info@mithrashopy.com',
+              smtpPassword: settingsData.smtpPassword || '',
+            });
           }
         } catch (settingsErr) {
           console.error('Error fetching settings:', settingsErr);
@@ -1003,6 +1151,16 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             enableCod: response.enableCod,
             enableExpress: response.enableExpress,
             enableInternational: response.enableInternational,
+          });
+        }
+        if (response.smtpHost !== undefined) {
+          setEmailSettings({
+            senderName: response.senderName || '',
+            senderEmail: response.senderEmail || '',
+            smtpHost: response.smtpHost || '',
+            smtpPort: String(response.smtpPort || ''),
+            smtpUsername: response.smtpUsername || '',
+            smtpPassword: response.smtpPassword || '',
           });
         }
       }
@@ -1081,7 +1239,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     return categories.filter(c => c.name !== catName && !isDescendant(catName, c.name));
   };
 
-  // --- Category CRUD handlers ---
   const handleAddCategorySubmit = async (e) => {
     e.preventDefault();
     if (!newCategory.name) return;
@@ -1091,12 +1248,16 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       return;
     }
 
+    const calculatedSlug = newCategory.slug || newCategory.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const catToAdd = {
       name: newCategory.name.trim(),
       parent: newCategory.parent,
-      count: parseInt(newCategory.count, 10) || 0,
+      count: 0,
       status: newCategory.status,
       image: newCategory.image || '',
+      displayOrder: parseInt(newCategory.displayOrder, 10) || 1,
+      icon: newCategory.icon || '',
+      slug: calculatedSlug,
       showInNavbar:     newCategory.showInNavbar     !== false,
       showInCategories: newCategory.showInCategories !== false,
       showInFilters:    newCategory.showInFilters    !== false,
@@ -1109,7 +1270,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setCategories([...categories, catToAdd]);
     }
     setShowAddCategoryModal(false);
-    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true });
+    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true, displayOrder: 1, icon: '', slug: '' });
   };
 
   const handleEditCategorySubmit = async (e) => {
@@ -1121,17 +1282,26 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       return;
     }
 
+    const calculatedSlug = editCategoryItem.slug || editCategoryItem.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const updatedCatObj = {
+      name: editCategoryItem.name.trim(),
+      parent: editCategoryItem.parent,
+      count: parseInt(editCategoryItem.count, 10) || 0,
+      status: editCategoryItem.status,
+      image: editCategoryItem.image || '',
+      displayOrder: parseInt(editCategoryItem.displayOrder, 10) || 1,
+      icon: editCategoryItem.icon || '',
+      slug: calculatedSlug,
+      showInNavbar:     editCategoryItem.showInNavbar     !== false,
+      showInCategories: editCategoryItem.showInCategories !== false,
+      showInFilters:    editCategoryItem.showInFilters    !== false,
+    };
+
     try {
-      await apiService.updateCategory(editCategoryItem.originalName, editCategoryItem);
+      await apiService.updateCategory(editCategoryItem.originalName, updatedCatObj);
       setCategories(categories.map(c => {
         if (c.name === editCategoryItem.originalName) {
-          return {
-            name: editCategoryItem.name.trim(),
-            parent: editCategoryItem.parent,
-            count: parseInt(editCategoryItem.count, 10) || 0,
-            status: editCategoryItem.status,
-            image: editCategoryItem.image || ''
-          };
+          return updatedCatObj;
         }
         if (c.parent === editCategoryItem.originalName) {
           return {
@@ -1144,13 +1314,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     } catch (err) {
       setCategories(categories.map(c => {
         if (c.name === editCategoryItem.originalName) {
-          return {
-            name: editCategoryItem.name.trim(),
-            parent: editCategoryItem.parent,
-            count: parseInt(editCategoryItem.count, 10) || 0,
-            status: editCategoryItem.status,
-            image: editCategoryItem.image || ''
-          };
+          return updatedCatObj;
         }
         if (c.parent === editCategoryItem.originalName) {
           return {
@@ -1196,11 +1360,46 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     }
   };
 
+  const toggleCategoryStatus = async (cat) => {
+    const newStatus = cat.status === 'Active' ? 'Inactive' : 'Active';
+    const updatedCat = {
+      ...cat,
+      status: newStatus
+    };
+    try {
+      await apiService.updateCategory(cat.name, updatedCat);
+      setCategories(categories.map(c => c.name === cat.name ? { ...c, status: newStatus } : c));
+    } catch (err) {
+      setCategories(categories.map(c => c.name === cat.name ? { ...c, status: newStatus } : c));
+    }
+  };
+
+  const handleMoveCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!moveCategoryItem) return;
+    const oldName = moveCategoryItem.name;
+    const newParent = moveCategoryItem.newParent;
+    const updatedCatObj = {
+      ...moveCategoryItem,
+      parent: newParent
+    };
+    delete updatedCatObj.newParent;
+
+    try {
+      await apiService.updateCategory(oldName, updatedCatObj);
+      setCategories(categories.map(c => c.name === oldName ? { ...c, parent: newParent } : c));
+    } catch (err) {
+      setCategories(categories.map(c => c.name === oldName ? { ...c, parent: newParent } : c));
+    }
+    setMoveCategoryItem(null);
+  };
+
   // Title header text helper
   const getPageTitle = () => {
     if (activeTab === 'Dashboard') return '1. Dashboard';
     if (activeTab === 'Products') return '2. Products';
     if (activeTab === 'Categories') return '3. Categories';
+    if (activeTab === 'Category Configuration') return '3b. Category Configuration';
     if (activeTab === 'Catalogues') return '4. Catalogues';
     if (activeTab === 'Orders') return '5. Orders';
     if (activeTab === 'Customers') return '6. Customers';
@@ -1346,8 +1545,11 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
   const renderCategorySpecificFields = (item, setItem) => {
     const category = item.category || '';
-    const lower = category.toLowerCase();
+    const config = item === newProduct ? newProductCategoryConfig : editProductCategoryConfig;
     const attrs = item.attributes || {};
+    const specs = item.specifications || {};
+    const selectedFilters = item.filters || [];
+    const selectedShipping = item.shippingOptions || [];
 
     const updateAttr = (key, val) => {
       setItem({
@@ -1359,20 +1561,45 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       });
     };
 
-    const removeAttr = (key) => {
-      const copy = { ...attrs };
-      delete copy[key];
-      setItem({ ...item, attributes: copy });
+    const updateSpec = (key, val) => {
+      setItem({
+        ...item,
+        specifications: {
+          ...specs,
+          [key]: val
+        }
+      });
+    };
+
+    const toggleFilter = (filterName) => {
+      const active = selectedFilters.includes(filterName);
+      const nextFilters = active 
+        ? selectedFilters.filter(f => f !== filterName)
+        : [...selectedFilters, filterName];
+      setItem({ ...item, filters: nextFilters });
+    };
+
+    const toggleShipping = (optionName) => {
+      const active = selectedShipping.includes(optionName);
+      const nextShipping = active
+        ? selectedShipping.filter(s => s !== optionName)
+        : [...selectedShipping, optionName];
+      setItem({ ...item, shippingOptions: nextShipping });
     };
 
     const renderCustomAttrs = () => {
+      const configAttributes = config?.attributes || [];
+      const configSpecs = config?.specs || [];
       const standardKeys = [
         'size', 'fabric', 'fit', 'sleeve', 
         'pages', 'material', 'binding', 'paperType', 
         'occasion', 'personalization', 'giftWrap', 
-        'warranty', 'type', 'theme', 'usage', 'component'
-      ];
-      const customKeys = Object.keys(attrs).filter(k => !standardKeys.includes(k));
+        'warranty', 'type', 'theme', 'usage', 'component',
+        ...configAttributes,
+        ...configSpecs
+      ].map(k => k.toLowerCase());
+      
+      const customKeys = Object.keys(attrs).filter(k => !standardKeys.includes(k.toLowerCase()));
 
       return (
         <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(0, 0, 0, 0.08)', paddingTop: '20px' }}>
@@ -1434,144 +1661,106 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       );
     };
 
-    let specTitle = "General Specifications";
-    let specFields = null;
+    const removeAttr = (key) => {
+      const copy = { ...attrs };
+      delete copy[key];
+      setItem({ ...item, attributes: copy });
+    };
 
-    if (lower.includes('clothing')) {
-      specTitle = "Clothing Custom Specifications";
-      specFields = (
-        <>
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Sizes (e.g. XS, S, M, L, XL)</label>
-              <input type="text" className="modal-input" value={attrs.size || ''} onChange={(e) => updateAttr('size', e.target.value)} placeholder="XS, S, M, L, XL" />
+    const configAttributes = config?.attributes || [];
+    const configSpecs = config?.specs || [];
+    const configFilters = config?.filters || [];
+    const configShipping = config?.shippingOptions || [];
+
+    const attributeFields = configAttributes.length > 0 && (
+      <div style={{ marginBottom: '20px' }}>
+        <h5 style={{ margin: '0 0 10px 0', fontSize: '0.82rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', tracking: '0.05em' }}>Product Attributes</h5>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {configAttributes.map(attrName => (
+            <div className="form-field" key={attrName}>
+              <label>{attrName}</label>
+              <input
+                type="text"
+                className="modal-input"
+                value={attrs[attrName] || ''}
+                onChange={(e) => updateAttr(attrName, e.target.value)}
+                placeholder={`Enter ${attrName}`}
+              />
             </div>
-            <div className="form-field">
-              <label>Fabric</label>
-              <input type="text" className="modal-input" value={attrs.fabric || ''} onChange={(e) => updateAttr('fabric', e.target.value)} placeholder="e.g. Cotton, Georgette" />
+          ))}
+        </div>
+      </div>
+    );
+
+    const specFields = configSpecs.length > 0 && (
+      <div style={{ marginBottom: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+        <h5 style={{ margin: '0 0 10px 0', fontSize: '0.82rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', tracking: '0.05em' }}>Technical Specifications</h5>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {configSpecs.map(specName => (
+            <div className="form-field" key={specName}>
+              <label>{specName}</label>
+              <input
+                type="text"
+                className="modal-input"
+                value={specs[specName] || ''}
+                onChange={(e) => updateSpec(specName, e.target.value)}
+                placeholder={`Enter ${specName}`}
+              />
             </div>
-          </div>
-          <div className="form-field-row" style={{ marginTop: '10px' }}>
-            <div className="form-field">
-              <label>Fit</label>
-              <input type="text" className="modal-input" value={attrs.fit || ''} onChange={(e) => updateAttr('fit', e.target.value)} placeholder="e.g. Regular Fit, Slim" />
-            </div>
-            <div className="form-field">
-              <label>Sleeve</label>
-              <input type="text" className="modal-input" value={attrs.sleeve || ''} onChange={(e) => updateAttr('sleeve', e.target.value)} placeholder="e.g. Sleeveless, Full Sleeve" />
-            </div>
-          </div>
-        </>
-      );
-    } else if (lower.includes('stationery')) {
-      specTitle = "Stationery Custom Specifications";
-      specFields = (
-        <>
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Page Count</label>
-              <input type="text" className="modal-input" value={attrs.pages || ''} onChange={(e) => updateAttr('pages', e.target.value)} placeholder="e.g. 160 Pages" />
-            </div>
-            <div className="form-field">
-              <label>Material</label>
-              <input type="text" className="modal-input" value={attrs.material || ''} onChange={(e) => updateAttr('material', e.target.value)} placeholder="e.g. Acid-free Paper" />
-            </div>
-          </div>
-          <div className="form-field-row" style={{ marginTop: '10px' }}>
-            <div className="form-field">
-              <label>Binding</label>
-              <input type="text" className="modal-input" value={attrs.binding || ''} onChange={(e) => updateAttr('binding', e.target.value)} placeholder="e.g. Hardbound, Spiral" />
-            </div>
-            <div className="form-field">
-              <label>Paper Type</label>
-              <input type="text" className="modal-input" value={attrs.paperType || ''} onChange={(e) => updateAttr('paperType', e.target.value)} placeholder="e.g. Ruled, Dotted" />
-            </div>
-          </div>
-        </>
-      );
-    } else if (lower.includes('gift')) {
-      specTitle = "Gifts Custom Specifications";
-      specFields = (
-        <>
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Occasion</label>
-              <input type="text" className="modal-input" value={attrs.occasion || ''} onChange={(e) => updateAttr('occasion', e.target.value)} placeholder="e.g. Birthday, Anniversary" />
-            </div>
-            <div className="form-field">
-              <label>Personalization Options</label>
-              <select className="modal-input" value={attrs.personalization || 'No'} onChange={(e) => updateAttr('personalization', e.target.value)}>
-                <option value="No">No Personalization</option>
-                <option value="Yes (Name Only)">Yes (Name Only)</option>
-                <option value="Yes (Custom Text/Message)">Yes (Custom Text/Message)</option>
-              </select>
-            </div>
-          </div>
-          <div className="form-field-row" style={{ marginTop: '10px' }}>
-            <div className="form-field">
-              <label>Gift Wrap Available</label>
-              <select className="modal-input" value={attrs.giftWrap || 'Yes'} onChange={(e) => updateAttr('giftWrap', e.target.value)}>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-          </div>
-        </>
-      );
-    } else if (lower.includes('accessor')) {
-      specTitle = "Accessories Custom Specifications";
-      specFields = (
-        <>
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Material</label>
-              <input type="text" className="modal-input" value={attrs.material || ''} onChange={(e) => updateAttr('material', e.target.value)} placeholder="e.g. PU Leather, Stainless Steel" />
-            </div>
-            <div className="form-field">
-              <label>Warranty</label>
-              <input type="text" className="modal-input" value={attrs.warranty || ''} onChange={(e) => updateAttr('warranty', e.target.value)} placeholder="e.g. 6 Months, 1 Year" />
-            </div>
-          </div>
-          <div className="form-field-row" style={{ marginTop: '10px' }}>
-            <div className="form-field">
-              <label>Accessories Type</label>
-              <input type="text" className="modal-input" value={attrs.type || ''} onChange={(e) => updateAttr('type', e.target.value)} placeholder="e.g. Handbag, Wallet, Belt" />
-            </div>
-          </div>
-        </>
-      );
-    } else if (lower.includes('fancy') || lower.includes('item')) {
-      specTitle = "Fancy Items Custom Specifications";
-      specFields = (
-        <>
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Theme</label>
-              <input type="text" className="modal-input" value={attrs.theme || ''} onChange={(e) => updateAttr('theme', e.target.value)} placeholder="e.g. Traditional, Quirky" />
-            </div>
-            <div className="form-field">
-              <label>Usage</label>
-              <input type="text" className="modal-input" value={attrs.usage || ''} onChange={(e) => updateAttr('usage', e.target.value)} placeholder="e.g. Party Wear, Gift" />
-            </div>
-          </div>
-          <div className="form-field-row" style={{ marginTop: '10px' }}>
-            <div className="form-field">
-              <label>Main Component</label>
-              <input type="text" className="modal-input" value={attrs.component || ''} onChange={(e) => updateAttr('component', e.target.value)} placeholder="e.g. Beads, Alloy, Stones" />
-            </div>
-          </div>
-        </>
-      );
-    }
+          ))}
+        </div>
+      </div>
+    );
+
+    const filterFields = configFilters.length > 0 && (
+      <div style={{ marginBottom: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+        <h5 style={{ margin: '0 0 10px 0', fontSize: '0.82rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', tracking: '0.05em' }}>Search Filters</h5>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+          {configFilters.map(filterName => (
+            <label key={filterName} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 500, color: '#334155', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={selectedFilters.includes(filterName)}
+                onChange={() => toggleFilter(filterName)}
+                style={{ width: '15px', height: '15px' }}
+              />
+              <span>{filterName} Filter</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+
+    const shippingFields = configShipping.length > 0 && (
+      <div style={{ marginBottom: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
+        <h5 style={{ margin: '0 0 10px 0', fontSize: '0.82rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', tracking: '0.05em' }}>Shipping & Fulfillment</h5>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+          {configShipping.map(option => (
+            <label key={option} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', border: '1px solid #f1f5f9', borderRadius: '8px', cursor: 'pointer', background: '#f8fafc' }}>
+              <input
+                type="checkbox"
+                checked={selectedShipping.includes(option)}
+                onChange={() => toggleShipping(option)}
+                style={{ width: '16px', height: '16px' }}
+              />
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155' }}>{option}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
 
     return (
       <div className="admin-modal-section-card">
         <div className="admin-modal-section-header">
           <Layers size={16} />
-          <h4>{specTitle}</h4>
+          <h4>Category Specific Form Fields</h4>
         </div>
         <div className="admin-modal-section-body" style={{ marginTop: '16px' }}>
+          {attributeFields}
           {specFields}
+          {filterFields}
+          {shippingFields}
           {renderCustomAttrs()}
         </div>
       </div>
@@ -1579,17 +1768,101 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   };
 
   const renderVariantManager = (item, setItem) => {
+    const config = item === newProduct ? newProductCategoryConfig : editProductCategoryConfig;
     const variants = item.variants || [];
+    const variantNames = config?.variants || [];
 
     const addVariant = () => {
-      const generatedSku = generateSKUForCategory(item.category);
+      const generatedSku = item.name ? `${item.name.substring(0,4).toUpperCase()}-VAR-${variants.length}` : `VAR-${variants.length}`;
+      const emptyVariant = { stock: 10, lowStockAlert: 5, price: null, sku: generatedSku, weight: 0.2, L: 10, W: 10, H: 10, image: '' };
+      variantNames.forEach(vName => {
+        emptyVariant[vName] = '';
+      });
+      emptyVariant.color = '';
+      emptyVariant.size = '';
       setItem({
         ...item,
-        variants: [
-          ...variants,
-          { size: '', color: '', stock: 0, price: null, sku: generatedSku, image: '' }
-        ]
+        variants: [...variants, emptyVariant]
       });
+    };
+
+    const generateBulk = () => {
+      const lists = variantNames.map(name => {
+        const val = bulkInputs[name] || '';
+        return val.split(',').map(s => s.trim()).filter(Boolean);
+      });
+
+      if (lists.every(list => list.length === 0)) {
+        alert('Please fill in at least one option list to generate variants!');
+        return;
+      }
+
+      const cartesian = (arrays) => {
+        return arrays.reduce((acc, curr) => {
+          if (curr.length === 0) return acc;
+          if (acc.length === 0) return curr.map(item => [item]);
+          const next = [];
+          acc.forEach(prevItems => {
+            curr.forEach(item => {
+              next.push([...prevItems, item]);
+            });
+          });
+          return next;
+        }, []);
+      };
+
+      const combos = cartesian(lists);
+      const generated = [];
+      const prodCode = String(item.name || 'PROD').substring(0, 4).toUpperCase();
+
+      combos.forEach((combo) => {
+        const variantData = {};
+        const skuParts = [prodCode];
+        
+        variantNames.forEach((name, idx) => {
+          const val = combo[idx] || '';
+          variantData[name] = val;
+          const valCode = val ? val.substring(0, 3).toUpperCase() : 'DEF';
+          skuParts.push(valCode);
+        });
+
+        const sku = skuParts.join('-');
+
+        const exists = variants.some(v => {
+          return variantNames.every(name => {
+            const existingVal = v[name] || '';
+            const newVal = variantData[name] || '';
+            return existingVal.toLowerCase() === newVal.toLowerCase();
+          });
+        });
+
+        if (!exists) {
+          generated.push({
+            ...variantData,
+            color: variantData['Color'] || variantData['Ink Color'] || '',
+            size: variantData['Size'] || variantData['Age'] || variantData['Pack Size'] || '',
+            style: variantData['Theme'] || '',
+            fabric: String(item.category || '').toLowerCase().includes('clothing') ? (variantData['Theme'] || '') : '',
+            price: item.price ? parseFloat(item.price) : null,
+            stock: 10,
+            lowStockAlert: 5,
+            sku: sku,
+            weight: 0.2,
+            L: 10,
+            W: 10,
+            H: 10,
+            image: ''
+          });
+        }
+      });
+
+      setItem({
+        ...item,
+        variants: [...variants, ...generated]
+      });
+
+      setBulkInputs({});
+      alert(`Auto-generated ${generated.length} new variation combinations!`);
     };
 
     const updateVariantField = (index, field, value) => {
@@ -1616,7 +1889,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         <div className="admin-modal-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Layers size={16} />
-            <h4 style={{ margin: 0 }}>Product & Color Variants</h4>
+            <h4 style={{ margin: 0 }}>Product & Color Variations</h4>
           </div>
           <button 
             type="button" 
@@ -1624,7 +1897,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             style={{ 
               padding: '6px 12px', 
               fontSize: '0.8rem', 
-              backgroundColor: 'var(--primary-rose)', 
+              backgroundColor: '#1d4ed8', 
               color: '#ffffff', 
               border: 'none',
               fontWeight: 600,
@@ -1638,78 +1911,202 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
           </button>
         </div>
         
-        <div className="admin-modal-section-body" style={{ marginTop: '16px' }}>
+        <div className="admin-modal-section-body" style={{ marginTop: '16px', spaceY: '16px' }}>
+          {/* Bulk Variant Generator UI card */}
+          {variantNames.length > 0 && (
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+              <h5 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>⚡ Bulk Variations Matrix Generator</h5>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(variantNames.length, 3)}, 1fr)`, gap: '10px', marginBottom: '12px' }}>
+                {variantNames.map(vName => (
+                  <div key={vName}>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                      {vName}s (Comma-separated)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={bulkInputs[vName] || ''} 
+                      onChange={(e) => setBulkInputs(prev => ({ ...prev, [vName]: e.target.value }))} 
+                      placeholder={`e.g. Red, Black`} 
+                      className="modal-input"
+                      style={{ fontSize: '0.78rem' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={generateBulk}
+                style={{
+                  width: '100%',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'var(--primary-rose, #D4AF37)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Generate Variants Cross-Multiplication Grid
+              </button>
+            </div>
+          )}
+
           {variants.length === 0 ? (
             <p style={{ fontSize: '0.85rem', color: '#666', margin: '10px 0' }}>No variants added yet. Products will use base price, image, and stock unless variants are defined.</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="admin-variant-table">
+              <table className="admin-variant-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr>
-                    <th>Color</th>
-                    <th>Size</th>
-                    <th>Price (INR)</th>
-                    <th>Stock</th>
-                    <th>SKU</th>
-                    <th>Variant Image</th>
-                    <th style={{ textAlign: 'center' }}>Action</th>
+                  <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc' }}>
+                    {variantNames.map(vName => (
+                      <th key={vName} style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>{vName}</th>
+                    ))}
+                    {variantNames.length === 0 && (
+                      <>
+                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Color</th>
+                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Size</th>
+                      </>
+                    )}
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Price (INR)</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Stock</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Alert Threshold</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>SKU</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Weight (kg)</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>L x W x H (cm)</th>
+                    <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700 }}>Variant Image</th>
+                    <th style={{ padding: '8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {variants.map((v, index) => (
-                    <tr key={index}>
-                      <td>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Red" 
-                          value={v.color || ''} 
-                          onChange={(e) => updateVariantField(index, 'color', e.target.value)}
-                          className="admin-table-input"
-                          style={{ minWidth: '95px' }}
-                        />
-                      </td>
-                      <td>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. M" 
-                          value={v.size || ''} 
-                          onChange={(e) => updateVariantField(index, 'size', e.target.value)}
-                          className="admin-table-input"
-                          style={{ minWidth: '70px' }}
-                        />
-                      </td>
-                      <td>
+                    <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      {variantNames.map(vName => (
+                        <td key={vName} style={{ padding: '6px' }}>
+                          <input 
+                            type="text" 
+                            placeholder={vName} 
+                            value={v[vName] || ''} 
+                            onChange={(e) => {
+                              const copy = [...variants];
+                              copy[index][vName] = e.target.value;
+                              if (vName === 'Color') copy[index].color = e.target.value;
+                              if (vName === 'Size') copy[index].size = e.target.value;
+                              setItem({ ...item, variants: copy });
+                            }}
+                            className="admin-table-input"
+                            style={{ minWidth: '70px', fontSize: '0.8rem', padding: '4px' }}
+                          />
+                        </td>
+                      ))}
+                      {variantNames.length === 0 && (
+                        <>
+                          <td style={{ padding: '6px' }}>
+                            <input 
+                              type="text" 
+                              placeholder="Color" 
+                              value={v.color || ''} 
+                              onChange={(e) => updateVariantField(index, 'color', e.target.value)}
+                              className="admin-table-input"
+                              style={{ minWidth: '70px', fontSize: '0.8rem', padding: '4px' }}
+                            />
+                          </td>
+                          <td style={{ padding: '6px' }}>
+                            <input 
+                              type="text" 
+                              placeholder="Size" 
+                              value={v.size || ''} 
+                              onChange={(e) => updateVariantField(index, 'size', e.target.value)}
+                              className="admin-table-input"
+                              style={{ minWidth: '55px', fontSize: '0.8rem', padding: '4px' }}
+                            />
+                          </td>
+                        </>
+                      )}
+                      <td style={{ padding: '6px' }}>
                         <input 
                           type="number" 
                           placeholder="Base price" 
                           value={v.price === null || v.price === undefined ? '' : v.price} 
                           onChange={(e) => updateVariantField(index, 'price', e.target.value === '' ? null : parseFloat(e.target.value))}
                           className="admin-table-input"
-                          style={{ minWidth: '100px' }}
+                          style={{ minWidth: '85px', fontSize: '0.8rem', padding: '4px' }}
                         />
                       </td>
-                      <td>
+                      <td style={{ padding: '6px' }}>
                         <input 
                           type="number" 
                           placeholder="0" 
                           value={v.stock || 0} 
                           onChange={(e) => updateVariantField(index, 'stock', parseInt(e.target.value, 10) || 0)}
                           className="admin-table-input"
-                          style={{ minWidth: '70px' }}
+                          style={{ minWidth: '55px', fontSize: '0.8rem', padding: '4px' }}
                         />
                       </td>
-                      <td>
+                      <td style={{ padding: '6px' }}>
+                        <input 
+                          type="number" 
+                          placeholder="5" 
+                          value={v.lowStockAlert || 5} 
+                          onChange={(e) => updateVariantField(index, 'lowStockAlert', parseInt(e.target.value, 10) || 5)}
+                          className="admin-table-input"
+                          style={{ minWidth: '55px', fontSize: '0.8rem', padding: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '6px' }}>
                         <input 
                           type="text" 
                           placeholder="SKU" 
                           value={v.sku || ''} 
                           onChange={(e) => updateVariantField(index, 'sku', e.target.value)}
                           className="admin-table-input"
-                          style={{ minWidth: '110px' }}
+                          style={{ minWidth: '95px', fontSize: '0.8rem', padding: '4px' }}
                         />
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <td style={{ padding: '6px' }}>
+                        <input 
+                          type="number" 
+                          step="0.05"
+                          placeholder="0.2" 
+                          value={v.weight === undefined ? 0.2 : v.weight} 
+                          onChange={(e) => updateVariantField(index, 'weight', parseFloat(e.target.value) || 0)}
+                          className="admin-table-input"
+                          style={{ minWidth: '55px', fontSize: '0.8rem', padding: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '6px' }}>
+                        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                          <input 
+                            type="number" 
+                            placeholder="L" 
+                            value={v.L === undefined ? 10 : v.L} 
+                            onChange={(e) => updateVariantField(index, 'L', parseInt(e.target.value, 10) || 0)}
+                            className="admin-table-input"
+                            style={{ width: '32px', fontSize: '0.8rem', padding: '4px' }}
+                          />
+                          <span style={{ fontSize: '0.7rem' }}>x</span>
+                          <input 
+                            type="number" 
+                            placeholder="W" 
+                            value={v.W === undefined ? 10 : v.W} 
+                            onChange={(e) => updateVariantField(index, 'W', parseInt(e.target.value, 10) || 0)}
+                            className="admin-table-input"
+                            style={{ width: '32px', fontSize: '0.8rem', padding: '4px' }}
+                          />
+                          <span style={{ fontSize: '0.7rem' }}>x</span>
+                          <input 
+                            type="number" 
+                            placeholder="H" 
+                            value={v.H === undefined ? 10 : v.H} 
+                            onChange={(e) => updateVariantField(index, 'H', parseInt(e.target.value, 10) || 0)}
+                            className="admin-table-input"
+                            style={{ width: '32px', fontSize: '0.8rem', padding: '4px' }}
+                          />
+                        </div>
+                      </td>
+                      <td style={{ padding: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {v.image && (
                             <img src={v.image} alt="variant" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
                           )}
@@ -1741,39 +2138,91 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     );
   };
 
-  const handleLocalImageUpload = async (e, item, setItem) => {
+  const performCanvasCrop = (imgSrc, zoom, offsetX, offsetY, aspect, callback) => {
+    const img = new Image();
+    img.src = imgSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const width = aspect === 0.75 ? 900 : 1000;
+      const height = aspect === 0.75 ? 1200 : 1000;
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+
+      const imgAspect = img.width / img.height;
+      const targetAspect = width / height;
+
+      let drawWidth = width * zoom;
+      let drawHeight = height * zoom;
+
+      if (imgAspect > targetAspect) {
+        drawHeight = (width / imgAspect) * zoom;
+      } else {
+        drawWidth = (height * imgAspect) * zoom;
+      }
+
+      const x = (width - drawWidth) / 2 + offsetX;
+      const y = (height - drawHeight) / 2 + offsetY;
+
+      ctx.drawImage(img, x, y, drawWidth, drawHeight);
+      callback(canvas.toDataURL('image/jpeg', 0.9));
+    };
+  };
+
+  const handleLocalImageUpload = async (e, item, setItem, type) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onloadend = async () => {
+    reader.onloadend = () => {
+      setAdminCropSrc(reader.result);
+      setAdminCropType(type); // 'new' or 'edit'
+      const isClothing = String(item.category || '').toLowerCase().includes('clothing');
+      setAdminCropAspect(isClothing ? 0.75 : 1.0);
+      setAdminCropZoom(1.0);
+      setAdminCropOffsetX(0);
+      setAdminCropOffsetY(0);
+      setAdminCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdminCropConfirm = () => {
+    const aspect = adminCropAspect;
+    performCanvasCrop(adminCropSrc, adminCropZoom, adminCropOffsetX, adminCropOffsetY, aspect, async (croppedBase64) => {
+      setAdminCropOpen(false);
       try {
-        const uploadedUrl = await apiService.uploadImage(file.name, reader.result);
+        const uploadedUrl = await apiService.uploadImage("cropped_img.jpg", croppedBase64);
         if (uploadedUrl) {
-          const currentVal = Array.isArray(item.images) 
-            ? item.images.join(', ') 
-            : (item.images || '');
+          const currentItem = adminCropType === 'new' ? newProduct : editProductItem;
+          const setItem = adminCropType === 'new' ? setNewProduct : setEditProductItem;
+          
+          const currentVal = Array.isArray(currentItem.images) 
+            ? currentItem.images.join(', ') 
+            : (currentItem.images || '');
           let currentImages = (currentVal ? currentVal.split(',') : [])
             .map(img => img.trim())
             .filter(img => img && isRealImg(img));
           
-          // Fallback to item.image if it's a real image URL and we have no gallery images yet
-          if (currentImages.length === 0 && item.image && isRealImg(item.image)) {
-            currentImages = [item.image];
+          if (currentImages.length === 0 && currentItem.image && isRealImg(currentItem.image)) {
+            currentImages = [currentItem.image];
           }
 
           setItem({
-            ...item,
-            images: [...currentImages, uploadedUrl].join(', ')
+            ...currentItem,
+            images: [...currentImages, uploadedUrl].join(', '),
+            image: currentItem.image ? currentItem.image : uploadedUrl
           });
-          alert('Image uploaded successfully and added to product gallery!');
+          alert('Optimized and cropped image uploaded successfully and added to product gallery!');
         }
       } catch (err) {
-        console.error('Image upload failed', err);
-        alert('Failed to upload image. Please try again.');
+        console.error('Cropped image upload failed', err);
+        alert('Failed to upload cropped image.');
       }
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
   const handleCategoryImageUpload = async (e, item, setItem) => {
@@ -1827,10 +2276,70 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     reader.readAsDataURL(file);
   };
 
+  const handleAddProductSubmitFromPayload = async (payload) => {
+    try {
+      const saved = await apiService.createProduct(payload);
+      setProducts([saved, ...products]);
+    } catch (err) {
+      setProducts([{ ...payload, id: Date.now() }, ...products]);
+    }
+    setShowAddProductModal(false);
+  };
+
+  const handleEditProductSubmitFromPayload = async (payload) => {
+    try {
+      const saved = await apiService.updateProduct(payload.id, payload);
+      setProducts(products.map(p => p.id === payload.id ? saved : p));
+    } catch (err) {
+      setProducts(products.map(p => p.id === payload.id ? payload : p));
+    }
+    setEditProductItem(null);
+  };
+
   // Handlers for Add/Edit/Delete Product Operations
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
+
+    // Validate dynamic rules if configured
+    const activeCategory = newProduct.category || '';
+    const categoryConfig = newProductCategoryConfig;
+    if (categoryConfig && categoryConfig.validationRules) {
+      const rules = categoryConfig.validationRules;
+      if (rules.name) {
+        const nameVal = newProduct.name || '';
+        if (rules.name.required && !nameVal) {
+          alert("Product Name is required.");
+          return;
+        }
+        if (rules.name.minLength && nameVal.length < rules.name.minLength) {
+          alert(`Product Name must be at least ${rules.name.minLength} characters for category ${activeCategory}.`);
+          return;
+        }
+      }
+      if (rules.price) {
+        const priceVal = parseFloat(newProduct.price) || 0;
+        if (rules.price.required && !priceVal) {
+          alert("Price is required.");
+          return;
+        }
+        if (rules.price.min && priceVal < rules.price.min) {
+          alert(`Price must be at least ${rules.price.min} INR for category ${activeCategory}.`);
+          return;
+        }
+      }
+      if (rules.stock) {
+        const stockVal = parseInt(newProduct.stock, 10) || 0;
+        if (rules.stock.required && isNaN(stockVal)) {
+          alert("Stock count is required.");
+          return;
+        }
+        if (rules.stock.min && stockVal < rules.stock.min) {
+          alert(`Stock cannot be less than ${rules.stock.min} for category ${activeCategory}.`);
+          return;
+        }
+      }
+    }
 
     if (newProduct.variants && newProduct.variants.length > 0) {
       const missingImage = newProduct.variants.some(v => !v.image || !v.image.trim());
@@ -1842,6 +2351,18 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     
     const imagesArray = newProduct.images ? newProduct.images.split(',').map(img => img.trim()).filter(Boolean) : [];
     const mainImg = imagesArray[0] || (newProduct.category.includes('Clothing') ? 'Kids' : 'Accessories');
+
+    const mergedAttributes = {};
+    if (newProduct.attributes) {
+      Object.entries(newProduct.attributes).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') mergedAttributes[k] = v;
+      });
+    }
+    if (newProduct.specifications) {
+      Object.entries(newProduct.specifications).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') mergedAttributes[k] = v;
+      });
+    }
 
     const productToAdd = {
       name: newProduct.name,
@@ -1855,7 +2376,9 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       image: mainImg,
       images: imagesArray.length > 0 ? imagesArray : [mainImg],
       description: newProduct.description,
-      attributes: newProduct.attributes || {},
+      attributes: mergedAttributes,
+      filters: newProduct.filters || [],
+      shippingOptions: newProduct.shippingOptions || [],
       variants: newProduct.variants || [],
       brand: newProduct.brand || '',
       rating: newProduct.rating ? parseFloat(newProduct.rating) : 4.8,
@@ -1876,12 +2399,52 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       setProducts([{ ...productToAdd, id: Date.now() }, ...products]);
     }
     setShowAddProductModal(false);
-    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false });
+    setNewProduct({ name: '', category: 'Clothing > Kids', subCategory: '', catalogue: 'Catalogue A', price: '', stock: '', status: 'Active', description: '', images: '', attributes: {}, specifications: {}, filters: [], shippingOptions: [], variants: [], brand: '', rating: '4.8', reviews: '120', discount: '0', originalPrice: '', badge: '', isNewArrival: false, isOffer: false });
   };
 
   const handleEditProductSubmit = async (e) => {
     e.preventDefault();
     if (!editProductItem.name || !editProductItem.price || !editProductItem.stock) return;
+
+    // Validate dynamic rules if configured
+    const activeCategory = editProductItem.category || '';
+    const categoryConfig = editProductCategoryConfig;
+    if (categoryConfig && categoryConfig.validationRules) {
+      const rules = categoryConfig.validationRules;
+      if (rules.name) {
+        const nameVal = editProductItem.name || '';
+        if (rules.name.required && !nameVal) {
+          alert("Product Name is required.");
+          return;
+        }
+        if (rules.name.minLength && nameVal.length < rules.name.minLength) {
+          alert(`Product Name must be at least ${rules.name.minLength} characters for category ${activeCategory}.`);
+          return;
+        }
+      }
+      if (rules.price) {
+        const priceVal = parseFloat(editProductItem.price) || 0;
+        if (rules.price.required && !priceVal) {
+          alert("Price is required.");
+          return;
+        }
+        if (rules.price.min && priceVal < rules.price.min) {
+          alert(`Price must be at least ${rules.price.min} INR for category ${activeCategory}.`);
+          return;
+        }
+      }
+      if (rules.stock) {
+        const stockVal = parseInt(editProductItem.stock, 10) || 0;
+        if (rules.stock.required && isNaN(stockVal)) {
+          alert("Stock count is required.");
+          return;
+        }
+        if (rules.stock.min && stockVal < rules.stock.min) {
+          alert(`Stock cannot be less than ${rules.stock.min} for category ${activeCategory}.`);
+          return;
+        }
+      }
+    }
 
     if (editProductItem.variants && editProductItem.variants.length > 0) {
       const missingImage = editProductItem.variants.some(v => !v.image || !v.image.trim());
@@ -1895,12 +2458,27 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       ? editProductItem.images.split(',').map(img => img.trim()).filter(Boolean) 
       : (Array.isArray(editProductItem.images) ? editProductItem.images : []);
 
+    const mergedAttributes = {};
+    if (editProductItem.attributes) {
+      Object.entries(editProductItem.attributes).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') mergedAttributes[k] = v;
+      });
+    }
+    if (editProductItem.specifications) {
+      Object.entries(editProductItem.specifications).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') mergedAttributes[k] = v;
+      });
+    }
+
     const updatedData = {
       ...editProductItem,
       price: parseFloat(editProductItem.price),
       stock: parseInt(editProductItem.stock, 10),
       image: imagesArray[0] || editProductItem.image,
       images: imagesArray.length > 0 ? imagesArray : (editProductItem.image ? [editProductItem.image] : []),
+      attributes: mergedAttributes,
+      filters: editProductItem.filters || [],
+      shippingOptions: editProductItem.shippingOptions || [],
       variants: editProductItem.variants || [],
       brand: editProductItem.brand || '',
       rating: editProductItem.rating ? parseFloat(editProductItem.rating) : 4.8,
@@ -2286,6 +2864,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     { label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'Products', icon: <Package size={18} /> },
     { label: 'Categories', icon: <Layers size={18} /> },
+    { label: 'Category Configuration', icon: <Sliders size={18} /> },
     { label: 'Catalogues', icon: <BookOpen size={18} /> },
     { label: 'Orders', icon: <ShoppingCart size={18} /> },
     { label: 'Customers', icon: <Users size={18} /> },
@@ -2655,7 +3234,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         {/* Pending Segment (100) -> 18.5% */}
                         <circle cx="80" cy="80" r="55" fill="none" stroke="#F39C12" strokeWidth="16" strokeDasharray="63.9 345.5" strokeDashoffset="0" />
                         {/* Processing Segment (132) -> 24.3% */}
-                        <circle cx="80" cy="80" r="55" fill="none" stroke="#3498DB" strokeWidth="16" strokeDasharray="84.2 345.5" strokeDashoffset="-63.9" />
+                        <circle cx="80" cy="80" r="55" fill="none" stroke="#051838" strokeWidth="16" strokeDasharray="84.2 345.5" strokeDashoffset="-63.9" />
                         {/* Shipped Segment (195) -> 36.0% */}
                         <circle cx="80" cy="80" r="55" fill="none" stroke="#2ECC71" strokeWidth="16" strokeDasharray="124.4 345.5" strokeDashoffset="-148.1" />
                         {/* Delivered Segment (90) -> 16.6% */}
@@ -2969,15 +3548,27 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               {/* Header Row */}
               <div className="categories-re-header-row">
                 <h2 className="categories-re-main-title">Categories</h2>
-                <button 
-                  className="categories-re-add-btn" 
-                  onClick={() => {
-                    setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', showInNavbar: true, showInCategories: true, showInFilters: true });
-                    setShowAddCategoryModal(true);
-                  }}
-                >
-                  <Plus size={16} /> Add Category
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="categories-re-add-btn main-btn" 
+                    onClick={() => {
+                      setNewCategory({ name: '', parent: '—', count: 0, status: 'Active', showInNavbar: true, showInCategories: true, showInFilters: true, displayOrder: 1, icon: '', slug: '' });
+                      setShowAddCategoryModal(true);
+                    }}
+                  >
+                    <Plus size={16} /> Add Main Category
+                  </button>
+                  <button 
+                    className="categories-re-add-btn child-btn" 
+                    onClick={() => {
+                      const firstCat = categories.length > 0 ? categories[0].name : '—';
+                      setNewCategory({ name: '', parent: firstCat, count: 0, status: 'Active', showInNavbar: true, showInCategories: true, showInFilters: true, displayOrder: 1, icon: '', slug: '' });
+                      setShowAddCategoryModal(true);
+                    }}
+                  >
+                    <Plus size={16} /> Add Child Category
+                  </button>
+                </div>
               </div>
 
               {/* Tree Grid Card Container */}
@@ -2987,10 +3578,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <thead>
                       <tr>
                         <th>Category Name</th>
-                        <th>Parent Category</th>
-                        <th>Products</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th style={{ width: '130px', textAlign: 'center' }}>Product Count</th>
+                        <th style={{ width: '120px', textAlign: 'center' }}>Status</th>
+                        <th style={{ width: '220px', textAlign: 'center' }}>Visibility</th>
+                        <th style={{ width: '240px', textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3001,6 +3592,19 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         const hasChildren = categories.some(c => c.parent === cat.name);
                         const isExpanded = expandedCategories[cat.name];
                         const depth = cat.depth || 0;
+
+                        const renderCategoryIcon = (iconName) => {
+                          const style = { color: '#aa7c11', flexShrink: 0 };
+                          if (iconName === 'Package') return <Package size={16} style={style} />;
+                          if (iconName === 'Layers') return <Layers size={16} style={style} />;
+                          if (iconName === 'BookOpen') return <BookOpen size={16} style={style} />;
+                          if (iconName === 'Tag') return <Tag size={16} style={style} />;
+                          if (iconName === 'Star') return <Star size={16} style={style} />;
+                          if (iconName === 'Store') return <Store size={16} style={style} />;
+                          if (iconName === 'Globe') return <Globe size={16} style={style} />;
+                          if (iconName === 'Sparkles') return <Sparkles size={16} style={style} />;
+                          return null;
+                        };
 
                         return (
                           <tr key={cat.name} className={`category-row depth-${depth}`}>
@@ -3014,36 +3618,72 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                       ...expandedCategories,
                                       [cat.name]: !isExpanded
                                     })}
+                                    title={isExpanded ? 'Collapse' : 'Expand'}
                                   >
-                                    <ChevronDown size={14} className="toggle-chevron-icon" />
+                                    {isExpanded ? <ChevronDown size={14} className="toggle-chevron-icon" /> : <ChevronRight size={14} className="toggle-chevron-icon" />}
                                   </button>
                                 ) : (
                                   <span className="cat-toggle-spacer">
                                     {depth > 0 && <span className="cat-branch-connector">↳</span>}
                                   </span>
                                 )}
+                                
+                                <span className="cat-folder-icon-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {hasChildren ? (
+                                    isExpanded ? <FolderOpen size={16} style={{ color: '#aa7c11', flexShrink: 0 }} /> : <Folder size={16} style={{ color: '#aa7c11', flexShrink: 0 }} />
+                                  ) : (
+                                    renderCategoryIcon(cat.icon) || <Layers size={16} style={{ color: '#888888', flexShrink: 0 }} />
+                                  )}
+                                </span>
+                                
                                 <span className="cat-name-text">{cat.name}</span>
                               </div>
                             </td>
-                            <td className="text-gray">{cat.parent || '—'}</td>
-                            <td className="text-gray font-semibold">{getCategoryProductCount(cat.name)}</td>
-                            <td>
+                            <td className="text-center font-semibold text-gray-700">
+                              <span className="products-count-badge">
+                                {getCategoryProductCount(cat.name)}
+                              </span>
+                            </td>
+                            <td className="text-center">
                               <span className={`status-badge-re ${cat.status.toLowerCase()}`}>
                                 {cat.status}
                               </span>
                             </td>
+                            <td className="text-center">
+                              <div className="visibility-pills-row">
+                                <span className={`visibility-pill ${cat.showInNavbar !== false ? 'active' : 'inactive'}`}>
+                                  Navbar
+                                </span>
+                                <span className={`visibility-pill ${cat.showInCategories !== false ? 'active' : 'inactive'}`}>
+                                  Shop
+                                </span>
+                                <span className={`visibility-pill ${cat.showInFilters !== false ? 'active' : 'inactive'}`}>
+                                  Filters
+                                </span>
+                              </div>
+                            </td>
                             <td className="action-cell">
-                              <div className="action-buttons-wrap">
+                              <div className="action-buttons-wrap justify-center">
+                                <button 
+                                  className="table-act-btn view" 
+                                  title="View Details" 
+                                  onClick={() => setViewCategoryItem(cat)}
+                                >
+                                  <Eye size={15} />
+                                </button>
                                 <button 
                                   className="table-act-btn edit" 
-                                  title="Edit category" 
+                                  title="Edit Category" 
                                   onClick={() => setEditCategoryItem({
                                     originalName: cat.name,
                                     name: cat.name,
-                                    parent: cat.parent,
+                                    parent: cat.parent || '—',
                                     count: getCategoryProductCount(cat.name),
                                     status: cat.status,
                                     image: cat.image || '',
+                                    displayOrder: cat.displayOrder || 1,
+                                    icon: cat.icon || '',
+                                    slug: cat.slug || cat.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
                                     showInNavbar:     cat.showInNavbar     !== false,
                                     showInCategories: cat.showInCategories !== false,
                                     showInFilters:    cat.showInFilters    !== false,
@@ -3052,15 +3692,35 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   <Edit3 size={15} />
                                 </button>
                                 <button 
-                                  className="table-act-btn view" 
-                                  title="View details" 
-                                  onClick={() => setViewCategoryItem(cat)}
+                                  className="table-act-btn add-child" 
+                                  title="Add Child Category" 
+                                  onClick={() => {
+                                    setNewCategory({ name: '', parent: cat.name, count: 0, status: 'Active', image: '', showInNavbar: true, showInCategories: true, showInFilters: true, displayOrder: 1, icon: '', slug: '' });
+                                    setShowAddCategoryModal(true);
+                                  }}
                                 >
-                                  <Eye size={15} />
+                                  <Plus size={15} />
+                                </button>
+                                <button 
+                                  className="table-act-btn move" 
+                                  title="Move Parent Category" 
+                                  onClick={() => setMoveCategoryItem({
+                                    ...cat,
+                                    newParent: cat.parent || '—'
+                                  })}
+                                >
+                                  <Move size={15} />
+                                </button>
+                                <button 
+                                  className="table-act-btn status-toggle" 
+                                  title={cat.status === 'Active' ? 'Disable Category' : 'Enable Category'} 
+                                  onClick={() => toggleCategoryStatus(cat)}
+                                >
+                                  {cat.status === 'Active' ? <ToggleRight size={20} style={{ color: '#2ecc71', cursor: 'pointer' }} /> : <ToggleLeft size={20} style={{ color: '#95a5a6', cursor: 'pointer' }} />}
                                 </button>
                                 <button 
                                   className="table-act-btn delete" 
-                                  title="Delete category" 
+                                  title="Delete Category" 
                                   onClick={() => deleteCategory(cat.name)}
                                 >
                                   <Trash2 size={15} />
@@ -3074,6 +3734,694 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 3b: CATEGORY CONFIGURATION VIEW */}
+          {activeTab === 'Category Configuration' && (
+            <div className="admin-view-tab-content">
+              <div className="categories-re-header-row">
+                <h2 className="categories-re-main-title">Category Product Behavior Configuration</h2>
+                
+                {selectedConfigCategory && (
+                  <button 
+                    className="btn-secondary" 
+                    onClick={() => selectCategoryForConfig('')}
+                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.88rem' }}
+                  >
+                    Back to Configs List
+                  </button>
+                )}
+              </div>
+
+              {/* Dynamic Category Selector */}
+              <div className="admin-re-card" style={{ padding: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, color: '#051838' }}>Select Category to Configure:</span>
+                <select 
+                  value={selectedConfigCategory}
+                  onChange={(e) => selectCategoryForConfig(e.target.value)}
+                  className="modal-input"
+                  style={{ minWidth: '280px', margin: 0 }}
+                >
+                  <option value="">-- Choose a Category to Configure --</option>
+                  {categories.map(c => (
+                    <option key={c.name} value={c.name}>{getCategoryPath(c.name)}</option>
+                  ))}
+                </select>
+                {selectedConfigCategory && (
+                  <span style={{ fontSize: '0.85rem', color: '#666' }}>
+                    Currently configuring: <strong style={{ color: '#aa7c11' }}>{getCategoryPath(selectedConfigCategory)}</strong>
+                  </span>
+                )}
+              </div>
+
+              {!selectedConfigCategory ? (
+                /* Saved Configurations List View */
+                <div className="admin-re-card" style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#051838', marginBottom: '16px' }}>Configured Categories Summary</h3>
+                  
+                  <div className="admin-table-responsive">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Category Name</th>
+                          <th>Product Attributes</th>
+                          <th>Variant Types</th>
+                          <th>Toggles</th>
+                          <th>Filter Fields</th>
+                          <th>Specifications</th>
+                          <th className="text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.keys(categoryConfigs).length === 0 ? (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: '#888' }}>
+                              No categories configured yet. Select a category above to start configuring!
+                            </td>
+                          </tr>
+                        ) : (
+                          Object.keys(categoryConfigs).map(catName => {
+                            const conf = categoryConfigs[catName];
+                            return (
+                              <tr key={catName}>
+                                <td style={{ fontWeight: 700, color: '#051838' }}>
+                                  {getCategoryPath(catName)}
+                                </td>
+                                <td>
+                                  {conf.attributes && conf.attributes.length > 0 ? (
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                      {conf.attributes.map(a => <span key={a} style={{ background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem' }}>{a}</span>)}
+                                    </div>
+                                  ) : <em style={{ color: '#999', fontSize: '0.8rem' }}>None</em>}
+                                </td>
+                                <td>
+                                  {conf.variants && conf.variants.length > 0 ? (
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                      {conf.variants.map(v => <span key={v} style={{ background: 'rgba(170, 124, 17, 0.08)', color: '#aa7c11', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>{v}</span>)}
+                                    </div>
+                                  ) : <em style={{ color: '#999', fontSize: '0.8rem' }}>None</em>}
+                                </td>
+                                <td>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.75rem' }}>
+                                    <span>Price impact: <strong>{conf.affectsPrice ? 'Yes' : 'No'}</strong></span>
+                                    <span>Stock impact: <strong>{conf.affectsStock ? 'Yes' : 'No'}</strong></span>
+                                    <span>Sep. images: <strong>{conf.requireImages ? 'Yes' : 'No'}</strong></span>
+                                  </div>
+                                </td>
+                                <td>
+                                  {conf.filters && conf.filters.length > 0 ? (
+                                    <span style={{ fontSize: '0.8rem' }}>{conf.filters.join(', ')}</span>
+                                  ) : <em style={{ color: '#999', fontSize: '0.8rem' }}>None</em>}
+                                </td>
+                                <td>
+                                  {conf.specs && conf.specs.length > 0 ? (
+                                    <span style={{ fontSize: '0.8rem' }}>{conf.specs.join(', ')}</span>
+                                  ) : <em style={{ color: '#999', fontSize: '0.8rem' }}>None</em>}
+                                </td>
+                                <td className="action-cell">
+                                  <div className="action-buttons-wrap justify-center">
+                                    <button 
+                                      className="table-act-btn edit" 
+                                      title="Edit Config" 
+                                      onClick={() => selectCategoryForConfig(catName)}
+                                    >
+                                      <Edit3 size={14} />
+                                    </button>
+                                    <button 
+                                      className="table-act-btn delete" 
+                                      title="Reset to Default / Delete Config" 
+                                      onClick={async () => {
+                                        if (window.confirm(`Are you sure you want to reset configuration for ${catName}?`)) {
+                                          setCategoryConfigs(prev => {
+                                            const copy = { ...prev };
+                                            delete copy[catName];
+                                            return copy;
+                                          });
+                                          await categoryConfigService.resetConfiguration(catName);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                /* Configuration Editor Form */
+                <div className="admin-re-card" style={{ padding: '28px' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#051838', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+                    Behavior Details for category: <span style={{ color: '#aa7c11' }}>{selectedConfigCategory}</span>
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px', marginBottom: '28px' }}>
+                    
+                    {/* COLUMN 1: Attributes, Variants & Behavior */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      
+                      {/* Product Attributes config */}
+                      <div className="form-field">
+                        <label style={{ fontWeight: 700, marginBottom: '6px', display: 'block' }}>Product Attributes</label>
+                        <span style={{ fontSize: '0.78rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          Custom features for products in this category (e.g. Brand, Fabric, Material, Pages, Fit)
+                        </span>
+                        
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                          <input 
+                            type="text" 
+                            value={attrInput}
+                            onChange={(e) => setAttrInput(e.target.value)}
+                            placeholder="Add attribute (e.g. Fabric)"
+                            className="modal-input"
+                            style={{ margin: 0, flex: 1 }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (attrInput.trim() && !configAttributes.includes(attrInput.trim())) {
+                                  setConfigAttributes([...configAttributes, attrInput.trim()]);
+                                  setAttrInput('');
+                                }
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-primary" 
+                            style={{ background: '#051838', color: '#fff', padding: '0 16px', borderRadius: '8px', border: '1px solid #051838' }}
+                            onClick={() => {
+                              if (attrInput.trim() && !configAttributes.includes(attrInput.trim())) {
+                                setConfigAttributes([...configAttributes, attrInput.trim()]);
+                                setAttrInput('');
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '40px', padding: '8px', background: '#faf9f6', borderRadius: '8px', border: '1px solid #eae6df' }}>
+                          {configAttributes.length === 0 ? (
+                            <span style={{ fontSize: '0.8rem', color: '#999', fontStyle: 'italic' }}>No attributes added yet.</span>
+                          ) : (
+                            configAttributes.map(tag => (
+                              <span key={tag} style={{ background: '#051838', color: '#fff', padding: '4px 10px', borderRadius: '999px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                {tag}
+                                <X size={12} style={{ cursor: 'pointer' }} onClick={() => setConfigAttributes(configAttributes.filter(x => x !== tag))} />
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Variant Types config */}
+                      <div className="form-field">
+                        <label style={{ fontWeight: 700, marginBottom: '6px', display: 'block' }}>Variant Types</label>
+                        <span style={{ fontSize: '0.78rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          Allowable variants for multi-item matrices (e.g. Size, Color, Pack Size, Age Group, Theme)
+                        </span>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                          <input 
+                            type="text" 
+                            value={variantInput}
+                            onChange={(e) => setVariantInput(e.target.value)}
+                            placeholder="Add variant type (e.g. Size)"
+                            className="modal-input"
+                            style={{ margin: 0, flex: 1 }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (variantInput.trim() && !configVariants.includes(variantInput.trim())) {
+                                  setConfigVariants([...configVariants, variantInput.trim()]);
+                                  setVariantInput('');
+                                }
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-primary" 
+                            style={{ background: '#051838', color: '#fff', padding: '0 16px', borderRadius: '8px', border: '1px solid #051838' }}
+                            onClick={() => {
+                              if (variantInput.trim() && !configVariants.includes(variantInput.trim())) {
+                                setConfigVariants([...configVariants, variantInput.trim()]);
+                                setVariantInput('');
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '40px', padding: '8px', background: '#faf9f6', borderRadius: '8px', border: '1px solid #eae6df' }}>
+                          {configVariants.length === 0 ? (
+                            <span style={{ fontSize: '0.8rem', color: '#999', fontStyle: 'italic' }}>No variants added yet.</span>
+                          ) : (
+                            configVariants.map(tag => (
+                              <span key={tag} style={{ background: '#aa7c11', color: '#fff', padding: '4px 10px', borderRadius: '999px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                {tag}
+                                <X size={12} style={{ cursor: 'pointer' }} onClick={() => setConfigVariants(configVariants.filter(x => x !== tag))} />
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Behavior Toggles */}
+                      <div className="form-field" style={{ background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df', marginTop: '8px' }}>
+                        <label style={{ fontWeight: 700, marginBottom: '12px', display: 'block', color: '#051838' }}>Variant Behavior</label>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}>
+                            <input 
+                              type="checkbox" 
+                              checked={configAffectsPrice}
+                              onChange={(e) => setConfigAffectsPrice(e.target.checked)}
+                              style={{ accentColor: '#aa7c11', width: '17px', height: '17px' }}
+                            />
+                            Variants affect price overrides (e.g. Size XL costs more)
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}>
+                            <input 
+                              type="checkbox" 
+                              checked={configAffectsStock}
+                              onChange={(e) => setConfigAffectsStock(e.target.checked)}
+                              style={{ accentColor: '#aa7c11', width: '17px', height: '17px' }}
+                            />
+                            Variants affect inventory/stock counts separately
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}>
+                            <input 
+                              type="checkbox" 
+                              checked={configRequireImages}
+                              onChange={(e) => setConfigRequireImages(e.target.checked)}
+                              style={{ accentColor: '#aa7c11', width: '17px', height: '17px' }}
+                            />
+                            Variants require separate custom images upload
+                          </label>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* COLUMN 2: Filters and Specs */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      
+                      {/* Filter Fields shown in Customer Website */}
+                      <div className="form-field">
+                        <label style={{ fontWeight: 700, marginBottom: '6px', display: 'block' }}>Filters Shown on Shop Page</label>
+                        <span style={{ fontSize: '0.78rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          Filter sidebars displaying for customer catalog navigation (e.g. Price, Color, Size, Theme, Brand)
+                        </span>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                          <input 
+                            type="text" 
+                            value={filterInput}
+                            onChange={(e) => setFilterInput(e.target.value)}
+                            placeholder="Add filter field (e.g. Brand)"
+                            className="modal-input"
+                            style={{ margin: 0, flex: 1 }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (filterInput.trim() && !configFilters.includes(filterInput.trim())) {
+                                  setConfigFilters([...configFilters, filterInput.trim()]);
+                                  setFilterInput('');
+                                }
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-primary" 
+                            style={{ background: '#051838', color: '#fff', padding: '0 16px', borderRadius: '8px', border: '1px solid #051838' }}
+                            onClick={() => {
+                              if (filterInput.trim() && !configFilters.includes(filterInput.trim())) {
+                                setConfigFilters([...configFilters, filterInput.trim()]);
+                                setFilterInput('');
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '40px', padding: '8px', background: '#faf9f6', borderRadius: '8px', border: '1px solid #eae6df' }}>
+                          {configFilters.length === 0 ? (
+                            <span style={{ fontSize: '0.8rem', color: '#999', fontStyle: 'italic' }}>No filter fields added yet.</span>
+                          ) : (
+                            configFilters.map(tag => (
+                              <span key={tag} style={{ background: '#555', color: '#fff', padding: '4px 10px', borderRadius: '999px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                {tag}
+                                <X size={12} style={{ cursor: 'pointer' }} onClick={() => setConfigFilters(configFilters.filter(x => x !== tag))} />
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Specifications displayed on Product Details page */}
+                      <div className="form-field">
+                        <label style={{ fontWeight: 700, marginBottom: '6px', display: 'block' }}>Specifications Table Fields</label>
+                        <span style={{ fontSize: '0.78rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          Detailed metadata shown in the specifications grid (e.g. Dimensions, Weight, Material, Pages, Origin)
+                        </span>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                          <input 
+                            type="text" 
+                            value={specInput}
+                            onChange={(e) => setSpecInput(e.target.value)}
+                            placeholder="Add specification (e.g. Weight)"
+                            className="modal-input"
+                            style={{ margin: 0, flex: 1 }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (specInput.trim() && !configSpecs.includes(specInput.trim())) {
+                                  setConfigSpecs([...configSpecs, specInput.trim()]);
+                                  setSpecInput('');
+                                }
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-primary" 
+                            style={{ background: '#051838', color: '#fff', padding: '0 16px', borderRadius: '8px', border: '1px solid #051838' }}
+                            onClick={() => {
+                              if (specInput.trim() && !configSpecs.includes(specInput.trim())) {
+                                setConfigSpecs([...configSpecs, specInput.trim()]);
+                                setSpecInput('');
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '40px', padding: '8px', background: '#faf9f6', borderRadius: '8px', border: '1px solid #eae6df' }}>
+                          {configSpecs.length === 0 ? (
+                            <span style={{ fontSize: '0.8rem', color: '#999', fontStyle: 'italic' }}>No specification fields added yet.</span>
+                          ) : (
+                            configSpecs.map(tag => (
+                              <span key={tag} style={{ background: '#dfb743', color: '#051838', padding: '4px 10px', borderRadius: '999px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                                {tag}
+                                <X size={12} style={{ cursor: 'pointer' }} onClick={() => setConfigSpecs(configSpecs.filter(x => x !== tag))} />
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Shipping Options displayed on Product creation */}
+                      <div className="form-field" style={{ marginTop: '12px' }}>
+                        <label style={{ fontWeight: 700, marginBottom: '6px', display: 'block' }}>Shipping Options</label>
+                        <span style={{ fontSize: '0.78rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          Custom shipping carriers / policies available (e.g. Standard Shipping, Express Delivery)
+                        </span>
+
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                          <input 
+                            type="text" 
+                            value={shippingOptionInput}
+                            onChange={(e) => setShippingOptionInput(e.target.value)}
+                            placeholder="Add shipping option (e.g. Same-Day Delivery)"
+                            className="modal-input"
+                            style={{ margin: 0, flex: 1 }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (shippingOptionInput.trim() && !configShippingOptions.includes(shippingOptionInput.trim())) {
+                                  setConfigShippingOptions([...configShippingOptions, shippingOptionInput.trim()]);
+                                  setShippingOptionInput('');
+                                }
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button" 
+                            className="btn-primary" 
+                            style={{ background: '#051838', color: '#fff', padding: '0 16px', borderRadius: '8px', border: '1px solid #051838' }}
+                            onClick={() => {
+                              if (shippingOptionInput.trim() && !configShippingOptions.includes(shippingOptionInput.trim())) {
+                                setConfigShippingOptions([...configShippingOptions, shippingOptionInput.trim()]);
+                                setShippingOptionInput('');
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '40px', padding: '8px', background: '#faf9f6', borderRadius: '8px', border: '1px solid #eae6df' }}>
+                          {configShippingOptions.length === 0 ? (
+                            <span style={{ fontSize: '0.8rem', color: '#999', fontStyle: 'italic' }}>No shipping options added yet.</span>
+                          ) : (
+                            configShippingOptions.map(tag => (
+                              <span key={tag} style={{ background: '#3b82f6', color: '#fff', padding: '4px 10px', borderRadius: '999px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                {tag}
+                                <X size={12} style={{ cursor: 'pointer' }} onClick={() => setConfigShippingOptions(configShippingOptions.filter(x => x !== tag))} />
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Validation Rules UI */}
+                      <div className="form-field" style={{ background: '#faf9f6', padding: '16px', borderRadius: '12px', border: '1px solid #eae6df', marginTop: '16px' }}>
+                        <label style={{ fontWeight: 700, marginBottom: '12px', display: 'block', color: '#051838' }}>Field Validation Rules</label>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {/* Name Rules */}
+                          <div style={{ borderBottom: '1px solid #eae6df', paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700, color: '#334155' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={valNameRequired}
+                                onChange={(e) => setValNameRequired(e.target.checked)}
+                                style={{ accentColor: '#aa7c11', width: '15px', height: '15px' }}
+                              />
+                              Name is required
+                            </div>
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Min length:</span>
+                              <input 
+                                type="number" 
+                                value={valNameMinLength}
+                                onChange={(e) => setValNameMinLength(parseInt(e.target.value, 10) || 0)}
+                                style={{ width: '60px', padding: '4px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Price Rules */}
+                          <div style={{ borderBottom: '1px solid #eae6df', paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700, color: '#334155' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={valPriceRequired}
+                                onChange={(e) => setValPriceRequired(e.target.checked)}
+                                style={{ accentColor: '#aa7c11', width: '15px', height: '15px' }}
+                              />
+                              Price is required
+                            </div>
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Min price (₹):</span>
+                              <input 
+                                type="number" 
+                                value={valPriceMin}
+                                onChange={(e) => setValPriceMin(parseInt(e.target.value, 10) || 0)}
+                                style={{ width: '80px', padding: '4px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Stock Rules */}
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700, color: '#334155' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={valStockRequired}
+                                onChange={(e) => setValStockRequired(e.target.checked)}
+                                style={{ accentColor: '#aa7c11', width: '15px', height: '15px' }}
+                              />
+                              Stock is required
+                            </div>
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Min stock quantity:</span>
+                              <input 
+                                type="number" 
+                                value={valStockMin}
+                                onChange={(e) => setValStockMin(parseInt(e.target.value, 10) || 0)}
+                                style={{ width: '60px', padding: '4px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* COLUMN 3: LIVE FORM GENERATOR PREVIEW */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', borderLeft: '2px dashed #eae6df', paddingLeft: '28px' }}>
+                      <h4 style={{ margin: 0, color: '#aa7c11', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Sparkles size={18} /> Live Form Generator Preview
+                      </h4>
+                      <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
+                        This is exactly how the product forms will look for vendors and admins when they select <strong>{selectedConfigCategory}</strong>:
+                      </p>
+
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', background: '#fff', padding: '16px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+                          COMMON FIELDS (Required)
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem', color: '#334155' }}>
+                          <div><strong>Product Name:</strong> [Input Field] {valNameMinLength ? `(Min Length: ${valNameMinLength})` : ''}</div>
+                          <div><strong>Price (₹):</strong> [Input Field] {valPriceMin ? `(Min: ₹${valPriceMin})` : ''}</div>
+                          <div><strong>Opening Stock:</strong> [Input Field] {valStockMin ? `(Min: ${valStockMin})` : ''}</div>
+                          <div><strong>Description:</strong> [Textarea]</div>
+                          <div><strong>Media / Images:</strong> [Upload Drag & Drop]</div>
+                        </div>
+
+                        {configAttributes.length > 0 && (
+                          <div style={{ marginTop: '16px' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                              PRODUCT ATTRIBUTES
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.78rem' }}>
+                              {configAttributes.map(attr => (
+                                <div key={attr} style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                  <strong>{attr}</strong>: [Text Input]
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {configSpecs.length > 0 && (
+                          <div style={{ marginTop: '16px' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                              TECHNICAL SPECIFICATIONS
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.78rem' }}>
+                              {configSpecs.map(spec => (
+                                <div key={spec} style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                  <strong>{spec}</strong>: [Text Input]
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {configVariants.length > 0 && (
+                          <div style={{ marginTop: '16px' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                              VARIANT MATRIX GENERATOR
+                            </div>
+                            <div style={{ background: '#faf5e6', padding: '10px', borderRadius: '8px', border: '1px solid #f3e8c9', fontSize: '0.78rem' }}>
+                              <div style={{ marginBottom: '6px' }}>Generates bulk rows using matrix of:</div>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {configVariants.map(v => (
+                                  <span key={v} style={{ background: '#aa7c11', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>{v}</span>
+                                ))}
+                              </div>
+                              <div style={{ marginTop: '8px', fontSize: '0.7rem', color: '#854d0e' }}>
+                                {configAffectsPrice && "✓ Price Overrides enabled  "}
+                                {configAffectsStock && "✓ Inventory Overrides enabled  "}
+                                {configRequireImages && "✓ Variant Image Upload required"}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {configFilters.length > 0 && (
+                          <div style={{ marginTop: '16px' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                              CUSTOMER SHOP FILTERS
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '0.78rem' }}>
+                              {configFilters.map(f => (
+                                <span key={f} style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', border: '1px solid #e2e8f0', color: '#475569' }}>
+                                  [Check] {f} Filter
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {configShippingOptions.length > 0 && (
+                          <div style={{ marginTop: '16px' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                              SHIPPING & FULFILLMENT OPTIONS
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem' }}>
+                              {configShippingOptions.map(option => (
+                                <div key={option} style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                  [Check] {option}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Actions row */}
+                  <div className="modal-actions-row" style={{ borderTop: '1px solid #eee', paddingTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                    <button 
+                      type="button" 
+                      className="btn-secondary" 
+                      onClick={() => selectCategoryForConfig('')}
+                      style={{ padding: '10px 20px', borderRadius: '8px', fontSize: '0.9rem' }}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-secondary" 
+                      onClick={() => {
+                        setConfigAttributes([]);
+                        setConfigVariants([]);
+                        setConfigAffectsPrice(false);
+                        setConfigAffectsStock(false);
+                        setConfigRequireImages(false);
+                        setConfigFilters([]);
+                        setConfigSpecs([]);
+                        setConfigShippingOptions([]);
+                        setValNameRequired(true);
+                        setValNameMinLength(3);
+                        setValPriceRequired(true);
+                        setValPriceMin(100);
+                        setValStockRequired(true);
+                        setValStockMin(0);
+                      }}
+                      style={{ padding: '10px 20px', borderRadius: '8px', fontSize: '0.9rem', color: '#e74c3c', borderColor: '#f5c6cb' }}
+                    >
+                      Clear All Fields
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="btn-primary" 
+                      onClick={handleSaveCategoryConfig}
+                      style={{ background: '#aa7c11', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, border: '1px solid #aa7c11' }}
+                    >
+                      Save Configuration
+                    </button>
+                  </div>
+
+                </div>
+              )}
             </div>
           )}
 
@@ -5016,8 +6364,24 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                        <button className="profile-change-photo-btn" onClick={() => alert('Cancel trigger')}>Cancel</button>
-                        <button className="settings-save-btn" style={{ margin: 0 }} onClick={() => alert('Email Settings Saved successfully!')}>Save Changes</button>
+                        <button className="profile-change-photo-btn" onClick={async () => {
+                          try {
+                            const settingsData = await apiService.getSettings();
+                            if (settingsData) {
+                              setEmailSettings({
+                                senderName: settingsData.senderName || 'Mithra Shopy',
+                                senderEmail: settingsData.senderEmail || 'info@mithrashopy.com',
+                                smtpHost: settingsData.smtpHost || 'smtp.gmail.com',
+                                smtpPort: settingsData.smtpPort !== undefined ? String(settingsData.smtpPort) : '587',
+                                smtpUsername: settingsData.smtpUsername || 'info@mithrashopy.com',
+                                smtpPassword: settingsData.smtpPassword || '',
+                              });
+                            }
+                          } catch (err) {
+                            console.error('Error resetting email settings:', err);
+                          }
+                        }}>Cancel</button>
+                        <button className="settings-save-btn" style={{ margin: 0 }} onClick={() => handleSaveSettings(emailSettings)}>Save Changes</button>
                       </div>
                     </div>
                   </div>
@@ -5914,392 +7278,22 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       {/* --- ADD PRODUCT MODAL DIALOG --- */}
       {showAddProductModal && (
         <div className="admin-modal-overlay" onClick={() => setShowAddProductModal(false)}>
-          <div className="admin-modal-box wide" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-hdr">
-              <h3>Add New Product</h3>
+          <div className="admin-modal-box wide" style={{ maxWidth: '900px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr" style={{ borderBottom: '1px solid #f1f5f9', padding: '16px 24px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#051838' }}>Add New Product</h3>
               <button className="close-btn" onClick={() => setShowAddProductModal(false)}><X size={18} /></button>
             </div>
-            
-            <form onSubmit={handleAddProductSubmit} className="modal-body-form" style={{ padding: 0 }}>
-              <div className="admin-modal-split-layout">
-                {/* Left Navigation Sidebar */}
-                <div className="admin-modal-sidebar">
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'basic' ? 'active' : ''}`}
-                    onClick={() => setAddProductActiveTab('basic')}
-                  >
-                    <Package size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Basic Info</span>
-                      <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'specs' ? 'active' : ''}`}
-                    onClick={() => setAddProductActiveTab('specs')}
-                  >
-                    <Layers size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
-                      <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${addProductActiveTab === 'media' ? 'active' : ''}`}
-                    onClick={() => setAddProductActiveTab('media')}
-                  >
-                    <ImageIcon size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Media & Description</span>
-                      <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Right Scrollable Content Pane */}
-                <div className="admin-modal-content-pane">
-                  {addProductActiveTab === 'basic' && (
-                    <>
-                      {/* Section 1: Identification */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Package size={16} />
-                          <h4>Product Identification</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Product Name <span className="req">*</span></label>
-                            <input 
-                              type="text" 
-                              value={newProduct.name}
-                              onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                              placeholder="e.g. Kids Party Dress" 
-                              required 
-                              className="modal-input"
-                            />
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Category</label>
-                              <select 
-                                value={newProduct.category}
-                                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                                className="modal-input"
-                              >
-                                {getCategoryPathsList().map(path => (
-                                  <option key={path} value={path}>{path}</option>
-                                ))}
-                              </select>
-                            </div>
-                            
-                            <div className="form-field">
-                              <label>SubCategory</label>
-                              <input 
-                                type="text" 
-                                value={newProduct.subCategory}
-                                onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value })}
-                                placeholder="e.g. Party Wear" 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Catalogue</label>
-                              <select 
-                                value={newProduct.catalogue}
-                                onChange={(e) => setNewProduct({ ...newProduct, catalogue: e.target.value })}
-                                className="modal-input"
-                              >
-                                {catalogues.map(cat => (
-                                  <option key={cat.name} value={cat.name}>{cat.name}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="form-field">
-                              <label>Status</label>
-                              <select 
-                                value={newProduct.status}
-                                onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
-                                className="modal-input"
-                              >
-                                <option value="Active">Active</option>
-                                <option value="Low Stock">Low Stock</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Pricing & Stock */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <CreditCard size={16} />
-                          <h4>Pricing & Inventory</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Price (₹) <span className="req">*</span></label>
-                              <input 
-                                type="number" 
-                                value={newProduct.price}
-                                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                                placeholder="1299" 
-                                required 
-                                className="modal-input"
-                              />
-                            </div>
-                            
-                            <div className="form-field">
-                              <label>Opening Stock Qty <span className="req">*</span></label>
-                              <input 
-                                type="number" 
-                                value={newProduct.stock}
-                                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                                placeholder="25" 
-                                required 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Original/Crossed-out Price (₹)</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.originalPrice || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, originalPrice: e.target.value })}
-                                placeholder="450 (Optional)" 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 3: Brand Info */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Star size={16} />
-                          <h4>Brand & Popularity Details</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Brand Name</label>
-                              <input 
-                                type="text" 
-                                value={newProduct.brand || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
-                                placeholder="Mithira Collection" 
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Rating (1.0 to 5.0)</label>
-                              <input 
-                                type="number" 
-                                step="0.1"
-                                min="1"
-                                max="5"
-                                value={newProduct.rating || '4.8'}
-                                onChange={(e) => setNewProduct({ ...newProduct, rating: e.target.value })}
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Reviews Count</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.reviews || '120'}
-                                onChange={(e) => setNewProduct({ ...newProduct, reviews: e.target.value })}
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Section 4: Badging & Labels */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Tag size={16} />
-                          <h4>Product Badging & Labels</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row" style={{ alignItems: 'flex-start' }}>
-                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                              <input 
-                                type="checkbox" 
-                                id="add-prod-is-offer"
-                                checked={newProduct.isOffer || false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setNewProduct({ 
-                                    ...newProduct, 
-                                    isOffer: checked,
-                                    discount: checked ? (newProduct.discount && newProduct.discount !== '0' ? newProduct.discount : '10') : '0'
-                                  });
-                                }}
-                              />
-                              <label htmlFor="add-prod-is-offer" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as Special Offer</label>
-                            </div>
-
-                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                              <input 
-                                type="checkbox" 
-                                id="add-prod-is-new"
-                                checked={newProduct.isNewArrival || false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setNewProduct({ 
-                                    ...newProduct, 
-                                    isNewArrival: checked,
-                                    badge: checked ? 'NEW' : ''
-                                  });
-                                }}
-                              />
-                              <label htmlFor="add-prod-is-new" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as New Arrival</label>
-                            </div>
-                          </div>
-
-                          {newProduct.isOffer && (
-                            <div className="form-field-row" style={{ marginTop: '15px' }}>
-                              <div className="form-field">
-                                <label>Offer Percentage (%) <span style={{ color: 'red' }}>*</span></label>
-                                <input 
-                                  type="number" 
-                                  required
-                                  min="1"
-                                  max="99"
-                                  value={newProduct.discount && newProduct.discount !== '0' ? newProduct.discount : '10'}
-                                  onChange={(e) => setNewProduct({ ...newProduct, discount: e.target.value })}
-                                  placeholder="e.g. 20" 
-                                  className="modal-input"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Section 5: Lucky Charm Settings */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Sparkles size={16} />
-                          <h4>Lucky Charm Settings</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Include in Lucky Charm</label>
-                            <select 
-                              value={newProduct.includeInLuckyCharm ? 'Yes' : 'No'}
-                              onChange={(e) => setNewProduct({ ...newProduct, includeInLuckyCharm: e.target.value === 'Yes' })}
-                              className="modal-input"
-                            >
-                              <option value="No">No</option>
-                              <option value="Yes">Yes</option>
-                            </select>
-                          </div>
-                          {newProduct.includeInLuckyCharm && (
-                            <div className="form-field">
-                              <label>Lucky Stock</label>
-                              <input 
-                                type="number" 
-                                value={newProduct.luckyStock || ''}
-                                onChange={(e) => setNewProduct({ ...newProduct, luckyStock: parseInt(e.target.value, 10) || 0 })}
-                                placeholder="e.g. 50"
-                                className="modal-input"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {addProductActiveTab === 'specs' && (
-                    <>
-                      {renderCategorySpecificFields(newProduct, setNewProduct)}
-                      {renderVariantManager(newProduct, setNewProduct)}
-                    </>
-                  )}
-
-                  {addProductActiveTab === 'media' && (
-                    <>
-                      {/* Section 1: Product Images */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <ImageIcon size={16} />
-                          <h4>Product Media Gallery</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Images (Comma separated URLs)</label>
-                            <input 
-                              type="text" 
-                              value={Array.isArray(newProduct.images) ? newProduct.images.join(', ') : (newProduct.images || '')}
-                              onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
-                              placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
-                              className="modal-input"
-                              style={{ marginBottom: '8px' }}
-                            />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <label htmlFor="add-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                                Upload Local File / Image
-                              </label>
-                              <input 
-                                type="file" 
-                                id="add-prod-file-upload" 
-                                style={{ display: 'none' }} 
-                                accept="image/*" 
-                                onChange={(e) => handleLocalImageUpload(e, newProduct, setNewProduct)} 
-                              />
-                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Description */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <BookOpen size={16} />
-                          <h4>Product Description</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Detailed Description</label>
-                            <textarea 
-                              value={newProduct.description}
-                              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                              placeholder="Enter detailed product description..." 
-                              className="modal-input"
-                              rows="4"
-                              style={{ resize: 'vertical', width: '100%' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                </div>
-              </div>
-
-              {/* Form Actions Footer Bar */}
-              <div className="modal-actions-row" style={{ borderTop: '1px solid #eae6df', margin: 0, padding: '16px 24px', background: '#fbfbfb' }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowAddProductModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Add to Catalog</button>
-              </div>
-            </form>
+            <div style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(90vh - 80px)' }}>
+              <ProductForm
+                initialData={{}}
+                onSave={handleAddProductSubmitFromPayload}
+                onCancel={() => setShowAddProductModal(false)}
+                isAdmin={true}
+                categoriesList={getCategoryPathsList()}
+                catalogues={catalogues}
+                categoryConfigService={categoryConfigService}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -6307,389 +7301,22 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
       {/* --- EDIT PRODUCT MODAL DIALOG --- */}
       {editProductItem && (
         <div className="admin-modal-overlay" onClick={() => setEditProductItem(null)}>
-          <div className="admin-modal-box wide" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-hdr">
-              <h3>Edit Product Details</h3>
+          <div className="admin-modal-box wide" style={{ maxWidth: '900px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr" style={{ borderBottom: '1px solid #f1f5f9', padding: '16px 24px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#051838' }}>Edit Product Details</h3>
               <button className="close-btn" onClick={() => setEditProductItem(null)}><X size={18} /></button>
             </div>
-            
-            <form onSubmit={handleEditProductSubmit} className="modal-body-form" style={{ padding: 0 }}>
-              <div className="admin-modal-split-layout">
-                {/* Left Navigation Sidebar */}
-                <div className="admin-modal-sidebar">
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'basic' ? 'active' : ''}`}
-                    onClick={() => setEditProductActiveTab('basic')}
-                  >
-                    <Package size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Basic Info</span>
-                      <span className="admin-modal-sidebar-btn-desc">Name, price, stock & catalog</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'specs' ? 'active' : ''}`}
-                    onClick={() => setEditProductActiveTab('specs')}
-                  >
-                    <Layers size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Specs & Variants</span>
-                      <span className="admin-modal-sidebar-btn-desc">Custom fields & sizing rows</span>
-                    </div>
-                  </button>
-                  <button 
-                    type="button" 
-                    className={`admin-modal-sidebar-btn ${editProductActiveTab === 'media' ? 'active' : ''}`}
-                    onClick={() => setEditProductActiveTab('media')}
-                  >
-                    <ImageIcon size={18} />
-                    <div className="sidebar-btn-text">
-                      <span className="admin-modal-sidebar-btn-label">Media & Description</span>
-                      <span className="admin-modal-sidebar-btn-desc">Upload images & write details</span>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Right Scrollable Content Pane */}
-                <div className="admin-modal-content-pane">
-                  {editProductActiveTab === 'basic' && (
-                    <>
-                      {/* Section 1: Identification */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Package size={16} />
-                          <h4>Product Identification</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Product Name <span className="req">*</span></label>
-                            <input 
-                              type="text" 
-                              value={editProductItem.name}
-                              onChange={(e) => setEditProductItem({ ...editProductItem, name: e.target.value })}
-                              required 
-                              className="modal-input"
-                            />
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Category</label>
-                              <select 
-                                value={editProductItem.category}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, category: e.target.value })}
-                                className="modal-input"
-                              >
-                                {getCategoryPathsList().map(path => (
-                                  <option key={path} value={path}>{path}</option>
-                                ))}
-                              </select>
-                            </div>
-                            
-                            <div className="form-field">
-                              <label>SubCategory</label>
-                              <input 
-                                type="text" 
-                                value={editProductItem.subCategory || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, subCategory: e.target.value })}
-                                placeholder="e.g. Party Wear" 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Catalogue</label>
-                              <select 
-                                value={editProductItem.catalogue}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, catalogue: e.target.value })}
-                                className="modal-input"
-                              >
-                                {catalogues.map(cat => (
-                                  <option key={cat.name} value={cat.name}>{cat.name}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="form-field">
-                              <label>Status</label>
-                              <select 
-                                value={editProductItem.status}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, status: e.target.value })}
-                                className="modal-input"
-                              >
-                                <option value="Active">Active</option>
-                                <option value="Low Stock">Low Stock</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Pricing & Stock */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <CreditCard size={16} />
-                          <h4>Pricing & Inventory</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Price (₹) <span className="req">*</span></label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.price}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, price: e.target.value })}
-                                required 
-                                className="modal-input"
-                              />
-                            </div>
-                            
-                            <div className="form-field">
-                              <label>Stock Qty <span className="req">*</span></label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.stock}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, stock: e.target.value })}
-                                required 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Original/Crossed-out Price (₹)</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.originalPrice || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, originalPrice: e.target.value })}
-                                placeholder="450 (Optional)" 
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 3: Brand Info */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Star size={16} />
-                          <h4>Brand & Popularity Details</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row">
-                            <div className="form-field">
-                              <label>Brand Name</label>
-                              <input 
-                                type="text" 
-                                value={editProductItem.brand || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, brand: e.target.value })}
-                                placeholder="Mithira Collection" 
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Rating (1.0 to 5.0)</label>
-                              <input 
-                                type="number" 
-                                step="0.1"
-                                min="1"
-                                max="5"
-                                value={editProductItem.rating || '4.8'}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, rating: e.target.value })}
-                                className="modal-input"
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Reviews Count</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.reviews || '120'}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, reviews: e.target.value })}
-                                className="modal-input"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Section 4: Badging & Labels */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Tag size={16} />
-                          <h4>Product Badging & Labels</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field-row" style={{ alignItems: 'flex-start' }}>
-                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                              <input 
-                                type="checkbox" 
-                                id="edit-prod-is-offer"
-                                checked={editProductItem.isOffer || false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setEditProductItem({ 
-                                    ...editProductItem, 
-                                    isOffer: checked,
-                                    discount: checked ? (editProductItem.discount && editProductItem.discount !== '0' ? editProductItem.discount : '10') : '0'
-                                  });
-                                }}
-                              />
-                              <label htmlFor="edit-prod-is-offer" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as Special Offer</label>
-                            </div>
-
-                            <div className="form-field checkbox-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                              <input 
-                                type="checkbox" 
-                                id="edit-prod-is-new"
-                                checked={editProductItem.isNewArrival || false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-                                  setEditProductItem({ 
-                                    ...editProductItem, 
-                                    isNewArrival: checked,
-                                    badge: checked ? 'NEW' : ''
-                                  });
-                                }}
-                              />
-                              <label htmlFor="edit-prod-is-new" style={{ fontWeight: 600, cursor: 'pointer' }}>Label as New Arrival</label>
-                            </div>
-                          </div>
-
-                          {editProductItem.isOffer && (
-                            <div className="form-field-row" style={{ marginTop: '15px' }}>
-                              <div className="form-field">
-                                <label>Offer Percentage (%) <span style={{ color: 'red' }}>*</span></label>
-                                <input 
-                                  type="number" 
-                                  required
-                                  min="1"
-                                  max="99"
-                                  value={editProductItem.discount && editProductItem.discount !== '0' ? editProductItem.discount : '10'}
-                                  onChange={(e) => setEditProductItem({ ...editProductItem, discount: e.target.value })}
-                                  placeholder="e.g. 20" 
-                                  className="modal-input"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Section 5: Lucky Charm Settings */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <Sparkles size={16} />
-                          <h4>Lucky Charm Settings</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Include in Lucky Charm</label>
-                            <select 
-                              value={editProductItem.includeInLuckyCharm ? 'Yes' : 'No'}
-                              onChange={(e) => setEditProductItem({ ...editProductItem, includeInLuckyCharm: e.target.value === 'Yes' })}
-                              className="modal-input"
-                            >
-                              <option value="No">No</option>
-                              <option value="Yes">Yes</option>
-                            </select>
-                          </div>
-                          {editProductItem.includeInLuckyCharm && (
-                            <div className="form-field">
-                              <label>Lucky Stock</label>
-                              <input 
-                                type="number" 
-                                value={editProductItem.luckyStock || ''}
-                                onChange={(e) => setEditProductItem({ ...editProductItem, luckyStock: parseInt(e.target.value, 10) || 0 })}
-                                placeholder="e.g. 50"
-                                className="modal-input"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {editProductActiveTab === 'specs' && (
-                    <>
-                      {renderCategorySpecificFields(editProductItem, setEditProductItem)}
-                      {renderVariantManager(editProductItem, setEditProductItem)}
-                    </>
-                  )}
-
-                  {editProductActiveTab === 'media' && (
-                    <>
-                      {/* Section 1: Product Images */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <ImageIcon size={16} />
-                          <h4>Product Media Gallery</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Images (Comma separated URLs)</label>
-                            <input 
-                              type="text" 
-                              value={Array.isArray(editProductItem.images) ? editProductItem.images.join(', ') : (editProductItem.images || editProductItem.image || '')}
-                              onChange={(e) => setEditProductItem({ ...editProductItem, images: e.target.value })}
-                              placeholder="e.g. https://example.com/img1.jpg, https://example.com/img2.jpg" 
-                              className="modal-input"
-                              style={{ marginBottom: '8px' }}
-                            />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <label htmlFor="edit-prod-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                                Upload Local File / Image
-                              </label>
-                              <input 
-                                type="file" 
-                                id="edit-prod-file-upload" 
-                                style={{ display: 'none' }} 
-                                accept="image/*" 
-                                onChange={(e) => handleLocalImageUpload(e, editProductItem, setEditProductItem)} 
-                              />
-                              <span style={{ fontSize: '0.78rem', color: '#666' }}>Or select file from your computer</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Description */}
-                      <div className="admin-modal-section-card">
-                        <div className="admin-modal-section-header">
-                          <BookOpen size={16} />
-                          <h4>Product Description</h4>
-                        </div>
-                        <div className="admin-modal-section-body">
-                          <div className="form-field">
-                            <label>Detailed Description</label>
-                            <textarea 
-                              value={editProductItem.description || ''}
-                              onChange={(e) => setEditProductItem({ ...editProductItem, description: e.target.value })}
-                              placeholder="Enter detailed product description..." 
-                              className="modal-input"
-                              rows="4"
-                              style={{ resize: 'vertical', width: '100%' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                </div>
-              </div>
-
-              {/* Form Actions Footer Bar */}
-              <div className="modal-actions-row" style={{ borderTop: '1px solid #eae6df', margin: 0, padding: '16px 24px', background: '#fbfbfb' }}>
-                <button type="button" className="btn-secondary" onClick={() => setEditProductItem(null)}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Changes</button>
-              </div>
-            </form>
+            <div style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(90vh - 80px)' }}>
+              <ProductForm
+                initialData={editProductItem}
+                onSave={handleEditProductSubmitFromPayload}
+                onCancel={() => setEditProductItem(null)}
+                isAdmin={true}
+                categoriesList={getCategoryPathsList()}
+                catalogues={catalogues}
+                categoryConfigService={categoryConfigService}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -7011,50 +7638,88 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <input 
                   type="text" 
                   value={newCategory.name}
-                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    setNewCategory({ ...newCategory, name, slug });
+                  }}
                   placeholder="e.g. Women, Kurti, Saree" 
                   required 
                   className="modal-input"
                 />
               </div>
 
-              <div className="form-field-row">
+              {newCategory.parent !== '—' && (
                 <div className="form-field">
-                  <label>Parent Category</label>
+                  <label>Parent Category <span className="req">*</span></label>
                   <select 
                     value={newCategory.parent}
                     onChange={(e) => setNewCategory({ ...newCategory, parent: e.target.value })}
+                    required
                     className="modal-input"
                   >
-                    <option value="—">— (None - Top Level)</option>
                     {categories.map(c => (
-                      <option key={c.name} value={c.name}>{c.name}</option>
+                      <option key={c.name} value={c.name}>{getCategoryPath(c.name)}</option>
                     ))}
                   </select>
                 </div>
-                
+              )}
+
+              <div className="form-field-row">
                 <div className="form-field">
-                  <label>Opening Products Qty</label>
+                  <label>Display Order</label>
                   <input 
                     type="number" 
-                    value={newCategory.count}
-                    onChange={(e) => setNewCategory({ ...newCategory, count: e.target.value })}
-                    placeholder="0" 
+                    value={newCategory.displayOrder}
+                    onChange={(e) => setNewCategory({ ...newCategory, displayOrder: e.target.value })}
+                    placeholder="1" 
                     className="modal-input"
                   />
                 </div>
+                
+                <div className="form-field">
+                  <label>Status</label>
+                  <select 
+                    value={newCategory.status}
+                    onChange={(e) => setNewCategory({ ...newCategory, status: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-field">
-                <label>Status</label>
-                <select 
-                  value={newCategory.status}
-                  onChange={(e) => setNewCategory({ ...newCategory, status: e.target.value })}
-                  className="modal-input"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
+              <div className="form-field-row">
+                <div className="form-field">
+                  <label>Category Icon (Optional)</label>
+                  <select 
+                    value={newCategory.icon || ''}
+                    onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="">None (Layers Default)</option>
+                    <option value="Package">Package</option>
+                    <option value="Layers">Layers</option>
+                    <option value="BookOpen">Book</option>
+                    <option value="Tag">Tag</option>
+                    <option value="Star">Star</option>
+                    <option value="Store">Store</option>
+                    <option value="Globe">Globe</option>
+                    <option value="Sparkles">Sparkles</option>
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label>SEO Slug</label>
+                  <input 
+                    type="text" 
+                    value={newCategory.slug}
+                    onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
+                    placeholder="auto-generated-slug" 
+                    className="modal-input"
+                  />
+                </div>
               </div>
 
               <div className="form-field">
@@ -7068,7 +7733,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     className="modal-input"
                   />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label htmlFor="add-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <label htmlFor="add-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #aa7c11', color: '#aa7c11', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                       Upload Cover Image
                     </label>
                     <input 
@@ -7094,7 +7759,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       type="checkbox"
                       checked={newCategory.showInNavbar !== false}
                       onChange={(e) => setNewCategory({ ...newCategory, showInNavbar: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
                     Navbar
                   </label>
@@ -7103,16 +7768,16 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       type="checkbox"
                       checked={newCategory.showInCategories !== false}
                       onChange={(e) => setNewCategory({ ...newCategory, showInCategories: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
-                    Shop By Categories
+                    Shop
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
                     <input
                       type="checkbox"
                       checked={newCategory.showInFilters !== false}
                       onChange={(e) => setNewCategory({ ...newCategory, showInFilters: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
                     Filters
                   </label>
@@ -7121,7 +7786,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setShowAddCategoryModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Create Category</button>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: '#aa7c11', color: '#fff' }}>Create Category</button>
               </div>
             </form>
           </div>
@@ -7143,48 +7808,83 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                 <input 
                   type="text" 
                   value={editCategoryItem.name}
-                  onChange={(e) => setEditCategoryItem({ ...editCategoryItem, name: e.target.value })}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    setEditCategoryItem({ ...editCategoryItem, name, slug });
+                  }}
                   required 
                   className="modal-input"
                 />
               </div>
 
+              <div className="form-field">
+                <label>Parent Category</label>
+                <select 
+                  value={editCategoryItem.parent}
+                  onChange={(e) => setEditCategoryItem({ ...editCategoryItem, parent: e.target.value })}
+                  className="modal-input"
+                >
+                  <option value="—">— (None - Top Level)</option>
+                  {getValidParentOptions(editCategoryItem.originalName).map(c => (
+                    <option key={c.name} value={c.name}>{getCategoryPath(c.name)}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-field-row">
                 <div className="form-field">
-                  <label>Parent Category</label>
-                  <select 
-                    value={editCategoryItem.parent}
-                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, parent: e.target.value })}
-                    className="modal-input"
-                  >
-                    <option value="—">— (None - Top Level)</option>
-                    {getValidParentOptions(editCategoryItem.originalName).map(c => (
-                      <option key={c.name} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="form-field">
-                  <label>Products Qty</label>
+                  <label>Display Order</label>
                   <input 
                     type="number" 
-                    value={editCategoryItem.count}
-                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, count: e.target.value })}
+                    value={editCategoryItem.displayOrder}
+                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, displayOrder: e.target.value })}
                     className="modal-input"
                   />
                 </div>
+                
+                <div className="form-field">
+                  <label>Status</label>
+                  <select 
+                    value={editCategoryItem.status}
+                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, status: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-field">
-                <label>Status</label>
-                <select 
-                  value={editCategoryItem.status}
-                  onChange={(e) => setEditCategoryItem({ ...editCategoryItem, status: e.target.value })}
-                  className="modal-input"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
+              <div className="form-field-row">
+                <div className="form-field">
+                  <label>Category Icon (Optional)</label>
+                  <select 
+                    value={editCategoryItem.icon || ''}
+                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, icon: e.target.value })}
+                    className="modal-input"
+                  >
+                    <option value="">None (Layers Default)</option>
+                    <option value="Package">Package</option>
+                    <option value="Layers">Layers</option>
+                    <option value="BookOpen">Book</option>
+                    <option value="Tag">Tag</option>
+                    <option value="Star">Star</option>
+                    <option value="Store">Store</option>
+                    <option value="Globe">Globe</option>
+                    <option value="Sparkles">Sparkles</option>
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label>SEO Slug</label>
+                  <input 
+                    type="text" 
+                    value={editCategoryItem.slug}
+                    onChange={(e) => setEditCategoryItem({ ...editCategoryItem, slug: e.target.value })}
+                    className="modal-input"
+                  />
+                </div>
               </div>
 
               <div className="form-field">
@@ -7198,7 +7898,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     className="modal-input"
                   />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label htmlFor="edit-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #D4AF37', color: '#D4AF37', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <label htmlFor="edit-cat-file-upload" style={{ cursor: 'pointer', padding: '6px 14px', background: '#F4FBF0', border: '1px solid #aa7c11', color: '#aa7c11', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                       Upload Cover Image
                     </label>
                     <input 
@@ -7224,7 +7924,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       type="checkbox"
                       checked={editCategoryItem.showInNavbar !== false}
                       onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInNavbar: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
                     Navbar
                   </label>
@@ -7233,16 +7933,16 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                       type="checkbox"
                       checked={editCategoryItem.showInCategories !== false}
                       onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInCategories: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
-                    Shop By Categories
+                    Shop
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 500, fontSize: '0.88rem' }}>
                     <input
                       type="checkbox"
                       checked={editCategoryItem.showInFilters !== false}
                       onChange={(e) => setEditCategoryItem({ ...editCategoryItem, showInFilters: e.target.checked })}
-                      style={{ accentColor: '#D4AF37', width: 16, height: 16 }}
+                      style={{ accentColor: '#aa7c11', width: 16, height: 16 }}
                     />
                     Filters
                   </label>
@@ -7251,7 +7951,45 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
 
               <div className="modal-actions-row">
                 <button type="button" className="btn-secondary" onClick={() => setEditCategoryItem(null)}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Changes</button>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: '#aa7c11', color: '#fff' }}>Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MOVE CATEGORY MODAL DIALOG --- */}
+      {moveCategoryItem && (
+        <div className="admin-modal-overlay" onClick={() => setMoveCategoryItem(null)}>
+          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hdr">
+              <h3>Move Category Parent</h3>
+              <button className="close-btn" onClick={() => setMoveCategoryItem(null)}><X size={18} /></button>
+            </div>
+            
+            <form onSubmit={handleMoveCategorySubmit} className="modal-body-form">
+              <div style={{ padding: '16px 24px 8px 24px', fontSize: '0.9rem', color: '#555' }}>
+                Change parent category for <strong style={{ color: '#aa7c11' }}>{moveCategoryItem.name}</strong>.
+              </div>
+
+              <div className="form-field" style={{ padding: '12px 24px 24px 24px' }}>
+                <label>Select New Parent Category</label>
+                <select 
+                  value={moveCategoryItem.newParent}
+                  onChange={(e) => setMoveCategoryItem({ ...moveCategoryItem, newParent: e.target.value })}
+                  className="modal-input"
+                  style={{ width: '100%' }}
+                >
+                  <option value="—">— (None - Top Level)</option>
+                  {getValidParentOptions(moveCategoryItem.name).map(c => (
+                    <option key={c.name} value={c.name}>{getCategoryPath(c.name)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="modal-actions-row" style={{ padding: '16px 24px', borderTop: '1px solid #eae6df', background: '#faf9f6' }}>
+                <button type="button" className="btn-secondary" onClick={() => setMoveCategoryItem(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: '#aa7c11', color: '#fff' }}>Move Category</button>
               </div>
             </form>
           </div>
@@ -7269,7 +8007,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
             
             <div className="modal-body-view">
               <div className="view-prod-details" style={{ paddingLeft: 0 }}>
-                <h4 className="view-title" style={{ color: '#C59B6C' }}>{viewCategoryItem.name}</h4>
+                <h4 className="view-title" style={{ color: '#aa7c11' }}>{viewCategoryItem.name}</h4>
                 <div className="view-spec-table">
                   <div className="spec-row">
                     <span className="spec-lbl">Parent Category:</span>
@@ -7284,8 +8022,32 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                     <span className="spec-val bold text-orange">{getCategoryProductCount(viewCategoryItem.name)} products</span>
                   </div>
                   <div className="spec-row">
+                    <span className="spec-lbl">Display Order:</span>
+                    <span className="spec-val bold">{viewCategoryItem.displayOrder || 1}</span>
+                  </div>
+                  <div className="spec-row">
+                    <span className="spec-lbl">Category Icon:</span>
+                    <span className="spec-val bold">{viewCategoryItem.icon || 'None (Layers Default)'}</span>
+                  </div>
+                  <div className="spec-row">
+                    <span className="spec-lbl">SEO Slug:</span>
+                    <span className="spec-val bold">{viewCategoryItem.slug || viewCategoryItem.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
+                  </div>
+                  <div className="spec-row">
                     <span className="spec-lbl">Status:</span>
                     <span className={`status-badge-re ${(viewCategoryItem.status || 'Active').toLowerCase()}`}>{viewCategoryItem.status || 'Active'}</span>
+                  </div>
+                  <div className="spec-row">
+                    <span className="spec-lbl">Navbar Visibility:</span>
+                    <span className="spec-val bold">{viewCategoryItem.showInNavbar !== false ? 'Show' : 'Hide'}</span>
+                  </div>
+                  <div className="spec-row">
+                    <span className="spec-lbl">Shop Visibility:</span>
+                    <span className="spec-val bold">{viewCategoryItem.showInCategories !== false ? 'Show' : 'Hide'}</span>
+                  </div>
+                  <div className="spec-row">
+                    <span className="spec-lbl">Filters Visibility:</span>
+                    <span className="spec-val bold">{viewCategoryItem.showInFilters !== false ? 'Show' : 'Hide'}</span>
                   </div>
                   {viewCategoryItem.image && (
                     <div className="spec-row">
@@ -7299,7 +8061,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
               </div>
               
               <div className="modal-actions-row">
-                <button type="button" className="btn-primary" onClick={() => setViewCategoryItem(null)}>Close View</button>
+                <button type="button" className="btn-primary" onClick={() => setViewCategoryItem(null)} style={{ backgroundColor: '#aa7c11', color: '#fff' }}>Close View</button>
               </div>
             </div>
           </div>
@@ -8996,6 +9758,178 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visual Crop Modal for Admin Panel */}
+      {adminCropOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%',
+            padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '1px solid #e2e8f0',
+            fontFamily: "'Inter', sans-serif"
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid #f1f5f9',
+              paddingBottom: '12px',
+              marginBottom: '16px'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Crop Image</h3>
+              <button 
+                type="button" 
+                onClick={() => setAdminCropOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{
+                position: 'relative',
+                background: '#f8fafc',
+                height: '300px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  position: 'relative',
+                  width: adminCropAspect === 0.75 ? '180px' : '240px',
+                  height: '240px',
+                  border: '2px dashed #D4AF37',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  background: '#f1f5f9',
+                  boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.65)'
+                }}>
+                  <img 
+                    src={adminCropSrc} 
+                    alt="Source" 
+                    style={{
+                      position: 'absolute',
+                      transform: `scale(${adminCropZoom}) translate(${adminCropOffsetX}px, ${adminCropOffsetY}px)`,
+                      transition: 'transform 0.05s ease-out',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Adjustments */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                    Zoom: {adminCropZoom.toFixed(1)}x
+                  </label>
+                  <input 
+                    type="range" 
+                    min="1.0" 
+                    max="3.0" 
+                    step="0.1" 
+                    value={adminCropZoom} 
+                    onChange={(e) => setAdminCropZoom(parseFloat(e.target.value))} 
+                    style={{ width: '100%', cursor: 'pointer' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                      Horizontal Shift
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-200" 
+                      max="200" 
+                      step="5" 
+                      value={adminCropOffsetX} 
+                      onChange={(e) => setAdminCropOffsetX(parseInt(e.target.value))} 
+                      style={{ width: '100%', cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                      Vertical Shift
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-200" 
+                      max="200" 
+                      step="5" 
+                      value={adminCropOffsetY} 
+                      onChange={(e) => setAdminCropOffsetY(parseInt(e.target.value))} 
+                      style={{ width: '100%', cursor: 'pointer' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #f1f5f9'
+            }}>
+              <button
+                type="button"
+                onClick={() => setAdminCropOpen(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminCropConfirm}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#1d4ed8',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm Crop
+              </button>
             </div>
           </div>
         </div>

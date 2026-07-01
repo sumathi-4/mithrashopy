@@ -59,7 +59,7 @@ export default function CategoryCards() {
   }, []);
 
   const handleClick = (catName) => {
-    window.history.pushState({}, '', `/Shop?category=${catName.toLowerCase()}`);
+    window.history.pushState({}, '', `/shop/${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
     window.dispatchEvent(new Event('popstate'));
   };
 

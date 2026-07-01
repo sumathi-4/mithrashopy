@@ -1,8 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Heart, User, ShoppingBag, ChevronDown, Menu, X, Eye, EyeOff, Shield, LogOut, LayoutDashboard } from 'lucide-react';
+import { Search, Heart, User, ShoppingBag, ChevronDown, Menu, X, Eye, EyeOff, Shield, LogOut, LayoutDashboard, Shirt, BookOpen, Crown, Gift } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { loginUser, registerUser, loginAdmin, logout as authLogout } from '../services/authService';
 import { apiService } from '../services/apiService';
+import Drawer from './ui/Drawer';
+import Accordion from './ui/Accordion';
+import imgClothing from '../assets/hero_clothing_banner.jpg';
+import imgStationery from '../assets/hero_stationery.jpg';
+import imgGifts from '../assets/hero_gifts.jpg';
+import imgAccessories from '../assets/hero_accessories.jpg';
+import celebCouple from '../assets/celeb_couple.jpg';
+
+const PROMO_CARDS = {
+  CLOTHING: {
+    tag: 'NEW ARRIVAL',
+    title: 'Premium Couple Sets',
+    desc: 'Matching ethnic wear for celebrations.',
+    image: celebCouple,
+    href: '/shop/clothing/couples'
+  },
+  STATIONERY: {
+    tag: 'TRENDING',
+    title: 'Vegan Leather Planners',
+    desc: 'Organize your days in luxury style.',
+    image: imgStationery,
+    href: '/shop/stationery/journals'
+  },
+  GIFTS: {
+    tag: 'CURATED',
+    title: 'Luxury Festive Hampers',
+    desc: 'Exquisite return favors for guests.',
+    image: imgGifts,
+    href: '/shop/gifts/return-gifts'
+  },
+  ACCESSORIES: {
+    tag: 'SPECIAL OFFER',
+    title: '24K Gold Plated Chokers',
+    desc: 'Royal elegance in every accent.',
+    image: imgAccessories,
+    href: '/shop/accessories/jewellery'
+  }
+};
 
 export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -493,13 +531,13 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
         </div>
 
         {/* ROW 2: Horizontal Categories & Hover Mega Menu */}
-        <div className={`navbar-row-two ${mobileMenuOpen ? 'open' : ''}`}>
+        <div className="navbar-row-two">
           <ul className="nav-menu-meesho">
             <li className="nav-item-meesho">
               <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
             </li>
             <li className="nav-item-meesho">
-              <a href="/Shop" onClick={(e) => handleLinkClick(e, '/Shop')}>Shop</a>
+              <a href="/shop" onClick={(e) => handleLinkClick(e, '/shop')}>Shop</a>
             </li>
             {getUnifiedCategories().map((group) => {
               return (
@@ -508,96 +546,69 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                   className="nav-item-meesho has-mega-menu"
                 >
                   <a
-                    href={`/Shop?category=${group.key.toLowerCase()}`}
+                    href={`/shop/${group.key.toLowerCase()}`}
                     className="category-link-meesho"
-                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}`)}
+                    onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}`)}
                   >
                     {group.name}
                   </a>
 
                   {/* Mega Menu container */}
                   {group.subcategories && group.subcategories.length > 0 && (
-                    <div 
-                      className="mega-menu-overlay"
-                      onMouseEnter={() => {
-                        if (!hoveredSubKeys[group.key]) {
-                          setHoveredSubKeys(prev => ({ ...prev, [group.key]: group.subcategories[0].key }));
-                        }
-                      }}
-                    >
+                    <div className="mega-menu-overlay">
                       <div className="mega-menu-split-container">
-                        {/* Left Sidebar: Subcategories list */}
-                        <div className="mega-menu-sidebar-left">
-                          <ul className="mega-menu-sidebar-list">
+                        <div className="mega-menu-grid-4col">
+                          {/* Columns 1-3: Subcategories */}
+                          <div className="mega-menu-links-group">
                             {group.subcategories.map((sub) => (
-                              <li 
-                                key={sub.key} 
-                                className={`mega-menu-sidebar-item ${
-                                  (hoveredSubKeys[group.key] || group.subcategories[0]?.key) === sub.key ? 'active' : ''
-                                }`}
-                                onMouseEnter={() => setHoveredSubKeys(prev => ({ ...prev, [group.key]: sub.key }))}
-                              >
+                              <div className="mega-menu-column" key={sub.key}>
                                 <a
-                                  href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${sub.dbName.toLowerCase()}`}
-                                  onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${sub.dbName.toLowerCase()}`)}
+                                  href={`/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                                  className="mega-menu-column-heading"
+                                  onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
                                 >
                                   {sub.label}
                                 </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Right Content: Active subcategory's children */}
-                        <div className="mega-menu-content-right">
-                          {(() => {
-                            const activeSubKey = hoveredSubKeys[group.key] || group.subcategories[0]?.key;
-                            const activeSub = group.subcategories.find(s => s.key === activeSubKey);
-                            if (!activeSub) return null;
-
-                            return (
-                              <div className="mega-menu-right-panel">
-                                <div className="mega-menu-right-header">
-                                  <a 
-                                    href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${activeSub.dbName.toLowerCase()}`}
-                                    className="mega-menu-right-main-link"
-                                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${activeSub.dbName.toLowerCase()}`)}
-                                  >
-                                    All {activeSub.label}
-                                  </a>
-                                </div>
-                                {activeSub.children && activeSub.children.length > 0 && (
-                                  <div className="mega-menu-right-grid">
-                                    {activeSub.children.map((child) => {
-                                      const hasSubChildren = child.children && child.children.length > 0;
-                                      return (
-                                        <div className="mega-menu-right-column" key={child.key}>
-                                          <a
-                                            href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${child.dbName.toLowerCase()}`}
-                                            className="mega-menu-right-column-heading"
-                                            onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${child.dbName.toLowerCase()}`)}
-                                          >
-                                            {child.label}
-                                          </a>
-                                          {hasSubChildren && (
-                                            <ul className="mega-menu-right-column-list">
-                                              {child.children.map((subChild) => (
-                                                <li key={subChild.key} className="mega-menu-right-item">
-                                                  <a
-                                                    href={`/Shop?category=${group.key.toLowerCase()}&subcategory=${subChild.dbName.toLowerCase()}`}
-                                                    onClick={(e) => handleLinkClick(e, `/Shop?category=${group.key.toLowerCase()}&subcategory=${subChild.dbName.toLowerCase()}`)}
-                                                  >
-                                                    {subChild.label}
-                                                  </a>
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
+                                {sub.children && sub.children.length > 0 && (
+                                  <ul className="mega-menu-column-list">
+                                    {sub.children.map((child) => (
+                                      <li key={child.key} className="mega-menu-item">
+                                        <a
+                                          href={`/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                                          onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
+                                        >
+                                          {child.label}
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
                                 )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Column 4: Promo Card */}
+                          {PROMO_CARDS[group.key] && (() => {
+                            const promo = PROMO_CARDS[group.key];
+                            return (
+                              <div className="mega-menu-promo-col">
+                                <div className="mega-menu-promo-card">
+                                  <div className="promo-badge">{promo.tag}</div>
+                                  <div className="promo-img-wrap">
+                                    <img src={promo.image} alt={promo.title} className="promo-img" />
+                                  </div>
+                                  <div className="promo-info">
+                                    <h4 className="promo-title">{promo.title}</h4>
+                                    <p className="promo-desc">{promo.desc}</p>
+                                    <a
+                                      href={promo.href}
+                                      className="promo-link"
+                                      onClick={(e) => handleLinkClick(e, promo.href)}
+                                    >
+                                      Shop Now &rarr;
+                                    </a>
+                                  </div>
+                                </div>
                               </div>
                             );
                           })()}
@@ -621,6 +632,86 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
       {/* ────────────────────────────────────────────
           AUTH MODAL OVERLAY
       ──────────────────────────────────────────── */}
+      {/* Mobile navigation slide-out Drawer */}
+      <Drawer
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        title="MithraShoppy Menu"
+        position="left"
+        width="290px"
+      >
+        <div className="mobile-nav-container">
+          <ul className="mobile-nav-menu">
+            <li className="mobile-nav-item">
+              <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
+            </li>
+            <li className="mobile-nav-item">
+              <a href="/shop" onClick={(e) => handleLinkClick(e, '/shop')}>Shop</a>
+            </li>
+          </ul>
+          
+          <Accordion
+            items={getUnifiedCategories().map(group => {
+              const icon = group.key === 'CLOTHING' ? <Shirt size={16} />
+                         : group.key === 'STATIONERY' ? <BookOpen size={16} />
+                         : group.key === 'GIFTS' ? <Gift size={16} />
+                         : group.key === 'ACCESSORIES' ? <Crown size={16} />
+                         : <Shirt size={16} />;
+              return {
+                id: group.key,
+                title: group.name,
+                icon: icon,
+                content: (
+                  <div className="mobile-nav-sub-list">
+                    <a
+                      href={`/shop/${group.key.toLowerCase()}`}
+                      className="mobile-nav-sub-link heading"
+                      onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}`)}
+                    >
+                      All {group.name}
+                    </a>
+                    {group.subcategories.map(sub => (
+                      <div key={sub.key} className="mobile-nav-sub-group">
+                        <a
+                          href={`/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                          className="mobile-nav-sub-link title"
+                          onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
+                        >
+                          {sub.label}
+                        </a>
+                        {sub.children && sub.children.length > 0 && (
+                          <div className="mobile-nav-child-list">
+                            {sub.children.map(child => (
+                              <a
+                                key={child.key}
+                                href={`/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                                className="mobile-nav-sub-link child"
+                                onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
+                              >
+                                {child.label}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              };
+            })}
+          />
+
+          <ul className="mobile-nav-menu" style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '16px' }}>
+            <li className="mobile-nav-item">
+              <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
+            </li>
+            <li className="mobile-nav-item">
+              <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
+            </li>
+          </ul>
+        </div>
+      </Drawer>
+      
       {authModal && (
         <div className="auth-overlay" onClick={closeModal}>
           <div
@@ -630,12 +721,10 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
             <button className="auth-close-btn" onClick={closeModal} aria-label="Close">
               <X size={18} />
             </button>
-
+            
             {/* ── USER MODAL ── */}
             {authModal === 'user' && (
               <div className="auth-user-content">
-
-                {/* Top Brand Header */}
                 <div className="auth-user-header">
                   <div className="auth-user-header-glow" />
                   <img src={`${logoImg}?v=2`} alt="Logo" className="auth-user-logo" />
@@ -645,8 +734,7 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                   </div>
                   <p className="auth-user-tagline">Your style. Your story.</p>
                 </div>
-
-                {/* Tab Toggle */}
+                
                 <div className="auth-user-tabs">
                   <button
                     className={`auth-user-tab ${activeTab === 'login' ? 'active' : ''}`}
@@ -659,15 +747,11 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                     type="button"
                   >New Account</button>
                 </div>
-
-                {/* Form Body */}
+                
                 <div className="auth-user-body">
-
-                  {/* ── LOGIN FORM ── */}
                   {activeTab === 'login' && (
                     <form className="auth-form" onSubmit={handleUserLogin} noValidate>
                       {userLoginError && <div className="auth-error-msg">{userLoginError}</div>}
-
                       <div className="auth-field-group">
                         <label className="auth-label">Email Address</label>
                         <input
@@ -679,7 +763,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           required
                         />
                       </div>
-
                       <div className="auth-field-group">
                         <label className="auth-label">Password</label>
                         <div className="auth-pwd-wrap">
@@ -696,15 +779,12 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           </button>
                         </div>
                       </div>
-
                       <div className="auth-forgot-row">
                         <a href="#" className="auth-forgot-link">Forgot Password?</a>
                       </div>
-
                       <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
                         {isSubmitting ? 'Logging in…' : 'Login to Account'}
                       </button>
-
                       <p className="auth-switch-text">
                         New here?{' '}
                         <button
@@ -717,12 +797,9 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                       </p>
                     </form>
                   )}
-
-                  {/* ── REGISTER FORM ── */}
                   {activeTab === 'register' && (
                     <form className="auth-form" onSubmit={handleRegister} noValidate>
                       {regError && <div className="auth-error-msg">{regError}</div>}
-
                       <div className="auth-field-group">
                         <label className="auth-label">Full Name <span className="auth-required">*</span></label>
                         <input
@@ -734,7 +811,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           required
                         />
                       </div>
-
                       <div className="auth-field-group">
                         <label className="auth-label">Email Address <span className="auth-required">*</span></label>
                         <input
@@ -746,7 +822,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           required
                         />
                       </div>
-
                       <div className="auth-reg-two-col">
                         <div className="auth-field-group">
                           <label className="auth-label">Mobile Number</label>
@@ -775,11 +850,9 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                           </div>
                         </div>
                       </div>
-
                       <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
                         {isSubmitting ? 'Creating Account…' : 'Create Account'}
                       </button>
-
                       <p className="auth-switch-text">
                         Already have an account?{' '}
                         <button
@@ -792,7 +865,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                       </p>
                     </form>
                   )}
-
                 </div>
               </div>
             )}

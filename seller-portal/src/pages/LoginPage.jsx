@@ -67,7 +67,7 @@ const LoginPage = () => {
         transition={{ duration: 0.6 }}
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12"
         style={{
-          background: 'linear-gradient(135deg, var(--blue-deep) 0%, #0a2560 60%, #0d2f78 100%)',
+          background: 'linear-gradient(135deg, var(--blue-deep) 0%, #051838 60%, #081d3f 100%)',
         }}
       >
         <div className="flex items-center gap-2">

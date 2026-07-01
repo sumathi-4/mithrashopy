@@ -1,0 +1,443 @@
+/* Shared Product Form Stylesheet */
+/* Theme Colors: Royal Blue (#051838) & Gold (#D4AF37) */
+
+.product-form-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+  background-color: #ffffff;
+}
+
+.product-form-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  min-height: 520px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .product-form-layout {
+    flex-direction: column;
+  }
+}
+
+/* Sidebar Styling */
+.product-form-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-right: 1px solid #f1f5f9;
+  padding-right: 16px;
+}
+
+@media (max-width: 768px) {
+  .product-form-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding-right: 0;
+    padding-bottom: 16px;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+.product-form-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.product-form-tab-btn .tab-icon {
+  color: #64748b;
+  transition: color 0.2s;
+}
+
+.product-form-tab-btn .tab-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-form-tab-btn .tab-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.product-form-tab-btn .tab-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Active State - Royal Blue background with Gold accent */
+.product-form-tab-btn.active {
+  background-color: #051838;
+  border-color: #051838;
+}
+
+.product-form-tab-btn.active .tab-label {
+  color: #ffffff;
+}
+
+.product-form-tab-btn.active .tab-desc {
+  color: #cbd5e1;
+}
+
+.product-form-tab-btn.active .tab-icon {
+  color: #D4AF37; /* Gold accent */
+}
+
+.product-form-tab-btn:hover:not(.active) {
+  background-color: #f8fafc;
+}
+
+/* Right Content Pane */
+.product-form-content-pane {
+  flex-grow: 1;
+  min-height: 480px;
+}
+
+/* Section Card */
+.product-form-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.product-form-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+
+.product-form-card-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #051838;
+  margin: 0;
+}
+
+.product-form-card-header .header-icon {
+  color: #D4AF37;
+}
+
+/* Fields & Inputs Grid */
+.product-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.product-form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .product-form-grid-2,
+  .product-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.product-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.product-form-field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.product-form-input,
+.product-form-select,
+.product-form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: #1e293b;
+  outline: none;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.product-form-input:focus,
+.product-form-select:focus,
+.product-form-textarea:focus {
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.product-form-input[readonly] {
+  background-color: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.product-form-textarea {
+  resize: none;
+  min-height: 100px;
+}
+
+/* Checkbox field row */
+.product-form-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.product-form-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+}
+
+.product-form-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #D4AF37;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Media Section Styling */
+.product-form-media-upload {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.product-form-media-upload:hover {
+  border-color: #D4AF37;
+  background-color: #fffdf9;
+}
+
+.product-form-media-upload.drag-over {
+  border-color: #051838;
+  background-color: #f0f4f8;
+}
+
+.product-form-media-preview-box {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.product-form-media-preview-box img,
+.product-form-media-preview-box video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.product-form-media-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(220, 38, 38, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.product-form-media-remove-btn:hover {
+  background-color: rgba(220, 38, 38, 1);
+}
+
+.product-form-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.product-form-gallery-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  cursor: move;
+}
+
+.product-form-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-form-gallery-primary-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #D4AF37;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Dynamic matrix / Variant Manager Styles */
+.product-form-bulk-generator {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.product-form-bulk-generator-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.product-form-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.product-form-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.product-form-table th {
+  background-color: #f8fafc;
+  padding: 10px 12px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.product-form-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.product-form-table-input {
+  width: 100%;
+  min-width: 60px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.product-form-table-input:focus {
+  border-color: #D4AF37;
+}
+
+/* Action row button styling */
+.product-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.product-form-btn {
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.product-form-btn-secondary {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.product-form-btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.product-form-btn-primary {
+  background-color: #051838;
+  color: #ffffff;
+}
+
+.product-form-btn-primary:hover {
+  background-color: #0c234a;
+}
+
+.product-form-btn-primary:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.product-form-btn-gold {
+  background-color: #D4AF37;
+  color: #ffffff;
+}
+
+.product-form-btn-gold:hover {
+  background-color: #c59f2e;
+}

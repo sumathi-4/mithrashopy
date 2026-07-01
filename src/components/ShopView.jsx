@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { useToast } from './ToastProvider';
+import Breadcrumbs from './ui/Breadcrumbs';
+import Skeleton, { ProductCardSkeleton } from './ui/Skeleton';
 import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles, RotateCcw } from 'lucide-react';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
+import bannerVideo from '../assets/banner_video.mp4';
 import logoImg from '../assets/logo.png';
 import pHairUpdated from '../assets/p_hair_updated.jpg';
 import pRing from '../assets/p_ring.jpg';
@@ -95,8 +98,19 @@ const getAllProductImages = (prod, selectedColor = '') => {
   return resolveProductGallery(prod, selectedColor);
 };
 
+const resolveImagesArray = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images.filter(isRealImg);
+  if (typeof images === 'string') {
+    return images.split(',')
+      .map(img => img.trim())
+      .filter(img => img && isRealImg(img));
+  }
+  return [];
+};
+
 // Handle color change and select the variant image in gallery
-const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize) => {
+const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize, currentSize) => {
   setModalColor(colorName);
   if (prod && prod.variants) {
     const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
@@ -106,20 +120,27 @@ const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, 
       if (colorIdx !== -1) {
         setActiveImageIndex(colorIdx);
       }
-    } else {
-      const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-      if (matchVar) {
-        const isImgValid = matchVar.image && isRealImg(matchVar.image);
-        if (isImgValid) {
-          setActiveImageIndex(0);
-        }
-      }
     }
 
-    // Automatically select the first valid size for the clicked color
-    const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-    if (matchVar && matchVar.size) {
-      setModalSize(matchVar.size);
+    // Selection Retention
+    const isSizeAvailable = prod.variants.some(v => 
+      v.color?.toLowerCase() === colorName.toLowerCase() && 
+      v.size?.toLowerCase() === currentSize?.toLowerCase() && 
+      v.stock > 0
+    );
+
+    if (isSizeAvailable) {
+      setModalSize(currentSize);
+    } else {
+      const fallbackVar = prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase() && 
+        v.stock > 0
+      ) || prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase()
+      );
+      if (fallbackVar && fallbackVar.size) {
+        setModalSize(fallbackVar.size);
+      }
     }
   }
 };
@@ -232,7 +253,7 @@ const getProductThemedColors = (prod) => {
       { name: 'Pink', hex: '#f8bbd0' },
       { name: 'Sage', hex: '#c8e6c9' },
       { name: 'Coral', hex: '#ffab91' },
-      { name: 'Blue', hex: '#bbdefb' }
+      { name: 'Blue', hex: '#051838' }
     ];
     if (model.includes('TQ-63') || model.includes('TQ-93')) return [
       { name: 'Maroon', hex: '#880e4f' },
@@ -242,25 +263,25 @@ const getProductThemedColors = (prod) => {
       { name: 'Green', hex: '#a5d6a7' }
     ];
     if (model.includes('TQ-87') || model.includes('TQ-145')) return [
-      { name: 'Blue', hex: '#1565c0' },
+      { name: 'Blue', hex: '#051838' },
       { name: 'Rose', hex: '#e91e63' },
       { name: 'Olive', hex: '#2e7d32' },
       { name: 'Yellow', hex: '#fbc02d' },
       { name: 'Purple', hex: '#6a1b9a' }
     ];
     if (model.includes('TQ-89') || model.includes('TQ-95')) return [
-      { name: 'Blue', hex: '#2196f3' },
+      { name: 'Blue', hex: '#051838' },
       { name: 'Sage', hex: '#4caf50' },
       { name: 'Rose', hex: '#e91e63' },
       { name: 'Yellow', hex: '#ffeb3b' },
       { name: 'Grey', hex: '#9e9e9e' }
     ];
     if (model.includes('TQ-103')) return [
-      { name: 'Blue-White', hex: '#1976d2' }
+      { name: 'Blue-White', hex: '#051838' }
     ];
     if (model.includes('TQ-109') || model.includes('TQ-110') || model.includes('TQ-113')) return [
       { name: 'Black', hex: '#212121' },
-      { name: 'Blue', hex: '#1e88e5' },
+      { name: 'Blue', hex: '#051838' },
       { name: 'Grey', hex: '#757575' },
       { name: 'Green', hex: '#43a047' },
       { name: 'Brown', hex: '#8d6e63' }
@@ -270,7 +291,7 @@ const getProductThemedColors = (prod) => {
       { name: 'Dark Grey', hex: '#424242' },
       { name: 'Maroon', hex: '#880e4f' },
       { name: 'Olive', hex: '#2e7d32' },
-      { name: 'Blue', hex: '#1565c0' }
+      { name: 'Blue', hex: '#051838' }
     ];
     if (model.includes('TQ-137') || model.includes('TQ-152') || model.includes('TQ-157')) return [
       { name: 'Yellow', hex: '#ffeb3b' },
@@ -306,7 +327,7 @@ const getProductThemedColors = (prod) => {
     if (isKids && !prod.modelNo) {
       return [
         { name: 'Pure White', hex: '#ffffff' },
-        { name: 'Ocean Blue', hex: '#1e88e5' }
+        { name: 'Ocean Blue', hex: '#051838' }
       ];
     }
     return [
@@ -349,77 +370,218 @@ const getCategoryThemeClass = (category) => {
   return 'theme-clothing';
 };
 
-const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty) => {
+const renderCategorySelectors = (
+  prod,
+  modalSize,
+  setModalSize,
+  modalColor,
+  setModalColor,
+  activeImageIndex,
+  setActiveImageIndex,
+  images,
+  colors,
+  modalQty,
+  setModalQty,
+  personalizationText = '',
+  setPersonalizationText = () => {},
+  personalizationError = false,
+  setPersonalizationError = () => {}
+) => {
   if (!prod) return null;
-  
-  if (prod.variants && prod.variants.length > 0) {
-    const varColors = getProductThemedColors(prod);
-    const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
-    const availableSizes = prod.variants
-      .filter(v => !activeColor || v.color?.toLowerCase() === activeColor.toLowerCase())
-      .map(v => v.size)
-      .filter(Boolean);
-    const uniqueSizes = [...new Set(availableSizes)];
-    
-    return (
-      <>
-        {varColors.length > 0 && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Color: <span className="color-name">{modalColor || varColors[0]?.name || ""}</span></span>
-            <div className="modal-color-dots">
-              {varColors.map((c, idx) => (
-                <button 
-                  key={idx}
-                  className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
-                  onClick={() => {
-                    handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize);
-                  }}
-                  title={c.name}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {uniqueSizes.length > 0 && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Select Size</span>
-            <div className="modal-size-pills">
-              {uniqueSizes.map((sz) => (
-                <button 
-                  key={sz}
-                  className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
-                  onClick={() => setModalSize(sz)}
-                >
-                  {sz}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
 
   const category = String(prod.category).toUpperCase();
 
+  // If the product has custom variants defined by a vendor:
+  if (prod.variants && prod.variants.length > 0) {
+    const varColors = getProductThemedColors(prod);
+    const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
+    
+    // Available options in list
+    const sizes = [...new Set(prod.variants.map(v => v.size).filter(Boolean))];
+    const fabrics = [...new Set(prod.variants.map(v => v.fabric || v.material).filter(Boolean))];
+    const fits = [...new Set(prod.variants.map(v => v.fit || v.style).filter(Boolean))];
+
+    // Helper to check if a combination is available (in-stock)
+    const isCombAvailable = (col, sz, fab, ft) => {
+      return prod.variants.some(v => 
+        (!col || v.color?.toLowerCase() === col.toLowerCase()) &&
+        (!sz || v.size?.toLowerCase() === sz.toLowerCase()) &&
+        (!fab || (v.fabric || v.material)?.toLowerCase() === fab.toLowerCase()) &&
+        (!ft || (v.fit || v.style)?.toLowerCase() === ft.toLowerCase()) &&
+        v.stock > 0
+      );
+    };
+
+    return (
+      <div className="variant-selectors-group" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Colors (Swatches) */}
+        {varColors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{modalColor || varColors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+              {varColors.map((c, idx) => {
+                const isColAvail = prod.variants.some(v => v.color?.toLowerCase() === c.name.toLowerCase() && v.stock > 0);
+                return (
+                  <button 
+                    key={idx}
+                    type="button"
+                    className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                    style={{ 
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: c.hex,
+                      border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                      outline: modalColor === c.name ? '2px solid var(--primary-rose, #1d4ed8)' : 'none',
+                      cursor: 'pointer',
+                      opacity: isColAvail ? 1 : 0.45,
+                      background: isColAvail ? undefined : `linear-gradient(45deg, ${c.hex} 48%, #94a3b8 49%, #94a3b8 51%, ${c.hex} 52%)`,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => {
+                      handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize, modalSize);
+                    }}
+                    title={`${c.name} ${isColAvail ? '' : '(Out of stock)'}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sizes (Grid) */}
+        {sizes.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {sizes.map((sz) => {
+                const isSzAvail = isCombAvailable(activeColor, sz);
+                return (
+                  <button 
+                    key={sz}
+                    type="button"
+                    className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                      color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                      background: modalSize === sz ? 'var(--bg-cream, #fffef9)' : (isSzAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)'),
+                      opacity: isSzAvail ? 1 : 0.4,
+                      cursor: isSzAvail ? 'pointer' : 'not-allowed',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => isSzAvail && setModalSize(sz)}
+                    disabled={!isSzAvail}
+                  >
+                    {sz}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fabrics/Materials */}
+        {fabrics.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Material / Fabric</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fabrics.map((fab) => {
+                const isFabAvail = isCombAvailable(activeColor, modalSize, fab);
+                return (
+                  <button 
+                    key={fab}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFabAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFabAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {fab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fits/Styles */}
+        {fits.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Style / Fit</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fits.map((ft) => {
+                const isFtAvail = isCombAvailable(activeColor, modalSize, null, ft);
+                return (
+                  <button 
+                    key={ft}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFtAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFtAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {ft}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback category-based static selectors (when no Mongoose variants exist)
   if (category.includes('CLOTHING') || category.includes('DRESS')) {
     const sizeOptions = prod.attributes?.size 
       ? prod.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
       : (prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']);
     return (
-      <>
-        {/* Colors selector */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {colors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Color: <span className="color-name">{colors[activeImageIndex]?.name || colors[0]?.name || ""}</span></span>
-            <div className="modal-color-dots">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
               {colors.map((c, idx) => (
                 <button 
                   key={idx}
+                  type="button"
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);
@@ -433,14 +595,24 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         )}
 
-        {/* Sizes selector */}
         <div className="modal-section-block">
-          <span className="modal-section-title">Select Size</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {sizeOptions.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
               >
                 {sz}
@@ -448,7 +620,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
             ))}
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -456,11 +628,10 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
     const packs = ['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'];
     const packSize = modalSize.includes('Pack') ? modalSize : 'Pack of 3';
     return (
-      <>
-        {/* Colors selector (Ink Color) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="modal-section-block">
-          <span className="modal-section-title">Ink Color: {modalColor || "Blue"}</span>
-          <div className="modal-color-dots">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Ink Color: {modalColor || "Blue"}</span>
+          <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
             {[
               { name: 'Blue', hex: '#0d47a1' },
               { name: 'Black', hex: '#212121' },
@@ -468,8 +639,17 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
             ].map((c, idx) => (
               <button 
                 key={idx}
+                type="button"
                 className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                style={{ backgroundColor: c.hex }}
+                style={{ 
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: c.hex,
+                  border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                  outline: modalColor === c.name ? '2px solid var(--primary-rose)' : 'none',
+                  cursor: 'pointer'
+                }}
                 onClick={() => setModalColor(c.name)}
                 title={c.name}
               />
@@ -477,23 +657,32 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         </div>
 
-        {/* Pack Size Selector */}
         <div className="modal-section-block">
-          <span className="modal-section-title">Pack Size</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Pack Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {packs.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${packSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: packSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: packSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: packSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
-                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
               >
                 {sz}
               </button>
             ))}
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -501,15 +690,25 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
     const wrapThemes = ['Classic Red', 'Mystic Violet', 'Minimalist White', 'Premium Gold'];
     const selectedTheme = modalColor.includes('Classic') || modalColor.includes('Mystic') || modalColor.includes('Minimal') || modalColor.includes('Premium') ? modalColor : 'Classic Red';
     return (
-      <>
-        {/* Wrap Occasion selector */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="modal-section-block">
-          <span className="modal-section-title">Occasion Theme: {modalSize || "Birthday"}</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Occasion Theme: {modalSize || "Birthday"}</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {['Birthday', 'Anniversary', 'Wedding', 'Corporate'].map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
               >
                 {sz}
@@ -518,52 +717,89 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         </div>
 
-        {/* Personalization input */}
-        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Personalization Details:</span>
-            <input 
-              type="text" 
-              className="modal-input" 
-              placeholder="Enter name or message to print..." 
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #eae6df', marginTop: '6px', outline: 'none' }}
-            />
-          </div>
-        )}
-
-        {/* Wrapping Paper Selector */}
+        {/* Gift Wrapping Toggle */}
         <div className="modal-section-block">
-          <span className="modal-section-title">Gift Wrapping Theme</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Gift Wrapping Theme</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {wrapThemes.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${selectedTheme === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: selectedTheme === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: selectedTheme === sz ? 'var(--primary-rose)' : '#475569',
+                  background: selectedTheme === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.82rem'
+                }}
                 onClick={() => setModalColor(sz)}
-                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
               >
                 {sz}
               </button>
             ))}
           </div>
         </div>
-      </>
+
+        {/* Personalization textarea */}
+        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
+          <div className="modal-section-block" id="personalization-input-container" style={{ scrollMarginTop: '100px' }}>
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '4px' }}>Personalization Message *</span>
+            <textarea 
+              className="modal-input" 
+              value={personalizationText}
+              onChange={(e) => {
+                setPersonalizationText(e.target.value);
+                setPersonalizationError(false);
+              }}
+              placeholder="Enter name or message to print on gift..." 
+              style={{ 
+                width: '100%', 
+                padding: '10px', 
+                borderRadius: '8px', 
+                border: personalizationError ? '2px solid #ef4444' : '1px solid #eae6df', 
+                marginTop: '6px', 
+                outline: 'none',
+                height: '80px',
+                resize: 'none',
+                boxShadow: personalizationError ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : 'none'
+              }}
+            />
+            {personalizationError && (
+              <span style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '4px', display: 'block', fontWeight: 600 }}>
+                Please provide custom message / name for personalization!
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     );
   }
 
   if (category.includes('ACCESSORIES') || category.includes('FANCY')) {
     return (
-      <>
-        {/* Plating Metal selector */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {colors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name || "Default"}</span>
-            <div className="modal-color-dots">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
               {colors.map((c, idx) => (
                 <button 
                   key={idx}
+                  type="button"
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer'
+                  }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);
@@ -577,14 +813,13 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         )}
 
-        {/* Static Size indicator */}
         <div className="modal-section-block">
-          <span className="modal-section-title">Size:</span>
-          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'inherit', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', width: 'fit-content' }}>
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Size:</span>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', width: 'fit-content', background: '#f8fafc' }}>
             One Size (Adjustable)
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -714,7 +949,7 @@ const getColorHex = (name) => {
     'yellow': '#fdd835',
     'green': '#43a047',
     'purple': '#8e24aa',
-    'blue': '#1e88e5',
+    'blue': 'hsla(225, 75%, 45%, 1)',
     'darkred': '#b71c1c',
     'crimson red': '#b32142',
     'champagne gold': '#D4AF37',
@@ -727,7 +962,7 @@ const getColorHex = (name) => {
     'peach': '#ffcc80',
     'cream': '#fff9c4',
     'aqua': '#80deea',
-    'navy': '#3949ab',
+    'navy': '#051838',
     'olive': '#2e7d32'
   };
   const key = name.toLowerCase().trim();
@@ -789,18 +1024,44 @@ const getSimilarProducts = (currentProd, allProds) => {
   return scored.map(s => s.product);
 };
 
+const getProductVideo = (prod) => {
+  if (prod && prod.video && isRealImg(prod.video)) return prod.video;
+  return null;
+};
+
 export default function ShopView({ authUser, setAuthUser }) {
   const [activeTab, setActiveTab] = useState('ALL');
   const [activeSubTab, setActiveSubTab] = useState('ALL');
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [fullDetailProduct, setFullDetailProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [zoomStyle, setZoomStyle] = useState({ transformOrigin: 'center', transform: 'scale(1)' });
+  const [personalizationText, setPersonalizationText] = useState('');
+  const [personalizationError, setPersonalizationError] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [modalSize, setModalSize] = useState('M');
   const [modalColor, setModalColor] = useState('Red');
   const [modalQty, setModalQty] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('DEFAULT');
+
+  // Category specific filter states
+  const [selectedFabrics, setSelectedFabrics] = useState([]);
+  const [selectedPaperSizes, setSelectedPaperSizes] = useState([]);
+  const [selectedPaperTypes, setSelectedPaperTypes] = useState([]);
+  const [selectedPackSizes, setSelectedPackSizes] = useState([]);
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const [selectedGiftThemes, setSelectedGiftThemes] = useState([]);
+  
+  const [isFabricOpen, setIsFabricOpen] = useState(false);
+  const [isPaperSizeOpen, setIsPaperSizeOpen] = useState(false);
+  const [isPaperTypeOpen, setIsPaperTypeOpen] = useState(false);
+  const [isPackSizeOpen, setIsPackSizeOpen] = useState(false);
+  const [isMaterialOpen, setIsMaterialOpen] = useState(false);
+  const [isGiftThemeOpen, setIsGiftThemeOpen] = useState(false);
+
+  // Infinite Scroll state
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
   const [wishlist, setWishlist] = useState(() => {
     if (authUser) return authUser.wishlist || [];
     try {
@@ -1298,6 +1559,14 @@ export default function ShopView({ authUser, setAuthUser }) {
     setSearchQuery('');
     setCategorySearchQuery('');
     setShowAllCategories(false);
+    
+    // Reset category-specific filters
+    setSelectedFabrics([]);
+    setSelectedPaperSizes([]);
+    setSelectedPaperTypes([]);
+    setSelectedPackSizes([]);
+    setSelectedMaterials([]);
+    setSelectedGiftThemes([]);
   };
 
   // Reset active selectors when product selection changes
@@ -1342,29 +1611,46 @@ export default function ShopView({ authUser, setAuthUser }) {
     }
   }, [quickViewProduct, fullDetailProduct]);
 
-  // Parse category/subcategory/search from URL on load
+  // Parse category/subcategory/search from URL (both path slugs and query params)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const catParam = params.get('category');
-    if (catParam) setActiveTab(catParam.toUpperCase());
-    const subParam = params.get('subcategory');
-    if (subParam) setActiveSubTab(subParam.toUpperCase());
-    const searchParam = params.get('search');
-    if (searchParam) setSearchQuery(decodeURIComponent(searchParam));
+    const parseUrl = () => {
+      const path = window.location.pathname.toLowerCase();
+      const segments = path.split('/').filter(Boolean); // e.g. ["shop", "clothing", "kids-wear"]
+      
+      let cat = 'ALL';
+      let sub = 'ALL';
 
-    const handlePopState = () => {
-      const updatedParams = new URLSearchParams(window.location.search);
-      const updatedCat = updatedParams.get('category');
-      setActiveTab(updatedCat ? updatedCat.toUpperCase() : 'ALL');
-      const updatedSub = updatedParams.get('subcategory');
-      setActiveSubTab(updatedSub ? updatedSub.toUpperCase() : 'ALL');
-      const updatedSearch = updatedParams.get('search');
-      if (updatedSearch) setSearchQuery(decodeURIComponent(updatedSearch));
+      if (segments[0] === 'shop') {
+        if (segments[1]) {
+          cat = segments[1].toUpperCase();
+          if (segments[2]) {
+            // decode hyphen to space (e.g. "kids-wear" -> "KIDS WEAR")
+            sub = segments[2].toUpperCase().replace(/-/g, ' ');
+          }
+        }
+      }
+
+      // Query param overrides/fallbacks (backward compatibility)
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('category');
+      if (catParam) cat = catParam.toUpperCase();
+      const subParam = params.get('subcategory');
+      if (subParam) sub = subParam.toUpperCase();
+      const searchParam = params.get('search');
+
+      setActiveTab(cat);
+      setActiveSubTab(sub);
+      if (searchParam) {
+        setSearchQuery(decodeURIComponent(searchParam));
+      }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    parseUrl();
+    window.addEventListener('popstate', parseUrl);
+    return () => window.removeEventListener('popstate', parseUrl);
   }, []);
+
+
   const { addToast } = useToast();
 
   const toggleWishlist = (id) => {
@@ -1417,7 +1703,8 @@ export default function ShopView({ authUser, setAuthUser }) {
       const prod = allProducts.find(p => p.id === id || p._id === id || String(p.id) === String(id) || String(p._id) === String(id));
       const selectedVariant = getSelectedVariant(prod, color, size);
       const variantId = selectedVariant ? (selectedVariant._id || selectedVariant.id || '') : null;
-      const sku = selectedVariant ? selectedVariant.sku : null;
+      const rawSku = selectedVariant ? selectedVariant.sku : null;
+      const sku = rawSku && rawSku.includes('||') ? rawSku.split('||')[0] : rawSku;
 
       updatedItems = [...prevItems.filter(item => item.productId !== id), {
         productId: id,
@@ -1527,8 +1814,9 @@ export default function ShopView({ authUser, setAuthUser }) {
 
           // Collect real images from the images array first
           let productImages = [];
-          if (p.images && p.images.length > 0) {
-            const realOnes = p.images.filter(isRealImg);
+          const rawImagesArray = Array.isArray(p.images) ? p.images : (typeof p.images === 'string' ? p.images.split(',').map(s => s.trim()) : []);
+          if (rawImagesArray.length > 0) {
+            const realOnes = rawImagesArray.filter(isRealImg);
             if (realOnes.length > 0) productImages = realOnes;
           }
 
@@ -1604,6 +1892,23 @@ export default function ShopView({ authUser, setAuthUser }) {
       if (data) setReviewsList(data);
     });
   }, []);
+
+  useEffect(() => {
+    if (fullDetailProduct) {
+      if (fullDetailProduct.variants && fullDetailProduct.variants.length > 0) {
+        const defaultVar = fullDetailProduct.variants.find(v => v.stock > 0) || fullDetailProduct.variants[0];
+        if (defaultVar) {
+          setModalColor(defaultVar.color || 'Red');
+          setModalSize(defaultVar.size || 'M');
+        }
+      } else {
+        setModalColor(fullDetailProduct.color || 'Red');
+        setModalSize(fullDetailProduct.size || 'M');
+      }
+      setPersonalizationText('');
+      setPersonalizationError(false);
+    }
+  }, [fullDetailProduct]);
 
   // Helper to determine if a product is in stock
   const isProductInStock = (p) => {
@@ -1722,6 +2027,44 @@ export default function ShopView({ authUser, setAuthUser }) {
     filteredProducts = filteredProducts.filter(p => {
       const pColors = getProductColors(p);
       return pColors.some(color => selectedColors.includes(color));
+    });
+  }
+
+  // Category-Specific Filters
+  if (activeTab === 'CLOTHING' && selectedFabrics.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const fab = p.fabric || p.attributes?.fabric || '';
+      return selectedFabrics.some(f => fab.toUpperCase().includes(f.toUpperCase()));
+    });
+  }
+  if (activeTab === 'STATIONERY' && selectedPaperSizes.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const size = p.attributes?.paperSize || '';
+      return selectedPaperSizes.some(s => size.toUpperCase().includes(s.toUpperCase()));
+    });
+  }
+  if (activeTab === 'STATIONERY' && selectedPaperTypes.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const type = p.attributes?.paperType || '';
+      return selectedPaperTypes.some(t => type.toUpperCase().includes(t.toUpperCase()));
+    });
+  }
+  if (activeTab === 'STATIONERY' && selectedPackSizes.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const pack = p.attributes?.packSize || '';
+      return selectedPackSizes.some(pk => pack.toUpperCase().includes(pk.toUpperCase()));
+    });
+  }
+  if (activeTab === 'ACCESSORIES' && selectedMaterials.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const mat = p.attributes?.material || p.material || '';
+      return selectedMaterials.some(m => mat.toUpperCase().includes(m.toUpperCase()));
+    });
+  }
+  if (activeTab === 'GIFTS' && selectedGiftThemes.length > 0) {
+    filteredProducts = filteredProducts.filter(p => {
+      const th = p.attributes?.theme || '';
+      return selectedGiftThemes.some(t => th.toUpperCase().includes(t.toUpperCase()));
     });
   }
 
@@ -1883,9 +2226,26 @@ export default function ShopView({ authUser, setAuthUser }) {
   const totalProductsCount = filteredProducts.length;
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentProducts = filteredProducts.slice(0, indexOfLastProduct);
   const totalPages = Math.ceil(totalProductsCount / productsPerPage);
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  // Infinite scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight * 0.85) {
+        if (currentPage < totalPages && !isFetchingNextPage) {
+          setIsFetchingNextPage(true);
+          setTimeout(() => {
+            setCurrentPage(prev => prev + 1);
+            setIsFetchingNextPage(false);
+          }, 600);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, totalPages, isFetchingNextPage]);
 
   if (fullDetailProduct) {
     const catTheme = getCategoryThemeClass(fullDetailProduct.category);
@@ -1902,6 +2262,23 @@ export default function ShopView({ authUser, setAuthUser }) {
     const isOutOfStock = displayStock <= 0;
     
     const mainImageUrl = images[activeImageIndex] || resolveProductImage(fullDetailProduct);
+    const prodVideo = getProductVideo(fullDetailProduct);
+    const hasVideo = !!prodVideo;
+    const isVideoActive = hasVideo && activeImageIndex === images.length;
+
+    const handleMouseMove = (e) => {
+      const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - left) / width) * 100;
+      const y = ((e.clientY - top) / height) * 100;
+      setZoomStyle({
+        transformOrigin: `${x}% ${y}%`,
+        transform: 'scale(1.8)'
+      });
+    };
+
+    const handleMouseLeave = () => {
+      setZoomStyle({ transformOrigin: 'center', transform: 'scale(1)' });
+    };
 
     return (
       <div className={`shop-view-page shop-product-detail-page-view ${catTheme}`}>
@@ -1928,7 +2305,7 @@ export default function ShopView({ authUser, setAuthUser }) {
             <div className="product-detail-gallery-col">
               <div className="product-detail-gallery-container">
                 {/* Thumbnails list */}
-                {images.length > 1 && (() => {
+                {(images.length > 1 || hasVideo) && (() => {
                   const hasVariantImages = fullDetailProduct.variants && fullDetailProduct.variants.some(v => v.image && isRealImg(v.image));
                   return (
                     <div className="product-detail-thumbnails">
@@ -1942,7 +2319,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                               setModalColor(colors[idx].name);
                               const matchVar = fullDetailProduct.variants.find(v => v.color?.toLowerCase() === colors[idx].name.toLowerCase());
                               if (matchVar && matchVar.size) {
-                                setModalSize(matchVar.size);
+                                  setModalSize(matchVar.size);
                               }
                             }
                           }}
@@ -1950,16 +2327,64 @@ export default function ShopView({ authUser, setAuthUser }) {
                           <img src={img} alt={`thumb-${idx}`} className="product-detail-thumbnail-img" />
                         </div>
                       ))}
+                      
+                      {/* Video Thumbnail Handle */}
+                      {hasVideo && (
+                        <div 
+                          className={`product-detail-thumbnail-wrapper video-thumb-wrapper ${activeImageIndex === images.length ? 'active' : ''}`}
+                          onClick={() => setActiveImageIndex(images.length)}
+                          style={{ position: 'relative' }}
+                        >
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(5, 24, 56, 0.45)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 2,
+                            borderRadius: '6px'
+                          }}>
+                            <span style={{ color: '#fff', fontSize: '14px' }}>▶</span>
+                          </div>
+                          <img src={images[0] || resolveProductImage(fullDetailProduct)} alt="video-thumb" className="product-detail-thumbnail-img" />
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
-                {/* Main Display Image */}
-                <div className="product-detail-main-image-wrapper">
-                  <img 
-                    src={mainImageUrl} 
-                    alt={fullDetailProduct.title} 
-                    className="product-detail-main-img" 
-                  />
+
+                {/* Main Display Area with Hover Zoom / Video Support */}
+                <div 
+                  className="product-detail-main-image-wrapper" 
+                  style={{ overflow: 'hidden', position: 'relative', cursor: isVideoActive ? 'default' : 'zoom-in' }}
+                >
+                  {isVideoActive ? (
+                    <video 
+                      src={prodVideo} 
+                      controls 
+                      autoPlay 
+                      muted 
+                      className="product-detail-main-img" 
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#091e42' }} 
+                    />
+                  ) : (
+                    <img 
+                      src={mainImageUrl} 
+                      alt={fullDetailProduct.title} 
+                      className="product-detail-main-img" 
+                      style={{ 
+                        transform: zoomStyle.transform, 
+                        transformOrigin: zoomStyle.transformOrigin,
+                        transition: 'transform 0.05s ease-out',
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover' 
+                      }}
+                      onMouseMove={handleMouseMove}
+                      onMouseLeave={handleMouseLeave}
+                    />
+                  )}
                   
                   {/* Floating badge */}
                   <div className="product-detail-badge-pill">
@@ -1975,7 +2400,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                 {fullDetailProduct.category} {fullDetailProduct.subCategory ? `| ${fullDetailProduct.subCategory}` : ''}
               </div>
               <h1 className="product-detail-title">{fullDetailProduct.title}</h1>
-              <p className="product-detail-tagline">Bloom with elegance. Designed exclusively for your premium collection.</p>
+              <p className="product-detail-tagline">{fullDetailProduct.attributes?.shortDescription || fullDetailProduct.shortDescription || "Bloom with elegance. Designed exclusively for your premium collection."}</p>
 
               {/* Rating and reviews */}
               <div className="product-detail-rating-row">
@@ -2003,8 +2428,30 @@ export default function ShopView({ authUser, setAuthUser }) {
                 </span>
               </div>
 
+              {/* Low stock alert chip */}
+              {displayStock > 0 && displayStock <= (selectedVariant?.lowStockAlert || 5) && (
+                <div 
+                  className="low-stock-badge-chip animate-fade-in" 
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#fee2e2',
+                    color: '#991b1b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    margin: '0 0 16px 0',
+                    border: '1px solid #fca5a5'
+                  }}
+                >
+                  ⚠️ Only {displayStock} left in {modalColor} - {modalSize}!
+                </div>
+              )}
+
               {/* Category-specific Selectors */}
-              {renderCategorySelectors(fullDetailProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+              {renderCategorySelectors(fullDetailProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty, personalizationText, setPersonalizationText, personalizationError, setPersonalizationError)}
 
               {/* Quantity */}
               <div className="product-detail-section-block qty-block">
@@ -2020,15 +2467,39 @@ export default function ShopView({ authUser, setAuthUser }) {
               <div className="product-detail-actions">
                 <button 
                   className={`product-detail-cart-btn ${cart.includes(fullDetailProduct.id) ? 'active' : ''}`}
+                  disabled={isOutOfStock}
+                  style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
                   onClick={() => {
+                    const isGift = String(fullDetailProduct.category).toUpperCase().includes('GIFT');
+                    const needsPersonalization = fullDetailProduct.attributes?.personalization && fullDetailProduct.attributes.personalization !== 'No';
+                    if (isGift && needsPersonalization && !personalizationText.trim()) {
+                      setPersonalizationError(true);
+                      const container = document.getElementById('personalization-input-container');
+                      if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
                     toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
                   }}
                 >
-                  {cart.includes(fullDetailProduct.id) ? "Remove from Cart" : "ADD TO CART"}
+                  {isOutOfStock ? "OUT OF STOCK" : (cart.includes(fullDetailProduct.id) ? "Remove from Cart" : "ADD TO CART")}
                 </button>
                 <button 
                   className="product-detail-buy-btn"
+                  disabled={isOutOfStock}
+                  style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
                   onClick={() => {
+                    const isGift = String(fullDetailProduct.category).toUpperCase().includes('GIFT');
+                    const needsPersonalization = fullDetailProduct.attributes?.personalization && fullDetailProduct.attributes.personalization !== 'No';
+                    if (isGift && needsPersonalization && !personalizationText.trim()) {
+                      setPersonalizationError(true);
+                      const container = document.getElementById('personalization-input-container');
+                      if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
                     if (!cart.includes(fullDetailProduct.id)) {
                       toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
                     }
@@ -2261,7 +2732,15 @@ export default function ShopView({ authUser, setAuthUser }) {
                           <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
                         </button>
 
-                        <img src={resolveProductImage(simProd)} alt={simProd.title} className="clothing-img" />
+                        <img src={resolveProductImage(simProd)} alt={simProd.title} className="clothing-img primary-card-img" loading="lazy" />
+                        {resolveImagesArray(simProd.images).length > 1 && (
+                          <img 
+                            src={resolveProductImage({ image: resolveImagesArray(simProd.images)[1] })} 
+                            alt={`${simProd.title} Alternate`} 
+                            className="clothing-img hover-card-img" 
+                            loading="lazy"
+                          />
+                        )}
 
                         <div className="clothing-hover-overlay">
                           <button 
@@ -2564,10 +3043,41 @@ export default function ShopView({ authUser, setAuthUser }) {
     });
   };
 
+  const getCategoryBannerImage = () => {
+    switch (activeTab) {
+      case 'CLOTHING': return imgClothing;
+      case 'STATIONERY': return imgStationery;
+      case 'GIFTS': return imgGifts;
+      case 'ACCESSORIES': return imgAccessories;
+      default: return shopBannerRaw;
+    }
+  };
+
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Shop', onClick: () => { setActiveTab('ALL'); setActiveSubTab('ALL'); window.history.pushState({}, '', '/shop'); window.dispatchEvent(new Event('popstate')); } }
+  ];
+  if (activeTab !== 'ALL') {
+    const cleanCat = activeTab.charAt(0) + activeTab.slice(1).toLowerCase();
+    breadcrumbItems.push({
+      label: cleanCat,
+      onClick: () => { setActiveTab(activeTab); setActiveSubTab('ALL'); window.history.pushState({}, '', `/shop/${activeTab.toLowerCase()}`); window.dispatchEvent(new Event('popstate')); }
+    });
+    if (activeSubTab !== 'ALL') {
+      const cleanSub = activeSubTab.charAt(0) + activeSubTab.slice(1).toLowerCase();
+      breadcrumbItems.push({
+        label: cleanSub
+      });
+    }
+  }
+
   return (
     <div className="shop-view-page">
-      
       <div className="shop-content-container">
+        {/* Breadcrumb Navigation */}
+        <div className="category-breadcrumbs-container" style={{ margin: '15px 0 25px 0' }}>
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
         
         {/* Toggle Button Row for Collapsing Sidebar */}
         <div className="filters-toggle-row-m3" style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '20px' }}>
@@ -2680,78 +3190,358 @@ export default function ShopView({ authUser, setAuthUser }) {
                 )}
               </div>
 
-              {/* 4. Size Accordion */}
-              <div className="filter-card-section size-accordion">
-                <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
-                  <h3 className="section-title-text">Size</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
-                </div>
-                {isSizeOpen && (
-                  <div className="section-content" style={{ marginTop: '10px' }}>
-                    <div className="size-buttons-grid">
-                      {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
-                        const isChecked = selectedSizes.includes(size);
-                        return (
-                          <button 
-                            key={size}
-                            className={`size-btn ${isChecked ? 'active' : ''}`}
-                            onClick={() => {
-                              if (isChecked) {
-                                setSelectedSizes(selectedSizes.filter(s => s !== size));
-                              } else {
-                                setSelectedSizes([...selectedSizes, size]);
-                              }
-                            }}
-                          >
-                            {size}
-                          </button>
-                        );
-                      })}
+              {/* Category-Specific Dynamic Filters */}
+              {activeTab === 'CLOTHING' && (
+                <>
+                  {/* Size Accordion */}
+                  <div className="filter-card-section size-accordion">
+                    <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
+                      <h3 className="section-title-text">Size</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
                     </div>
+                    {isSizeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        <div className="size-buttons-grid">
+                          {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
+                            const isChecked = selectedSizes.includes(size);
+                            return (
+                              <button 
+                                key={size}
+                                className={`size-btn ${isChecked ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedSizes(selectedSizes.filter(s => s !== size));
+                                  } else {
+                                    setSelectedSizes([...selectedSizes, size]);
+                                  }
+                                }}
+                              >
+                                {size}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* 5. Colors Accordion */}
-              <div className="filter-card-section color-accordion">
-                <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
-                  <h3 className="section-title-text">Colors</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
-                </div>
-                {isColorsOpen && (
-                  <div className="section-content" style={{ marginTop: '10px' }}>
-                    <div className="color-circles-list">
-                      {[
-                        { name: 'Pink', value: '#E94FA8' },
-                        { name: 'Red', value: '#FF0000' },
-                        { name: 'Yellow', value: '#FFCC00' },
-                        { name: 'Green', value: '#00CC66' },
-                        { name: 'Purple', value: '#8A2BE2' },
-                        { name: 'Black', value: '#000000' },
-                        { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                        { name: 'Blue', value: '#4A90E2' }
-                      ].map(color => {
-                        const isChecked = selectedColors.includes(color.name);
-                        return (
-                          <button 
-                            key={color.name}
-                            className={`color-bubble ${isChecked ? 'active' : ''}`}
-                            style={{ backgroundColor: color.value, border: color.border || 'none' }}
-                            onClick={() => {
-                              if (isChecked) {
-                                setSelectedColors(selectedColors.filter(c => c !== color.name));
-                              } else {
-                                setSelectedColors([...selectedColors, color.name]);
-                              }
-                            }}
-                            title={color.name}
-                          />
-                        );
-                      })}
+                  {/* Colors Accordion */}
+                  <div className="filter-card-section color-accordion">
+                    <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
+                      <h3 className="section-title-text">Colors</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
                     </div>
+                    {isColorsOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        <div className="color-circles-list">
+                          {[
+                            { name: 'Pink', value: '#E94FA8' },
+                            { name: 'Red', value: '#FF0000' },
+                            { name: 'Yellow', value: '#FFCC00' },
+                            { name: 'Green', value: '#00CC66' },
+                            { name: 'Purple', value: '#8A2BE2' },
+                            { name: 'Black', value: '#000000' },
+                            { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
+                            { name: 'Blue', value: '#051838' }
+                          ].map(color => {
+                            const isChecked = selectedColors.includes(color.name);
+                            return (
+                              <button 
+                                key={color.name}
+                                className={`color-bubble ${isChecked ? 'active' : ''}`}
+                                style={{ backgroundColor: color.value, border: color.border || 'none' }}
+                                onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedColors(selectedColors.filter(c => c !== color.name));
+                                  } else {
+                                    setSelectedColors([...selectedColors, color.name]);
+                                  }
+                                }}
+                                title={color.name}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+
+                  {/* Fabric Accordion */}
+                  <div className="filter-card-section fabric-accordion">
+                    <div className="section-title-row" onClick={() => setIsFabricOpen(!isFabricOpen)}>
+                      <h3 className="section-title-text">Fabric</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isFabricOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isFabricOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['Cotton', 'Rayon', 'Silk', 'Polyester'].map(fab => {
+                          const isChecked = selectedFabrics.includes(fab);
+                          return (
+                            <label key={fab} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedFabrics(selectedFabrics.filter(f => f !== fab));
+                                  } else {
+                                    setSelectedFabrics([...selectedFabrics, fab]);
+                                  }
+                                }}
+                              />
+                              <span>{fab}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'STATIONERY' && (
+                <>
+                  {/* Paper Size Accordion */}
+                  <div className="filter-card-section paper-size-accordion">
+                    <div className="section-title-row" onClick={() => setIsPaperSizeOpen(!isPaperSizeOpen)}>
+                      <h3 className="section-title-text">Paper Size</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isPaperSizeOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isPaperSizeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['A4', 'A5', 'A6'].map(size => {
+                          const isChecked = selectedPaperSizes.includes(size);
+                          return (
+                            <label key={size} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedPaperSizes(selectedPaperSizes.filter(s => s !== size));
+                                  } else {
+                                    setSelectedPaperSizes([...selectedPaperSizes, size]);
+                                  }
+                                }}
+                              />
+                              <span>{size}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Paper Type Accordion */}
+                  <div className="filter-card-section paper-type-accordion">
+                    <div className="section-title-row" onClick={() => setIsPaperTypeOpen(!isPaperTypeOpen)}>
+                      <h3 className="section-title-text">Paper Type</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isPaperTypeOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isPaperTypeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['Ruled', 'Plain'].map(type => {
+                          const isChecked = selectedPaperTypes.includes(type);
+                          return (
+                            <label key={type} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedPaperTypes(selectedPaperTypes.filter(t => t !== type));
+                                  } else {
+                                    setSelectedPaperTypes([...selectedPaperTypes, type]);
+                                  }
+                                }}
+                              />
+                              <span>{type}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pack Size Accordion */}
+                  <div className="filter-card-section pack-size-accordion">
+                    <div className="section-title-row" onClick={() => setIsPackSizeOpen(!isPackSizeOpen)}>
+                      <h3 className="section-title-text">Pack Size</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isPackSizeOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isPackSizeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'].map(pack => {
+                          const isChecked = selectedPackSizes.includes(pack);
+                          return (
+                            <label key={pack} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedPackSizes(selectedPackSizes.filter(p => p !== pack));
+                                  } else {
+                                    setSelectedPackSizes([...selectedPackSizes, pack]);
+                                  }
+                                }}
+                              />
+                              <span>{pack}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'ACCESSORIES' && (
+                <>
+                  {/* Material Accordion */}
+                  <div className="filter-card-section material-accordion">
+                    <div className="section-title-row" onClick={() => setIsMaterialOpen(!isMaterialOpen)}>
+                      <h3 className="section-title-text">Material</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isMaterialOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isMaterialOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['Gold', 'Silver', 'Brass', 'Alloy', 'Leather'].map(mat => {
+                          const isChecked = selectedMaterials.includes(mat);
+                          return (
+                            <label key={mat} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedMaterials(selectedMaterials.filter(m => m !== mat));
+                                  } else {
+                                    setSelectedMaterials([...selectedMaterials, mat]);
+                                  }
+                                }}
+                              />
+                              <span>{mat}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'GIFTS' && (
+                <>
+                  {/* Theme Accordion */}
+                  <div className="filter-card-section gift-theme-accordion">
+                    <div className="section-title-row" onClick={() => setIsGiftThemeOpen(!isGiftThemeOpen)}>
+                      <h3 className="section-title-text">Occasion Theme</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isGiftThemeOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isGiftThemeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        {['Festive', 'Anniversary', 'Birthday', 'Kids', 'Corporate'].map(theme => {
+                          const isChecked = selectedGiftThemes.includes(theme);
+                          return (
+                            <label key={theme} className="checkbox-filter-row">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedGiftThemes(selectedGiftThemes.filter(t => t !== theme));
+                                  } else {
+                                    setSelectedGiftThemes([...selectedGiftThemes, theme]);
+                                  }
+                                }}
+                              />
+                              <span>{theme}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'ALL' && (
+                <>
+                  {/* Default Size Accordion */}
+                  <div className="filter-card-section size-accordion">
+                    <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
+                      <h3 className="section-title-text">Size</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isSizeOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        <div className="size-buttons-grid">
+                          {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
+                            const isChecked = selectedSizes.includes(size);
+                            return (
+                              <button 
+                                key={size}
+                                className={`size-btn ${isChecked ? 'active' : ''}`}
+                                onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedSizes(selectedSizes.filter(s => s !== size));
+                                  } else {
+                                    setSelectedSizes([...selectedSizes, size]);
+                                  }
+                                }}
+                              >
+                                {size}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Default Colors Accordion */}
+                  <div className="filter-card-section color-accordion">
+                    <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
+                      <h3 className="section-title-text">Colors</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
+                    </div>
+                    {isColorsOpen && (
+                      <div className="section-content" style={{ marginTop: '10px' }}>
+                        <div className="color-circles-list">
+                          {[
+                            { name: 'Pink', value: '#E94FA8' },
+                            { name: 'Red', value: '#FF0000' },
+                            { name: 'Yellow', value: '#FFCC00' },
+                            { name: 'Green', value: '#00CC66' },
+                            { name: 'Purple', value: '#8A2BE2' },
+                            { name: 'Black', value: '#000000' },
+                            { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
+                            { name: 'Blue', value: '#051838' }
+                          ].map(color => {
+                            const isChecked = selectedColors.includes(color.name);
+                            return (
+                              <button 
+                                key={color.name}
+                                className={`color-bubble ${isChecked ? 'active' : ''}`}
+                                style={{ backgroundColor: color.value, border: color.border || 'none' }}
+                                onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedColors(selectedColors.filter(c => c !== color.name));
+                                  } else {
+                                    setSelectedColors([...selectedColors, color.name]);
+                                  }
+                                }}
+                                title={color.name}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* 6. Availability Accordion */}
               <div className="filter-card-section availability-accordion">
@@ -2948,7 +3738,15 @@ export default function ShopView({ authUser, setAuthUser }) {
                             <Heart size={15} fill={isWishlisted ? "currentColor" : "none"} />
                           </button>
 
-                          <img src={resolveProductImage(product)} alt={product.title} className="clothing-img" />
+                          <img src={resolveProductImage(product)} alt={product.title} className="clothing-img primary-card-img" loading="lazy" />
+                          {resolveImagesArray(product.images).length > 1 && (
+                            <img 
+                              src={resolveProductImage({ image: resolveImagesArray(product.images)[1] })} 
+                              alt={`${product.title} Alternate`} 
+                              className="clothing-img hover-card-img" 
+                              loading="lazy"
+                            />
+                          )}
 
                           {/* Image Hover Overlay */}
                           <div className="clothing-hover-overlay">
@@ -3025,32 +3823,40 @@ export default function ShopView({ authUser, setAuthUser }) {
                   })}
                 </div>
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="shop-pagination">
-                    {pageNumbers.map(number => (
-                      <button
-                        key={number}
-                        onClick={() => {
-                          setCurrentPage(number);
-                          window.scrollTo({ top: 400, behavior: 'smooth' });
-                        }}
-                        className={`pagination-number-btn ${currentPage === number ? 'active' : ''}`}
-                      >
-                        {number}
-                      </button>
+                {/* Infinite Scroll Pulsing Skeleton Loader */}
+                {isFetchingNextPage && (
+                  <div className="shop-products-grid animate-fade-in-up" style={{ marginTop: '20px' }}>
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <ProductCardSkeleton key={idx} />
                     ))}
+                  </div>
+                )}
+
+                {/* Fallback Load More Button */}
+                {currentPage < totalPages && (
+                  <div className="load-more-container" style={{ display: 'flex', justifyContent: 'center', margin: '40px 0 20px 0' }}>
                     <button
-                      onClick={() => {
-                        if (currentPage < totalPages) {
-                          setCurrentPage(prev => prev + 1);
-                          window.scrollTo({ top: 400, behavior: 'smooth' });
-                        }
+                      className="ms-btn ms-btn--secondary"
+                      style={{
+                        padding: '12px 30px',
+                        borderRadius: '30px',
+                        border: '1.5px solid var(--primary-rose)',
+                        color: 'var(--primary-rose)',
+                        fontWeight: '600',
+                        background: '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
                       }}
-                      disabled={currentPage === totalPages}
-                      className="pagination-next-btn"
+                      onClick={() => {
+                        setIsFetchingNextPage(true);
+                        setTimeout(() => {
+                          setCurrentPage(prev => prev + 1);
+                          setIsFetchingNextPage(false);
+                        }, 500);
+                      }}
+                      disabled={isFetchingNextPage}
                     >
-                      Next &rarr;
+                      {isFetchingNextPage ? 'Loading more products...' : 'Load More Products'}
                     </button>
                   </div>
                 )}
@@ -3192,7 +3998,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                   </p>
 
                   {/* Category-specific Selectors */}
-                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty, personalizationText, setPersonalizationText, personalizationError, setPersonalizationError)}
 
                   {/* Quantity Block (Aligned to match reference image) */}
                   <div className="modal-section-block quantity-section">
@@ -3208,11 +4014,23 @@ export default function ShopView({ authUser, setAuthUser }) {
                   <div className="modal-actions-buttons-row">
                     <button 
                       className="modal-primary-action-btn"
+                      disabled={isOutOfStock}
+                      style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
                       onClick={() => {
+                        const isGift = String(quickViewProduct.category).toUpperCase().includes('GIFT');
+                        const needsPersonalization = quickViewProduct.attributes?.personalization && quickViewProduct.attributes.personalization !== 'No';
+                        if (isGift && needsPersonalization && !personalizationText.trim()) {
+                          setPersonalizationError(true);
+                          const container = document.getElementById('personalization-input-container');
+                          if (container) {
+                            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                          return;
+                        }
                         toggleCart(quickViewProduct.id, quickViewProduct.title, modalSize, modalColor);
                       }}
                     >
-                      {cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart"}
+                      {isOutOfStock ? "OUT OF STOCK" : (cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart")}
                     </button>
                     <button 
                       className="modal-secondary-action-btn"

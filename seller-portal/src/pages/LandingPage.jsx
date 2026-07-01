@@ -184,7 +184,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="pt-24 pb-14 md:pt-32 md:pb-16 px-6 md:px-16 bg-white relative overflow-hidden">
         {/* Soft Background Gradients */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#1E3A8A]/5 blur-[120px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#051838]/5 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#DFB743]/5 blur-[100px] rounded-full pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto">
@@ -199,7 +199,7 @@ export default function LandingPage() {
                 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-800 leading-tight tracking-tight"
               >
                 Start Selling on <br />
-                <span className="bg-gradient-to-r from-[#08214D] to-[#1E3A8A] bg-clip-text text-transparent">Mithra</span>
+                <span className="bg-gradient-to-r from-[#08214D] to-[#051838] bg-clip-text text-transparent">Mithra</span>
                 <span className="bg-gradient-to-r from-[#DFB743] via-[#F5D98B] to-[#C29B27] bg-clip-text text-transparent ml-1">Shoppy</span>
               </motion.h1>
 
@@ -262,12 +262,12 @@ export default function LandingPage() {
                   <svg className="w-full h-full" viewBox="0 0 300 120" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0.22" />
-                        <stop offset="100%" stopColor="#1E3A8A" stopOpacity="0.0" />
+                        <stop offset="0%" stopColor="#051838" stopOpacity="0.22" />
+                        <stop offset="100%" stopColor="#051838" stopOpacity="0.0" />
                       </linearGradient>
                       <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#1E3A8A" />
-                        <stop offset="50%" stopColor="#3B82F6" />
+                        <stop offset="0%" stopColor="#051838" />
+                        <stop offset="50%" stopColor="#072658" />
                         <stop offset="100%" stopColor="#DFB743" />
                       </linearGradient>
                     </defs>
@@ -295,7 +295,7 @@ export default function LandingPage() {
                     />
 
                     {/* Chart markers */}
-                    <circle cx="80" cy="60" r="5" fill="#1E3A8A" stroke="#fff" strokeWidth="2" />
+                    <circle cx="80" cy="60" r="5" fill="#051838" stroke="#fff" strokeWidth="2" />
                     <circle cx="170" cy="40" r="5" fill="#DFB743" stroke="#fff" strokeWidth="2" />
                     <circle cx="300" cy="10" r="5" fill="#DFB743" stroke="#fff" strokeWidth="2" />
                   </svg>
@@ -446,7 +446,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                   className="bg-[#F8FAFC]/50 border border-slate-200/50 p-6.5 rounded-3xl text-center w-full max-w-[210px] flex flex-col items-center space-y-4 shadow-sm hover:border-[#DFB743]/50 hover:bg-white transition-all duration-300 hover:shadow-md"
                 >
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base bg-gradient-to-br from-[#08214D] to-[#1E3A8A] text-white relative shadow-md shadow-blue-900/10">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base bg-gradient-to-br from-[#08214D] to-[#051838] text-white relative shadow-md shadow-blue-900/10">
                     {step}
                     <span className="absolute -bottom-1 -right-1 text-xs bg-white/95 backdrop-blur-sm p-0.5 rounded-lg w-5.5 h-5.5 flex items-center justify-center border border-slate-100 shadow-sm select-none">
                       {icon}
@@ -542,10 +542,10 @@ export default function LandingPage() {
 
       {/* Premium Containerized CTA Bottom Banner */}
       <section className="py-14 px-6 md:px-16 bg-[#F8FAFC]">
-        <div className="max-w-5xl mx-auto rounded-3xl overflow-hidden bg-gradient-to-br from-[#08214D] via-[#051838] to-[#1E3A8A] text-center text-white py-14 px-6 md:px-12 relative shadow-xl">
+        <div className="max-w-5xl mx-auto rounded-3xl overflow-hidden bg-gradient-to-br from-[#08214D] via-[#051838] to-[#072658] text-center text-white py-14 px-6 md:px-12 relative shadow-xl">
           <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
           {/* Glowing Accents */}
-          <div className="absolute -top-12 -left-12 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+          <div className="absolute -top-12 -left-12 w-64 h-64 bg-[#051838]/10 blur-[80px] rounded-full pointer-events-none"></div>
           <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-[#DFB743]/10 blur-[80px] rounded-full pointer-events-none"></div>
           
           <div className="max-w-xl mx-auto space-y-5 relative z-10">

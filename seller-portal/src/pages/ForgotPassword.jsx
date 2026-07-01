@@ -32,7 +32,7 @@ const ForgotPassword = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, var(--blue-deep) 0%, #0a2560 100%)' }}
+      style={{ background: 'linear-gradient(135deg, var(--blue-deep) 0%, #051838 100%)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 30 }}

@@ -13,7 +13,12 @@
   - [x] Create `admin-panel/src/main.jsx`
   - [x] Create `admin-panel/src/index.css` with layout styles
   - [x] Create `admin-panel/src/App.jsx` with secure login screen
-  - [x] Copy and adjust `AdminDashboard.jsx` in `admin-panel/src/components/`
+  - [x] Copy and adjust `AdminDashboard.jsx`
+  - [x] Customer Website (src/) standard blue replacement
+  - [x] Replace stationery card blues (#1565c0, #1976d2, #0d47a1) in index.css
+  - [x] Replace shipped order status blues (#1565C0, rgba(21, 101, 192)) in index.css
+  - [x] Replace standard blue shadows and borders in Offers/New Arrivals (rgba(29, 78, 216)) in index.css
+- [/] Seller Portal (seller-portal/) standard blue replacement
   - [x] Copy services (`apiService.js`, `authService.js`) and helpers (`imageHelper.js`)
 - [x] Verification
   - [x] Run backend and verify new routes
@@ -40,6 +45,25 @@
   - [x] Add a fully functional and beautifully styled "My Rewards" tab showing the user's spin rewards history and allowing them to claim pending items
   - [x] Add a "My Reviews" tab listing past reviews and enabling users to write reviews for their purchased products
   - [x] Implement customer self-cancellation of pending/processing orders
+- [x] Category Management & Configuration
+  - [x] Redesign Category Management UI/UX in Admin Panel
+  - [x] Add state variables for new Parent Category popup (Move Category modal)
+  - [x] Update category form submissions (handleAddCategorySubmit, handleEditCategorySubmit) to manage displayOrder, icon, slug, and visibility fields
+  - [x] Refactored Category tab layout:
+    - [x] Replace header buttons with "Add Main Category" and "Add Child Category"
+    - [x] Rebuild table rows as a clean tree grid with indentation, folder/leaf icons, and chevrons
+    - [x] Add columns for visibility (Navbar, Shop, Filters badges) and product counts
+    - [x] Implement inline Actions (View, Edit, Add Child, Move Parent, Enable/Disable, Delete)
+  - [x] Redesign and simplify Add Category and Edit Category modals to keep only Name, Parent, Display Order, Status, Cover Image, Icon, Visibility checkboxes, and SEO Slug (auto-populated/editable)
+  - [x] Add Category Move Modal dialog UI
+  - [x] Add CSS overrides at the end of admin-panel/src/index.css
+  - [x] Build & Verify all portals
+  - [x] Create Category Configuration Page in Admin Panel
+    - [x] Declare configuration state (with fallback example configurations for Clothing, Stationery, Gifts)
+    - [x] Add tab navigation "Category Configuration" inside sidebar navItems
+    - [x] Create Configurations list view displaying configured attributes, variants, toggles, filter fields, and specifications
+    - [x] Create configuration editor page with tag inputs (Attributes, Variants, Filters, Specs) and checkboxes for behavior toggles (affectsPrice, affectsStock, requireImages)
+    - [x] Build and compile modules successfully
 - [x] Verification and validation
   - [x] Verify frontend and backend build/run status
   - [x] Create walkthrough report with screenshots/logs

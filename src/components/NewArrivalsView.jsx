@@ -26,7 +26,7 @@ const getColorHex = (name) => {
     'yellow': '#fdd835',
     'green': '#43a047',
     'purple': '#8e24aa',
-    'blue': '#1e88e5',
+    'blue': 'hsla(225, 75%, 45%, 1)',
     'darkred': '#b71c1c',
     'crimson red': '#b32142',
     'champagne gold': '#D4AF37',
@@ -39,7 +39,7 @@ const getColorHex = (name) => {
     'peach': '#ffcc80',
     'cream': '#fff9c4',
     'aqua': '#80deea',
-    'navy': '#3949ab',
+    'navy': '#051838',
     'olive': '#2e7d32'
   };
   const key = name.toLowerCase().trim();
@@ -1055,7 +1055,7 @@ export default function NewArrivalsView() {
                 {fullDetailProduct.category} {fullDetailProduct.subCategory ? `| ${fullDetailProduct.subCategory}` : ''}
               </div>
               <h1 className="product-detail-title">{fullDetailProduct.title}</h1>
-              <p className="product-detail-tagline">Newly arrived premium selection, designed with elegance for this season.</p>
+              <p className="product-detail-tagline">{fullDetailProduct.attributes?.shortDescription || fullDetailProduct.shortDescription || "Newly arrived premium selection, designed with elegance for this season."}</p>
 
               <div className="product-detail-rating-row">
                 <span className="product-detail-rating-stars">★ {fullDetailProduct.rating || "4.8"}</span>
@@ -1465,7 +1465,7 @@ export default function NewArrivalsView() {
                           { name: 'Purple', value: '#8A2BE2' },
                           { name: 'Black', value: '#000000' },
                           { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                          { name: 'Blue', value: '#4A90E2' }
+                          { name: 'Blue', value: '#051838' }
                         ].map(color => {
                           const isChecked = selectedColors.includes(color.name);
                           return (
