@@ -26383,3 +26383,284 @@ body .shop-product-detail-page-view.theme-accessories .product-detail-qty-contro
   border-bottom: 1px solid #eae6df;
 }
 
+/* ==========================================================================
+   ADMIN PANEL PREMIUM MODERN REDESIGN OVERRIDES
+   ========================================================================== */
+
+/* Modernized Sidebar navigation */
+body .admin-re-sidebar {
+  background: linear-gradient(180deg, #051838 0%, #030f25 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body .admin-re-brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 24px !important;
+}
+
+body .admin-re-nav {
+  padding: 16px 0 !important;
+}
+
+body .admin-re-nav-item {
+  margin: 4px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  padding: 12px 16px !important;
+  color: #94a3b8 !important;
+  background: transparent !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+body .admin-re-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  transform: translateX(4px) !important;
+}
+
+body .admin-re-nav-item.active {
+  background: linear-gradient(90deg, #dfb743 0%, #aa7c11 100%) !important;
+  color: #051838 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.25) !important;
+}
+
+body .admin-re-nav-item.active svg {
+  color: #051838 !important;
+}
+
+/* Topbar styles */
+body .admin-re-topbar {
+  background: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(5, 24, 56, 0.02) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 16px 32px !important;
+}
+
+body .admin-re-page-title {
+  color: #051838 !important;
+  font-weight: 800 !important;
+  font-size: 1.6rem !important;
+}
+
+/* Dashboard Metric Cards */
+body .admin-app-layout .re-stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 4px 20px rgba(5, 24, 56, 0.01) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body .admin-app-layout .re-stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 30px rgba(5, 24, 56, 0.06) !important;
+  border-color: #cbd5e1 !important;
+}
+
+body .admin-app-layout .re-stat-card .stat-lbl {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #64748b !important;
+  margin-bottom: 8px !important;
+}
+
+body .admin-app-layout .re-stat-card .stat-val {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Panel Sections styling */
+body .admin-re-section-card,
+body .admin-app-layout .graph-panel,
+body .admin-app-layout .bottom-widget-card,
+body .admin-app-layout .admin-table-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px !important;
+  padding: 28px !important;
+  box-shadow: 0 10px 30px rgba(5, 24, 56, 0.02) !important;
+  margin-bottom: 24px !important;
+}
+
+body .admin-app-layout .panel-title,
+body .admin-app-layout .widget-title,
+body .admin-app-layout .card-title,
+body .admin-re-section-title {
+  color: #051838 !important;
+  font-weight: 700 !important;
+  font-size: 1.2rem !important;
+  margin-bottom: 20px !important;
+}
+
+/* Tables styling */
+body .admin-app-layout table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+body .admin-app-layout table th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 14px 20px !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+body .admin-app-layout table td {
+  padding: 16px 20px !important;
+  color: #334155 !important;
+  font-size: 0.9rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  vertical-align: middle !important;
+}
+
+body .admin-app-layout table tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* Input Fields and Selects */
+body .admin-app-layout input,
+body .admin-app-layout select,
+body .admin-app-layout textarea,
+body .admin-app-layout .admin-re-search-input {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 0.9rem !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+
+body .admin-app-layout input:focus,
+body .admin-app-layout select:focus,
+body .admin-app-layout textarea:focus,
+body .admin-app-layout .admin-re-search-input:focus {
+  border-color: #dfb743 !important;
+  box-shadow: 0 0 0 3px rgba(223, 183, 67, 0.15) !important;
+}
+
+/* Form tag badges and attribute tags list */
+body .admin-app-layout .attribute-tag,
+body .admin-app-layout .filter-tag,
+body .admin-app-layout .visibility-pill,
+body .admin-app-layout .products-count-badge {
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+body .admin-app-layout .visibility-pill.active {
+  background-color: rgba(223, 183, 67, 0.1) !important;
+  color: #aa7c11 !important;
+  border: 1px solid rgba(223, 183, 67, 0.2) !important;
+}
+
+body .admin-app-layout .visibility-pill.inactive {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Buttons */
+body .admin-app-layout .btn-primary,
+body .admin-app-layout button[type="submit"]:not(.qty-btn),
+body .admin-modal-box .btn-primary {
+  background: linear-gradient(135deg, #051838 0%, #030f25 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 10px 20px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(5, 24, 56, 0.15) !important;
+}
+
+body .admin-app-layout .btn-primary:hover,
+body .admin-app-layout button[type="submit"]:not(.qty-btn):hover,
+body .admin-modal-box .btn-primary:hover {
+  background: linear-gradient(135deg, #dfb743 0%, #aa7c11 100%) !important;
+  color: #051838 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 15px rgba(223, 183, 67, 0.25) !important;
+}
+
+body .admin-app-layout .btn-secondary,
+body .admin-modal-box .btn-secondary {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  transition: all 0.2s ease !important;
+}
+
+body .admin-app-layout .btn-secondary:hover,
+body .admin-modal-box .btn-secondary:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #1e293b !important;
+}
+
+body .admin-app-layout .table-act-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+body .admin-app-layout .table-act-btn:hover {
+  background: #f8fafc !important;
+  color: #051838 !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Modals overlays & headers */
+body .admin-modal-box {
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  overflow: hidden !important;
+}
+
+body .admin-modal-box .modal-hdr {
+  background-color: #f8fafc !important;
+  padding: 20px 28px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body .admin-modal-box .modal-hdr h3 {
+  color: #051838 !important;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+}
+

@@ -2385,6 +2385,31 @@ export default function ShopView({ authUser, setAuthUser }) {
                       onMouseLeave={handleMouseLeave}
                     />
                   )}
+
+                  {!isVideoActive && images.length > 1 && (
+                    <>
+                      <button 
+                        type="button"
+                        className="gallery-nav-arrow arrow-left" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <button 
+                        type="button"
+                        className="gallery-nav-arrow arrow-right" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1));
+                        }}
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
                   
                   {/* Floating badge */}
                   <div className="product-detail-badge-pill">
@@ -2508,6 +2533,22 @@ export default function ShopView({ authUser, setAuthUser }) {
                 >
                   BUY NOW
                 </button>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="product-detail-trust-badges">
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Secure Payment</span>
+                </div>
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                  <span>Easy Returns</span>
+                </div>
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  <span>Free Shipping</span>
+                </div>
               </div>
 
               {/* WhatsApp Inquiry */}
@@ -2688,10 +2729,15 @@ export default function ShopView({ authUser, setAuthUser }) {
 
           {/* Similar Products Row */}
           <div className="product-detail-similar-section">
-            <h3 className="similar-title">Similar Products</h3>
+            <div className="similar-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', width: '100%' }}>
+              <h3 className="similar-title" style={{ margin: 0 }}>Similar Products</h3>
+              <span className="similar-view-all" style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700, color: '#dfb743' }} onClick={() => setFullDetailProduct(null)}>
+                View All &gt;
+              </span>
+            </div>
             <div className="similar-products-grid">
               {getSimilarProducts(fullDetailProduct, allProducts)
-                .slice(0, 4)
+                .slice(0, 6)
                 .map((simProd) => {
                   const isWishlisted = wishlist.includes(simProd.id);
                   const isInCart = cart.includes(simProd.id);

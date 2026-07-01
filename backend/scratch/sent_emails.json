@@ -52,5 +52,14 @@
     "orderId": "#ORD8945",
     "status": "Shipped",
     "timestamp": "2026-06-27T09:25:42.792Z"
+  },
+  {
+    "to": "mathi@gmail.com",
+    "subject": "Order Status Updated: ##ORD4183",
+    "body": "Dear mathi,\n\nYour order status has been updated.\n\nOrder ID: ##ORD4183\nUpdated Status: Processing\nOrder Date: Jun 24, 2026\nTotal Amount: ₹1692\n\nItems Ordered:\n- Women Kurti x 1 (₹899)\n- antique jewll x 1 (₹535)\n\nThank you for shopping with us!\nMithraShoppy Team",
+    "type": "customer_order_status",
+    "orderId": "#ORD4183",
+    "status": "Processing",
+    "timestamp": "2026-07-01T08:42:52.035Z"
   }
 ]

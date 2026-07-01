@@ -1045,6 +1045,30 @@ export default function NewArrivalsView() {
                 )}
                 <div className="product-detail-main-image-wrapper">
                   <img src={mainImageUrl} alt={fullDetailProduct.title} className="product-detail-main-img" />
+                  {images.length > 1 && (
+                    <>
+                      <button 
+                        type="button"
+                        className="gallery-nav-arrow arrow-left" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <button 
+                        type="button"
+                        className="gallery-nav-arrow arrow-right" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1));
+                        }}
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
                   <div className="product-detail-badge-pill">NEW</div>
                 </div>
               </div>
@@ -1112,6 +1136,22 @@ export default function NewArrivalsView() {
                 </button>
               </div>
 
+              {/* Trust Badges */}
+              <div className="product-detail-trust-badges">
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Secure Payment</span>
+                </div>
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                  <span>Easy Returns</span>
+                </div>
+                <div className="trust-badge-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  <span>Free Shipping</span>
+                </div>
+              </div>
+
               <div className="product-detail-tabs-section" style={{ marginTop: '40px' }}>
                 <div className="detail-tabs-header" style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
                   <button className="active-tab-btn" style={{ background: 'none', border: 'none', fontWeight: 600, color: '#b89047', borderBottom: '2px solid #b89047', paddingBottom: '8px' }}>Description</button>
@@ -1124,11 +1164,16 @@ export default function NewArrivalsView() {
           </div>
 
           {/* Fully Dynamic Similarity Recommendations Grid */}
-          <div className="product-detail-similar-section" style={{ marginTop: '80px', paddingTop: '40px', borderTop: '1px solid #eee' }}>
-            <h3 className="similar-title" style={{ fontSize: '1.8rem', fontFamily: 'var(--font-serif)', color: '#333', marginBottom: '25px' }}>Similar Products</h3>
-            <div className="similar-products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '25px' }}>
+          <div className="product-detail-similar-section">
+            <div className="similar-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', width: '100%' }}>
+              <h3 className="similar-title" style={{ margin: 0 }}>Similar Products</h3>
+              <span className="similar-view-all" style={{ cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700, color: '#dfb743' }} onClick={() => setFullDetailProduct(null)}>
+                View All &gt;
+              </span>
+            </div>
+            <div className="similar-products-grid">
               {getSimilarProductsForNewArrivals(fullDetailProduct, allProducts.length > 0 ? allProducts : fallbackNewArrivals)
-                .slice(0, 8)
+                .slice(0, 6)
                 .map((simProd) => {
                   const isSimWishlisted = wishlist.includes(simProd.id);
                   const isSimInCart = cart.includes(simProd.id);
@@ -1156,12 +1201,12 @@ export default function NewArrivalsView() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(simProd); setModalQty(1); setModalColor(''); setActiveImageIndex(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                        {simProd.isNewArrival && (
+                        {simProd.isNewArrival ? (
                           <div className="arrival-new-badge">NEW</div>
-                        )}
-                        
-                        {simDiscountPercentage > 0 && (
-                          <div className="clothing-discount-badge" style={{ top: simProd.isNewArrival ? '48px' : '15px' }}>{simDiscountPercentage}% OFF</div>
+                        ) : (
+                          simDiscountPercentage > 0 && (
+                            <div className="clothing-discount-badge">{simDiscountPercentage}% OFF</div>
+                          )
                         )}
                         
                         <button 
@@ -1676,12 +1721,12 @@ export default function NewArrivalsView() {
                         >
                           <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); setModalQty(1); setModalColor(''); setActiveImageIndex(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                             {/* Dedicated NEW Badge */}
-                            <div className="arrival-new-badge">NEW</div>
-
-                            {discountPercentage > 0 && (
-                              <div className="clothing-discount-badge" style={{ top: '48px' }}>
-                                {discountPercentage}% OFF
-                              </div>
+                            {prod.isNewArrival ? (
+                              <div className="arrival-new-badge">NEW</div>
+                            ) : (
+                              discountPercentage > 0 && (
+                                <div className="clothing-discount-badge">{discountPercentage}% OFF</div>
+                              )
                             )}
                             
                             <button 

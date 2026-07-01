@@ -47,6 +47,11 @@
     flex-direction: row;
     overflow-x: auto;
   }
+  .product-form-tab-btn {
+    width: auto !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
 }
 
 .product-form-tab-btn {

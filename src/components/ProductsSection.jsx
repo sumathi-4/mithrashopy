@@ -668,10 +668,12 @@ export default function ProductsSection({ authUser, setAuthUser }) {
             };
           });
           
-          // Filter to display first 12 products and exclusive/new products on home page
-          const exclusiveOnly = mapped.filter(p => {
+          // Filter to display first 12 products and all new products (ID > 116)
+          const exclusiveOnly = mapped.filter((p, index) => {
             const pid = Number(p.id);
-            return pid <= 12 || pid >= 104;
+            if (index < 12) return true;
+            if (pid > 116) return true;
+            return false;
           });
           setProductsList(exclusiveOnly);
         } else {
@@ -1464,13 +1466,12 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                       >
                         <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}>
                           {/* Dedicated Red NEW Badge */}
-                          <div className="clothing-new-badge">NEW</div>
-
-                          {/* Discount Badge */}
-                          {discountPercentage > 0 && (
-                            <div className="clothing-discount-badge" style={{ top: '48px' }}>
-                              {discountPercentage}% OFF
-                            </div>
+                          {product.isNewArrival ? (
+                            <div className="clothing-new-badge">NEW</div>
+                          ) : (
+                            discountPercentage > 0 && (
+                              <div className="clothing-discount-badge">{discountPercentage}% OFF</div>
+                            )
                           )}
                           
                           {/* Wishlist float button (top-right of image) */}
