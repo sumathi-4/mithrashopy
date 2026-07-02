@@ -3,7 +3,6 @@
     "attributes": [
       "Brand",
       "Material",
-      "Occasion",
       "Fit",
       "fabric",
       "neck style"
@@ -19,7 +18,7 @@
       "Price",
       "Size",
       "Color",
-      "Brand",
+      "pattern",
       "brand"
     ],
     "specs": [
@@ -237,7 +236,8 @@
       "Sleeve Type",
       "Neck Type",
       "Pattern",
-      "Fit"
+      "Fit",
+      "gender"
     ],
     "variants": [
       "color",
@@ -247,11 +247,12 @@
     "affectsStock": true,
     "requireImages": true,
     "filters": [
-      "Brand",
       "Price",
       "Color",
       "Size",
-      "Age Group"
+      "Age Group",
+      "fabric",
+      "gender"
     ],
     "specs": [
       "Fabric",

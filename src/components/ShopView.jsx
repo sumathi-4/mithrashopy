@@ -1,11 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
+import { categoryConfigService } from '../services/categoryConfigService';
 import { useToast } from './ToastProvider';
 import Breadcrumbs from './ui/Breadcrumbs';
 import Skeleton, { ProductCardSkeleton } from './ui/Skeleton';
 import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles, RotateCcw } from 'lucide-react';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
+import { COLOR_MAP, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
 import bannerVideo from '../assets/banner_video.mp4';
 import logoImg from '../assets/logo.png';
 import pHairUpdated from '../assets/p_hair_updated.jpg';
@@ -61,6 +63,8 @@ import clothingUser2 from '../assets/clothing_user_2.jpg';
 import clothingUser3 from '../assets/clothing_user_3.jpg';
 import clothingUser4 from '../assets/clothing_user_4.jpg';
 import clothingUser5 from '../assets/clothing_user_5.jpg';
+
+
 
 
 
@@ -1032,6 +1036,7 @@ const getProductVideo = (prod) => {
 export default function ShopView({ authUser, setAuthUser }) {
   const [activeTab, setActiveTab] = useState('ALL');
   const [activeSubTab, setActiveSubTab] = useState('ALL');
+  const [isUrlParsed, setIsUrlParsed] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [fullDetailProduct, setFullDetailProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -1118,6 +1123,12 @@ export default function ShopView({ authUser, setAuthUser }) {
     apiService.getCategories().then(data => {
       if (data && data.length > 0) {
         setCategoriesList(data);
+      }
+    }).catch(console.error);
+
+    categoryConfigService.getCategoryConfigurations().then(confs => {
+      if (confs) {
+        setCategoryConfigs(confs);
       }
     }).catch(console.error);
 
@@ -1260,6 +1271,22 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
   const [isGenderOpen, setIsGenderOpen] = useState(true);
 
+  const [categoryConfigs, setCategoryConfigs] = useState({});
+  const [activeFilters, setActiveFilters] = useState({});
+  const [openSections, setOpenSections] = useState({});
+
+  const activeCategoryConfig = (() => {
+    if (!activeTab || activeTab === 'ALL') return null;
+    const lowerTab = activeTab.toLowerCase();
+    let matchKey = Object.keys(categoryConfigs).find(k => k.toLowerCase() === lowerTab);
+    if (!matchKey) {
+      matchKey = Object.keys(categoryConfigs).find(k => k.toLowerCase().includes(lowerTab) || lowerTab.includes(k.toLowerCase()));
+    }
+    return matchKey ? categoryConfigs[matchKey] : null;
+  })();
+
+
+
   // Redesigned Sidebar Additional Filter States (Multi-select)
   const [selectedSubcategories, setSelectedSubcategories] = useState([]);
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
@@ -1283,7 +1310,18 @@ export default function ShopView({ authUser, setAuthUser }) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRatings, selectedSubcategories, selectedShopFor, selectedSizes, selectedColors, selectedDiscounts, filterNewArrivals, filterBestSellers, filterOffers]);
+  }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRatings, selectedSubcategories, selectedShopFor, selectedSizes, selectedColors, selectedDiscounts, filterNewArrivals, filterBestSellers, filterOffers, activeFilters]);
+
+  // Compute merged category filters from parent + subcategory configs (case-insensitive, no duplicates)
+  const categoryFilters = getMergedFiltersForPath(
+    categoryConfigs,
+    activeTab,
+    activeSubTab,
+    selectedSubcategories,
+    categoriesList
+  );
+
+  const dynamicFilterNames = categoryFilters.filter(f => f && typeof f === 'string' && f.toLowerCase() !== 'price');
 
   const getCategoriesToShow = () => {
     let list = [];
@@ -1541,6 +1579,8 @@ export default function ShopView({ authUser, setAuthUser }) {
   }, [activeSubTab, categoriesList]);
 
   const handleClearAllFilters = () => {
+    setActiveFilters({});
+    setOpenSections({});
     setCatalogue('A');
     setPriceRange(15000);
     setShowInStock(true);
@@ -1567,6 +1607,9 @@ export default function ShopView({ authUser, setAuthUser }) {
     setSelectedPackSizes([]);
     setSelectedMaterials([]);
     setSelectedGiftThemes([]);
+    
+    // Clear URL state
+    window.history.replaceState(null, '', '/shop');
   };
 
   // Reset active selectors when product selection changes
@@ -1611,7 +1654,7 @@ export default function ShopView({ authUser, setAuthUser }) {
     }
   }, [quickViewProduct, fullDetailProduct]);
 
-  // Parse category/subcategory/search from URL (both path slugs and query params)
+  // Parse category/subcategory/search/filters from URL (both path slugs and query params)
   useEffect(() => {
     const parseUrl = () => {
       const path = window.location.pathname.toLowerCase();
@@ -1642,13 +1685,106 @@ export default function ShopView({ authUser, setAuthUser }) {
       setActiveSubTab(sub);
       if (searchParam) {
         setSearchQuery(decodeURIComponent(searchParam));
+      } else {
+        setSearchQuery('');
       }
+
+      // Parse query params for dynamic filters
+      const dynamicFilters = {};
+      const ignoredParams = ['category', 'subcategory', 'search', 'catalogue', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories'];
+      params.forEach((value, key) => {
+        if (!ignoredParams.includes(key.toLowerCase())) {
+          dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+        }
+      });
+      setActiveFilters(dynamicFilters);
+
+      const priceVal = params.get('price');
+      if (priceVal) {
+        setPriceRange(Number(priceVal));
+      } else {
+        setPriceRange(15000);
+      }
+
+      const instockVal = params.get('instock');
+      if (instockVal === 'false') {
+        setShowInStock(false);
+      } else {
+        setShowInStock(true);
+      }
+
+      const outofstockVal = params.get('outofstock');
+      if (outofstockVal === 'false') {
+        setShowOutOfStock(false);
+      } else {
+        setShowOutOfStock(true);
+      }
+
+      const ratingVal = params.get('rating');
+      if (ratingVal) {
+        setSelectedRatings(ratingVal.split(',').map(Number));
+      } else {
+        setSelectedRatings([]);
+      }
+
+      const discountVal = params.get('discount');
+      if (discountVal) {
+        setSelectedDiscounts(discountVal.split(',').map(Number));
+      } else {
+        setSelectedDiscounts([]);
+      }
+
+      const catalogueVal = params.get('catalogue');
+      if (catalogueVal) {
+        setCatalogue(catalogueVal);
+      } else {
+        setCatalogue('A');
+      }
+
+      const subcategoriesVal = params.get('subcategories');
+      if (subcategoriesVal) {
+        setSelectedSubcategories(subcategoriesVal.split(',').map(v => decodeURIComponent(v)));
+      } else {
+        setSelectedSubcategories([]);
+      }
+      setIsUrlParsed(true);
     };
 
     parseUrl();
     window.addEventListener('popstate', parseUrl);
     return () => window.removeEventListener('popstate', parseUrl);
   }, []);
+
+  // Sync filter state to URL query parameters
+  useEffect(() => {
+    if (!isUrlParsed) return;
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (priceRange !== 15000) params.set('price', priceRange);
+    if (!showInStock) params.set('instock', 'false');
+    if (!showOutOfStock) params.set('outofstock', 'false');
+    if (selectedRatings.length > 0) params.set('rating', selectedRatings.join(','));
+    if (selectedDiscounts.length > 0) params.set('discount', selectedDiscounts.join(','));
+    if (catalogue !== 'A') params.set('catalogue', catalogue);
+    if (selectedSubcategories.length > 0) params.set('subcategories', selectedSubcategories.map(v => encodeURIComponent(v)).join(','));
+    
+    Object.entries(activeFilters).forEach(([key, values]) => {
+      if (values && values.length > 0) {
+        params.set(key, values.map(v => encodeURIComponent(v)).join(','));
+      }
+    });
+
+    const path = activeTab !== 'ALL'
+      ? `/shop/${activeTab.toLowerCase()}${activeSubTab !== 'ALL' ? '/' + activeSubTab.toLowerCase().replace(/\s+/g, '-') : ''}`
+      : '/shop';
+    
+    const queryString = params.toString();
+    const newUrl = `${path}${queryString ? '?' + queryString : ''}`;
+    
+    if (window.location.pathname + window.location.search !== newUrl) {
+      window.history.pushState(null, '', newUrl);
+    }
+  }, [isUrlParsed, activeTab, activeSubTab, searchQuery, priceRange, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, catalogue, activeFilters, selectedSubcategories]);
 
 
   const { addToast } = useToast();
@@ -1960,6 +2096,52 @@ export default function ShopView({ authUser, setAuthUser }) {
     return 'A';
   };
 
+  // Get all products matching the selected category and active subcategory
+  const categoryProducts = allProducts.filter(p => {
+    // 1. Root Category filter
+    if (activeTab !== 'ALL') {
+      const rootCat = String(p.category || '').split('>')[0].trim().toUpperCase();
+      if (activeTab === 'ACCESSORIES') {
+        if (rootCat !== 'ACCESSORIES' && rootCat !== 'FANCY') return false;
+      } else {
+        if (rootCat !== activeTab) return false;
+      }
+    }
+    // 2. Subcategory filter
+    if (activeSubTab !== 'ALL') {
+      const subKeys = getAllSubcategoryKeysUnder(activeSubTab).map(k => k.toUpperCase());
+      const productSubs = getProductSubCategories(p).map(s => s.toUpperCase());
+      if (!productSubs.some(subName => subKeys.includes(subName) || subName === activeSubTab.toUpperCase())) return false;
+    }
+    return true;
+  });
+
+
+
+  const handleToggleFilter = (filterName, value) => {
+    setActiveFilters(prev => {
+      const current = prev[filterName] || [];
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value];
+      
+      const newFilters = { ...prev };
+      if (updated.length > 0) {
+        newFilters[filterName] = updated;
+      } else {
+        delete newFilters[filterName];
+      }
+      return newFilters;
+    });
+  };
+
+  const toggleSection = (sectionName) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
   // Dynamic database-driven filtering of all products
   let filteredProducts = allProducts;
 
@@ -1985,11 +2167,37 @@ export default function ShopView({ authUser, setAuthUser }) {
 
   // 3. Search Query
   if (searchQuery.trim() !== '') {
-    filteredProducts = filteredProducts.filter(p => 
-      (p.title || p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (p.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.subCategory && p.subCategory.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const qLower = searchQuery.toLowerCase().trim();
+    filteredProducts = filteredProducts.filter(p => {
+      // Name / Title
+      const name = (p.title || p.name || '').toLowerCase();
+      // Category
+      const category = (p.category || '').toLowerCase();
+      // Subcategory
+      const subCategory = (p.subCategory || '').toLowerCase();
+      // Brand
+      const brand = (p.brand || p.attributes?.brand || '').toLowerCase();
+      // Tags
+      const tags = Array.isArray(p.tags) 
+        ? p.tags.join(' ').toLowerCase() 
+        : (typeof p.tags === 'string' ? p.tags.toLowerCase() : '');
+      // Keywords
+      const keywords = Array.isArray(p.keywords) 
+        ? p.keywords.join(' ').toLowerCase() 
+        : (typeof p.keywords === 'string' ? p.keywords.toLowerCase() : '');
+      // Descriptions
+      const shortDesc = (p.shortDescription || p.attributes?.shortDescription || '').toLowerCase();
+      const longDesc = (p.description || '').toLowerCase();
+
+      return name.includes(qLower) || 
+             category.includes(qLower) || 
+             subCategory.includes(qLower) || 
+             brand.includes(qLower) || 
+             tags.includes(qLower) || 
+             keywords.includes(qLower) ||
+             shortDesc.includes(qLower) ||
+             longDesc.includes(qLower);
+    });
   }
 
   // 4. Subcategories Checkbox Filter
@@ -2000,71 +2208,15 @@ export default function ShopView({ authUser, setAuthUser }) {
     });
   }
 
-  // 5. Shop For (Gender) Filter
-  if (selectedShopFor.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const gender = getProductGender(p);
-      return selectedShopFor.includes(gender);
-    });
-  }
+  // 5. Dynamic Attribute and Variant Filters
+  filteredProducts = applyDynamicFilters(filteredProducts, activeFilters);
 
   // 6. Price Filter
-  filteredProducts = filteredProducts.filter(p => {
-    const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
-    return priceNum <= priceRange;
-  });
-
-  // 7. Sizes Filter
-  if (selectedSizes.length > 0) {
+  const hasPriceFilter = categoryFilters.some(f => f && typeof f === 'string' && f.toLowerCase() === 'price') || activeTab === 'ALL';
+  if (hasPriceFilter) {
     filteredProducts = filteredProducts.filter(p => {
-      const pSizes = getProductSizes(p);
-      return pSizes.some(size => selectedSizes.includes(size));
-    });
-  }
-
-  // 8. Colors Filter
-  if (selectedColors.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const pColors = getProductColors(p);
-      return pColors.some(color => selectedColors.includes(color));
-    });
-  }
-
-  // Category-Specific Filters
-  if (activeTab === 'CLOTHING' && selectedFabrics.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const fab = p.fabric || p.attributes?.fabric || '';
-      return selectedFabrics.some(f => fab.toUpperCase().includes(f.toUpperCase()));
-    });
-  }
-  if (activeTab === 'STATIONERY' && selectedPaperSizes.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const size = p.attributes?.paperSize || '';
-      return selectedPaperSizes.some(s => size.toUpperCase().includes(s.toUpperCase()));
-    });
-  }
-  if (activeTab === 'STATIONERY' && selectedPaperTypes.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const type = p.attributes?.paperType || '';
-      return selectedPaperTypes.some(t => type.toUpperCase().includes(t.toUpperCase()));
-    });
-  }
-  if (activeTab === 'STATIONERY' && selectedPackSizes.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const pack = p.attributes?.packSize || '';
-      return selectedPackSizes.some(pk => pack.toUpperCase().includes(pk.toUpperCase()));
-    });
-  }
-  if (activeTab === 'ACCESSORIES' && selectedMaterials.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const mat = p.attributes?.material || p.material || '';
-      return selectedMaterials.some(m => mat.toUpperCase().includes(m.toUpperCase()));
-    });
-  }
-  if (activeTab === 'GIFTS' && selectedGiftThemes.length > 0) {
-    filteredProducts = filteredProducts.filter(p => {
-      const th = p.attributes?.theme || '';
-      return selectedGiftThemes.some(t => th.toUpperCase().includes(t.toUpperCase()));
+      const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+      return priceNum <= priceRange;
     });
   }
 
@@ -2764,11 +2916,17 @@ export default function ShopView({ authUser, setAuthUser }) {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(simProd); setModalQty(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                        {discountPercentage > 0 && (
-                          <div className="clothing-discount-badge">
-                            {discountPercentage}% OFF
-                          </div>
-                        )}
+                        {/* Badge Logic */}
+                        {(() => {
+                          const badgeInfo = getProductBadge(simProd, discountPercentage);
+                          if (!badgeInfo) return null;
+                          if (badgeInfo.type === 'NEW') {
+                            return <div className="clothing-new-badge">NEW</div>;
+                          } else if (badgeInfo.type === 'DISCOUNT') {
+                            return <div className="clothing-discount-badge">{badgeInfo.text}</div>;
+                          }
+                          return null;
+                        })()}
                         
                         <button 
                           className={`clothing-wishlist-float-btn ${isWishlisted ? 'active' : ''}`}
@@ -3179,415 +3337,104 @@ export default function ShopView({ authUser, setAuthUser }) {
                   </div>
                 )}
               </div>
-
-              {/* 2. Shop For Accordion (default open) */}
-              <div className="filter-card-section shop-for-accordion">
-                <div className="section-title-row" onClick={() => setIsGenderOpen(!isGenderOpen)}>
-                  <h3 className="section-title-text">Shop For</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isGenderOpen ? 'rotated' : ''}`} />
+              {/* 3. Price Range Accordion (Rendered dynamically if 'Price' filter is configured) */}
+              {hasPriceFilter && (
+                <div className="filter-card-section price-accordion">
+                  <div className="section-title-row" onClick={() => setIsPriceOpen(!isPriceOpen)}>
+                    <h3 className="section-title-text">Price Range</h3>
+                    <ChevronDown size={14} className={`section-chevron ${isPriceOpen ? 'rotated' : ''}`} />
+                  </div>
+                  {isPriceOpen && (
+                    <div className="section-content price-slider-container" style={{ marginTop: '10px' }}>
+                      <input 
+                        type="range" 
+                        min="100" 
+                        max="15000" 
+                        step="100"
+                        value={priceRange} 
+                        onChange={(e) => setPriceRange(Number(e.target.value))}
+                        className="pink-price-slider"
+                      />
+                      <div className="price-labels-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                        <span>₹100</span>
+                        <span>₹{priceRange.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {isGenderOpen && (
-                  <div className="section-content" style={{ marginTop: '10px' }}>
-                    {['Men', 'Women', 'Kids', 'Other'].map(gender => {
-                      const isChecked = selectedShopFor.includes(gender);
-                      return (
-                        <label key={gender} className="checkbox-filter-row">
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedShopFor(selectedShopFor.filter(g => g !== gender));
-                              } else {
-                                setSelectedShopFor([...selectedShopFor, gender]);
-                              }
-                            }}
-                          />
-                          <span>{gender}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              )}
 
-              {/* 3. Price Range Accordion */}
-              <div className="filter-card-section price-accordion">
-                <div className="section-title-row" onClick={() => setIsPriceOpen(!isPriceOpen)}>
-                  <h3 className="section-title-text">Price Range</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isPriceOpen ? 'rotated' : ''}`} />
-                </div>
-                {isPriceOpen && (
-                  <div className="section-content price-slider-container" style={{ marginTop: '10px' }}>
-                    <input 
-                      type="range" 
-                      min="100" 
-                      max="15000" 
-                      step="100"
-                      value={priceRange} 
-                      onChange={(e) => setPriceRange(Number(e.target.value))}
-                      className="pink-price-slider"
-                    />
-                    <div className="price-labels-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <span>₹100</span>
-                      <span>₹{priceRange.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Dynamic Configuration-Driven Filters */}
+              {dynamicFilterNames.map(filterName => {
+                const options = getFilterOptions(categoryProducts, filterName);
+                if (options.length === 0) return null; // Hide if no values
 
-              {/* Category-Specific Dynamic Filters */}
-              {activeTab === 'CLOTHING' && (
-                <>
-                  {/* Size Accordion */}
-                  <div className="filter-card-section size-accordion">
-                    <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
-                      <h3 className="section-title-text">Size</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
+                const isSectionOpen = openSections[filterName] !== false; // Default open
+                const selectedVals = activeFilters[filterName] || [];
+
+                return (
+                  <div key={filterName} className="filter-card-section dynamic-accordion">
+                    <div className="section-title-row" onClick={() => toggleSection(filterName)}>
+                      <h3 className="section-title-text">{filterName}</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isSectionOpen ? 'rotated' : ''}`} />
                     </div>
-                    {isSizeOpen && (
+                    {isSectionOpen && (
                       <div className="section-content" style={{ marginTop: '10px' }}>
-                        <div className="size-buttons-grid">
-                          {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
-                            const isChecked = selectedSizes.includes(size);
+                        {/* Special case: Color circle bubbles */}
+                        {(filterName.toLowerCase() === 'color' || filterName.toLowerCase() === 'colors') ? (
+                          <div className="color-circles-list">
+                            {options.map(colorName => {
+                              const isChecked = selectedVals.includes(colorName);
+                              const colorVal = COLOR_MAP[colorName.toLowerCase()] || colorName;
+                              const borderStyle = colorName.toLowerCase() === 'white' ? '1px solid #ddd' : 'none';
+                              return (
+                                <button 
+                                  key={colorName}
+                                  className={`color-bubble ${isChecked ? 'active' : ''}`}
+                                  style={{ backgroundColor: colorVal, border: borderStyle }}
+                                  onClick={() => handleToggleFilter(filterName, colorName)}
+                                  title={colorName}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : /* Special case: Size button grid */
+                        (filterName.toLowerCase() === 'size' || filterName.toLowerCase() === 'sizes') ? (
+                          <div className="size-buttons-grid">
+                            {options.map(sizeName => {
+                              const isChecked = selectedVals.includes(sizeName);
+                              return (
+                                <button 
+                                  key={sizeName}
+                                  className={`size-btn ${isChecked ? 'active' : ''}`}
+                                  onClick={() => handleToggleFilter(filterName, sizeName)}
+                                >
+                                  {sizeName}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* Standard check-box list */
+                          options.map(val => {
+                            const isChecked = selectedVals.includes(val);
                             return (
-                              <button 
-                                key={size}
-                                className={`size-btn ${isChecked ? 'active' : ''}`}
-                                onClick={() => {
-                                  if (isChecked) {
-                                    setSelectedSizes(selectedSizes.filter(s => s !== size));
-                                  } else {
-                                    setSelectedSizes([...selectedSizes, size]);
-                                  }
-                                }}
-                              >
-                                {size}
-                              </button>
+                              <label key={val} className="checkbox-filter-row">
+                                <input 
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleToggleFilter(filterName, val)}
+                                />
+                                <span>{val}</span>
+                              </label>
                             );
-                          })}
-                        </div>
+                          })
+                        )}
                       </div>
                     )}
                   </div>
-
-                  {/* Colors Accordion */}
-                  <div className="filter-card-section color-accordion">
-                    <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
-                      <h3 className="section-title-text">Colors</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isColorsOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        <div className="color-circles-list">
-                          {[
-                            { name: 'Pink', value: '#E94FA8' },
-                            { name: 'Red', value: '#FF0000' },
-                            { name: 'Yellow', value: '#FFCC00' },
-                            { name: 'Green', value: '#00CC66' },
-                            { name: 'Purple', value: '#8A2BE2' },
-                            { name: 'Black', value: '#000000' },
-                            { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                            { name: 'Blue', value: '#051838' }
-                          ].map(color => {
-                            const isChecked = selectedColors.includes(color.name);
-                            return (
-                              <button 
-                                key={color.name}
-                                className={`color-bubble ${isChecked ? 'active' : ''}`}
-                                style={{ backgroundColor: color.value, border: color.border || 'none' }}
-                                onClick={() => {
-                                  if (isChecked) {
-                                    setSelectedColors(selectedColors.filter(c => c !== color.name));
-                                  } else {
-                                    setSelectedColors([...selectedColors, color.name]);
-                                  }
-                                }}
-                                title={color.name}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Fabric Accordion */}
-                  <div className="filter-card-section fabric-accordion">
-                    <div className="section-title-row" onClick={() => setIsFabricOpen(!isFabricOpen)}>
-                      <h3 className="section-title-text">Fabric</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isFabricOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isFabricOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['Cotton', 'Rayon', 'Silk', 'Polyester'].map(fab => {
-                          const isChecked = selectedFabrics.includes(fab);
-                          return (
-                            <label key={fab} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedFabrics(selectedFabrics.filter(f => f !== fab));
-                                  } else {
-                                    setSelectedFabrics([...selectedFabrics, fab]);
-                                  }
-                                }}
-                              />
-                              <span>{fab}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeTab === 'STATIONERY' && (
-                <>
-                  {/* Paper Size Accordion */}
-                  <div className="filter-card-section paper-size-accordion">
-                    <div className="section-title-row" onClick={() => setIsPaperSizeOpen(!isPaperSizeOpen)}>
-                      <h3 className="section-title-text">Paper Size</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isPaperSizeOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isPaperSizeOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['A4', 'A5', 'A6'].map(size => {
-                          const isChecked = selectedPaperSizes.includes(size);
-                          return (
-                            <label key={size} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedPaperSizes(selectedPaperSizes.filter(s => s !== size));
-                                  } else {
-                                    setSelectedPaperSizes([...selectedPaperSizes, size]);
-                                  }
-                                }}
-                              />
-                              <span>{size}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Paper Type Accordion */}
-                  <div className="filter-card-section paper-type-accordion">
-                    <div className="section-title-row" onClick={() => setIsPaperTypeOpen(!isPaperTypeOpen)}>
-                      <h3 className="section-title-text">Paper Type</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isPaperTypeOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isPaperTypeOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['Ruled', 'Plain'].map(type => {
-                          const isChecked = selectedPaperTypes.includes(type);
-                          return (
-                            <label key={type} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedPaperTypes(selectedPaperTypes.filter(t => t !== type));
-                                  } else {
-                                    setSelectedPaperTypes([...selectedPaperTypes, type]);
-                                  }
-                                }}
-                              />
-                              <span>{type}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Pack Size Accordion */}
-                  <div className="filter-card-section pack-size-accordion">
-                    <div className="section-title-row" onClick={() => setIsPackSizeOpen(!isPackSizeOpen)}>
-                      <h3 className="section-title-text">Pack Size</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isPackSizeOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isPackSizeOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'].map(pack => {
-                          const isChecked = selectedPackSizes.includes(pack);
-                          return (
-                            <label key={pack} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedPackSizes(selectedPackSizes.filter(p => p !== pack));
-                                  } else {
-                                    setSelectedPackSizes([...selectedPackSizes, pack]);
-                                  }
-                                }}
-                              />
-                              <span>{pack}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeTab === 'ACCESSORIES' && (
-                <>
-                  {/* Material Accordion */}
-                  <div className="filter-card-section material-accordion">
-                    <div className="section-title-row" onClick={() => setIsMaterialOpen(!isMaterialOpen)}>
-                      <h3 className="section-title-text">Material</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isMaterialOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isMaterialOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['Gold', 'Silver', 'Brass', 'Alloy', 'Leather'].map(mat => {
-                          const isChecked = selectedMaterials.includes(mat);
-                          return (
-                            <label key={mat} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedMaterials(selectedMaterials.filter(m => m !== mat));
-                                  } else {
-                                    setSelectedMaterials([...selectedMaterials, mat]);
-                                  }
-                                }}
-                              />
-                              <span>{mat}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeTab === 'GIFTS' && (
-                <>
-                  {/* Theme Accordion */}
-                  <div className="filter-card-section gift-theme-accordion">
-                    <div className="section-title-row" onClick={() => setIsGiftThemeOpen(!isGiftThemeOpen)}>
-                      <h3 className="section-title-text">Occasion Theme</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isGiftThemeOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isGiftThemeOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        {['Festive', 'Anniversary', 'Birthday', 'Kids', 'Corporate'].map(theme => {
-                          const isChecked = selectedGiftThemes.includes(theme);
-                          return (
-                            <label key={theme} className="checkbox-filter-row">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedGiftThemes(selectedGiftThemes.filter(t => t !== theme));
-                                  } else {
-                                    setSelectedGiftThemes([...selectedGiftThemes, theme]);
-                                  }
-                                }}
-                              />
-                              <span>{theme}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeTab === 'ALL' && (
-                <>
-                  {/* Default Size Accordion */}
-                  <div className="filter-card-section size-accordion">
-                    <div className="section-title-row" onClick={() => setIsSizeOpen(!isSizeOpen)}>
-                      <h3 className="section-title-text">Size</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isSizeOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isSizeOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        <div className="size-buttons-grid">
-                          {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
-                            const isChecked = selectedSizes.includes(size);
-                            return (
-                              <button 
-                                key={size}
-                                className={`size-btn ${isChecked ? 'active' : ''}`}
-                                onClick={() => {
-                                  if (isChecked) {
-                                    setSelectedSizes(selectedSizes.filter(s => s !== size));
-                                  } else {
-                                    setSelectedSizes([...selectedSizes, size]);
-                                  }
-                                }}
-                              >
-                                {size}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Default Colors Accordion */}
-                  <div className="filter-card-section color-accordion">
-                    <div className="section-title-row" onClick={() => setIsColorsOpen(!isColorsOpen)}>
-                      <h3 className="section-title-text">Colors</h3>
-                      <ChevronDown size={14} className={`section-chevron ${isColorsOpen ? 'rotated' : ''}`} />
-                    </div>
-                    {isColorsOpen && (
-                      <div className="section-content" style={{ marginTop: '10px' }}>
-                        <div className="color-circles-list">
-                          {[
-                            { name: 'Pink', value: '#E94FA8' },
-                            { name: 'Red', value: '#FF0000' },
-                            { name: 'Yellow', value: '#FFCC00' },
-                            { name: 'Green', value: '#00CC66' },
-                            { name: 'Purple', value: '#8A2BE2' },
-                            { name: 'Black', value: '#000000' },
-                            { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                            { name: 'Blue', value: '#051838' }
-                          ].map(color => {
-                            const isChecked = selectedColors.includes(color.name);
-                            return (
-                              <button 
-                                key={color.name}
-                                className={`color-bubble ${isChecked ? 'active' : ''}`}
-                                style={{ backgroundColor: color.value, border: color.border || 'none' }}
-                                onClick={() => {
-                                  if (isChecked) {
-                                    setSelectedColors(selectedColors.filter(c => c !== color.name));
-                                  } else {
-                                    setSelectedColors([...selectedColors, color.name]);
-                                  }
-                                }}
-                                title={color.name}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+                );
+              })}
 
               {/* 6. Availability Accordion */}
               <div className="filter-card-section availability-accordion">
@@ -3724,7 +3571,15 @@ export default function ShopView({ authUser, setAuthUser }) {
             {/* Premium Sort Bar */}
             <div className="premium-sort-bar-m2">
               <div className="showing-products-count">
-                Showing <span className="gold-count">{filteredProducts.length}</span> premium products
+                {searchQuery.trim() ? (
+                  <>
+                    Search results for "<span className="gold-count">{searchQuery}</span>" (Found <span className="gold-count">{filteredProducts.length}</span> products)
+                  </>
+                ) : (
+                  <>
+                    Showing <span className="gold-count">{filteredProducts.length}</span> premium products
+                  </>
+                )}
               </div>
               <div className="sort-by-container">
                 <span className="sort-by-label">SORT BY:</span>
@@ -3768,12 +3623,17 @@ export default function ShopView({ authUser, setAuthUser }) {
                         style={{ cursor: 'pointer' }}
                       >
                         <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(product); }}>
-                          {/* Discount Badge */}
-                          {discountPercentage > 0 && (
-                            <div className="clothing-discount-badge">
-                              {discountPercentage}% OFF
-                            </div>
-                          )}
+                          {/* Badge Logic */}
+                          {(() => {
+                            const badgeInfo = getProductBadge(product, discountPercentage);
+                            if (!badgeInfo) return null;
+                            if (badgeInfo.type === 'NEW') {
+                              return <div className="clothing-new-badge">NEW</div>;
+                            } else if (badgeInfo.type === 'DISCOUNT') {
+                              return <div className="clothing-discount-badge">{badgeInfo.text}</div>;
+                            }
+                            return null;
+                          })()}
                           
                           {/* Wishlist float button (top-right of image) */}
                           <button 
@@ -3908,9 +3768,19 @@ export default function ShopView({ authUser, setAuthUser }) {
                 )}
               </>
             ) : (
-              <div className="shop-empty-state">
-                <h3>No products found matching your criteria</h3>
-                <p>Try checking your search query or selecting a different category filter</p>
+              <div className="shop-empty-state" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔍</div>
+                {searchQuery.trim() ? (
+                  <>
+                    <h3 style={{ fontSize: '1.4rem', color: '#051838', marginBottom: '8px' }}>No products found for "{searchQuery}"</h3>
+                    <p style={{ color: '#64748b' }}>We couldn't find any matches. Double check your spelling or try search keywords like clothing, gifts, stationery, etc.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 style={{ fontSize: '1.4rem', color: '#051838', marginBottom: '8px' }}>No products found matching your criteria</h3>
+                    <p style={{ color: '#64748b' }}>Try adjusting your filters or selecting a different category.</p>
+                  </>
+                )}
               </div>
             )}
 

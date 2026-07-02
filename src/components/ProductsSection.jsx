@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Star, ChevronLeft, ChevronRight, X, ChevronDown, ChevronUp, Menu, Eye, ShoppingCart } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { apiService } from '../services/apiService';
+import { categoryConfigService } from '../services/categoryConfigService';
 import clothingUser1 from '../assets/clothing_user_1.jpg';
 import clothingUser2 from '../assets/clothing_user_2.jpg';
 import { useToast } from './ToastProvider';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
+import { COLOR_MAP, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
 
 export default function ProductsSection({ authUser, setAuthUser }) {
   const { addToast } = useToast();
@@ -32,6 +34,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   const [maxPrice, setMaxPrice] = useState(10000); // price slider
   const [searchQuery, setSearchQuery] = useState(''); // search products
   const [sortBy, setSortBy] = useState('relevance');
+  const [isUrlParsed, setIsUrlParsed] = useState(false);
   
   // Flat Categories checklist states
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
@@ -55,6 +58,10 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   const [isOffersAccordionOpen, setIsOffersAccordionOpen] = useState(false);
   const [isCollectionAccordionOpen, setIsCollectionAccordionOpen] = useState(false);
 
+  const [categoryConfigs, setCategoryConfigs] = useState({});
+  const [activeFilters, setActiveFilters] = useState({});
+  const [openSections, setOpenSections] = useState({});
+
   // Categories Tree from DB
   const [categoriesList, setCategoriesList] = useState([]);
 
@@ -62,6 +69,12 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     apiService.getCategories().then(data => {
       if (data && data.length > 0) {
         setCategoriesList(data);
+      }
+    }).catch(console.error);
+
+    categoryConfigService.getCategoryConfigurations().then(confs => {
+      if (confs) {
+        setCategoryConfigs(confs);
       }
     }).catch(console.error);
   }, []);
@@ -686,6 +699,74 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Parse query parameters on load and popstate
+  useEffect(() => {
+    const parseUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get('search');
+      if (searchParam) setSearchQuery(decodeURIComponent(searchParam));
+
+      // Parse dynamic filters
+      const dynamicFilters = {};
+      const ignoredParams = ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategory'];
+      params.forEach((value, key) => {
+        if (!ignoredParams.includes(key.toLowerCase())) {
+          dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+        }
+      });
+      setActiveFilters(dynamicFilters);
+
+      const subParam = params.get('subcategory');
+      if (subParam) setSelectedSubcategories(subParam.split(',').map(v => decodeURIComponent(v)));
+
+      const priceVal = params.get('price');
+      if (priceVal) setMaxPrice(Number(priceVal));
+
+      const instockVal = params.get('instock');
+      if (instockVal === 'false') setShowInStock(false);
+
+      const outofstockVal = params.get('outofstock');
+      if (outofstockVal === 'false') setShowOutOfStock(false);
+
+      const ratingVal = params.get('rating');
+      if (ratingVal) setSelectedRatings(ratingVal.split(',').map(Number));
+
+      const discountVal = params.get('discount');
+      if (discountVal) setSelectedDiscounts(discountVal.split(',').map(Number));
+      setIsUrlParsed(true);
+    };
+
+    parseUrl();
+    window.addEventListener('popstate', parseUrl);
+    return () => window.removeEventListener('popstate', parseUrl);
+  }, []);
+
+  // Sync filter state to URL query parameters
+  useEffect(() => {
+    if (!isUrlParsed) return;
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (maxPrice !== 10000) params.set('price', maxPrice);
+    if (!showInStock) params.set('instock', 'false');
+    if (!showOutOfStock) params.set('outofstock', 'false');
+    if (selectedRatings.length > 0) params.set('rating', selectedRatings.join(','));
+    if (selectedDiscounts.length > 0) params.set('discount', selectedDiscounts.join(','));
+    if (selectedSubcategories.length > 0) params.set('subcategory', selectedSubcategories.map(v => encodeURIComponent(v)).join(','));
+    
+    Object.entries(activeFilters).forEach(([key, values]) => {
+      if (values && values.length > 0) {
+        params.set(key, values.map(v => encodeURIComponent(v)).join(','));
+      }
+    });
+
+    const queryString = params.toString();
+    const newUrl = `${window.location.pathname}${queryString ? '?' + queryString : ''}`;
+    
+    if (window.location.pathname + window.location.search !== newUrl) {
+      window.history.pushState(null, '', newUrl);
+    }
+  }, [isUrlParsed, searchQuery, maxPrice, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, selectedSubcategories, activeFilters]);
+
   // Auto slider setup for New Arrivals
   useEffect(() => {
     if (newArrivalsProducts.length === 0) return;
@@ -697,6 +778,8 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   }, [newArrivalsProducts.length]);
 
   const handleResetFilters = () => {
+    setActiveFilters({});
+    setOpenSections({});
     setSelectedSubcategories([]);
     setSelectedShopFor([]);
     setSelectedSizes([]);
@@ -830,6 +913,43 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     );
   };
 
+  const handleToggleFilter = (filterName, value) => {
+    setActiveFilters(prev => {
+      const current = prev[filterName] || [];
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value];
+      
+      const newFilters = { ...prev };
+      if (updated.length > 0) {
+        newFilters[filterName] = updated;
+      } else {
+        delete newFilters[filterName];
+      }
+      return newFilters;
+    });
+  };
+
+  const toggleSection = (sectionName) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
+  const categoryProducts = productsList;
+
+  // Compute merged category filters from parent + subcategory configs (case-insensitive, no duplicates)
+  const categoryFilters = getMergedFiltersForPath(
+    categoryConfigs,
+    'ALL',
+    'ALL',
+    selectedSubcategories,
+    categoriesList
+  );
+
+  const dynamicFilterNames = categoryFilters.filter(f => f && typeof f === 'string' && f.toLowerCase() !== 'price');
+
   // Apply filters: Search, Subcategories, Shop For, Price, Sizes, Colors, Availability, Ratings, Discounts, Collections
   let displayProducts = productsList;
 
@@ -850,33 +970,15 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     });
   }
 
-  // 3. Shop For (Gender) Filter
-  if (selectedShopFor.length > 0) {
-    displayProducts = displayProducts.filter(p => {
-      const gender = getProductGender(p);
-      return selectedShopFor.includes(gender);
-    });
-  }
+  // 3. Dynamic Attribute and Variant Filters
+  displayProducts = applyDynamicFilters(displayProducts, activeFilters);
 
   // 4. Price Filter
-  displayProducts = displayProducts.filter(p => {
-    const priceNum = parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
-    return priceNum <= maxPrice;
-  });
-
-  // 5. Sizes Filter
-  if (selectedSizes.length > 0) {
+  const hasPriceFilter = categoryFilters.some(f => f && typeof f === 'string' && f.toLowerCase() === 'price') || selectedSubcategories.length === 0;
+  if (hasPriceFilter) {
     displayProducts = displayProducts.filter(p => {
-      const pSizes = getProductSizes(p);
-      return pSizes.some(size => selectedSizes.includes(size));
-    });
-  }
-
-  // 6. Colors Filter
-  if (selectedColors.length > 0) {
-    displayProducts = displayProducts.filter(p => {
-      const pColors = getProductColors(p);
-      return pColors.some(color => selectedColors.includes(color));
+      const priceNum = parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0;
+      return priceNum <= maxPrice;
     });
   }
 
@@ -1002,134 +1104,104 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                   )}
                 </div>
 
-                {/* 2. Shop For Accordion (default open) */}
-                <div className="filter-card-section shop-for-accordion">
-                  <div className="section-title-row" onClick={() => setIsShopForAccordionOpen(!isShopForAccordionOpen)}>
-                    <h3 className="section-title-text">Shop For</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isShopForAccordionOpen ? 'rotated' : ''}`} />
-                  </div>
-                  {isShopForAccordionOpen && (
-                    <div className="section-content" style={{ marginTop: '10px' }}>
-                      {['Men', 'Women', 'Kids', 'Other'].map(gender => {
-                        const isChecked = selectedShopFor.includes(gender);
-                        return (
-                          <label key={gender} className="checkbox-filter-row">
-                            <input 
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                if (isChecked) {
-                                  setSelectedShopFor(selectedShopFor.filter(g => g !== gender));
-                                } else {
-                                  setSelectedShopFor([...selectedShopFor, gender]);
-                                }
-                              }}
-                            />
-                            <span>{gender}</span>
-                          </label>
-                        );
-                      })}
+                {/* Price Range Accordion (Rendered dynamically if 'Price' filter is configured) */}
+                {hasPriceFilter && (
+                  <div className="filter-card-section price-accordion">
+                    <div className="section-title-row" onClick={() => setIsPriceAccordionOpen(!isPriceAccordionOpen)}>
+                      <h3 className="section-title-text">Price Range</h3>
+                      <ChevronDown size={14} className={`section-chevron ${isPriceAccordionOpen ? 'rotated' : ''}`} />
                     </div>
-                  )}
-                </div>
-
-                {/* 3. Price Range Accordion */}
-                <div className="filter-card-section price-accordion">
-                  <div className="section-title-row" onClick={() => setIsPriceAccordionOpen(!isPriceAccordionOpen)}>
-                    <h3 className="section-title-text">Price Range</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isPriceAccordionOpen ? 'rotated' : ''}`} />
-                  </div>
-                  {isPriceAccordionOpen && (
-                    <div className="section-content price-slider-container" style={{ marginTop: '10px' }}>
-                      <input 
-                        type="range" 
-                        min="100" 
-                        max="15000" 
-                        step="100"
-                        value={maxPrice} 
-                        onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="pink-price-slider"
-                      />
-                      <div className="price-labels-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span>₹100</span>
-                        <span>₹{maxPrice.toLocaleString()}</span>
+                    {isPriceAccordionOpen && (
+                      <div className="section-content price-slider-container" style={{ marginTop: '10px' }}>
+                        <input 
+                          type="range" 
+                          min="100" 
+                          max="15000" 
+                          step="100"
+                          value={maxPrice} 
+                          onChange={(e) => setMaxPrice(Number(e.target.value))}
+                          className="pink-price-slider"
+                        />
+                        <div className="price-labels-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span>₹100</span>
+                          <span>₹{maxPrice.toLocaleString()}</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Size Accordion */}
-                <div className="filter-card-section size-accordion">
-                  <div className="section-title-row" onClick={() => setIsSizeAccordionOpen(!isSizeAccordionOpen)}>
-                    <h3 className="section-title-text">Size</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isSizeAccordionOpen ? 'rotated' : ''}`} />
+                    )}
                   </div>
-                  {isSizeAccordionOpen && (
-                    <div className="section-content" style={{ marginTop: '10px' }}>
-                      <div className="size-buttons-grid">
-                        {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'].map(size => {
-                          const isChecked = selectedSizes.includes(size);
-                          return (
-                            <button 
-                              key={size}
-                              className={`size-btn ${isChecked ? 'active' : ''}`}
-                              onClick={() => {
-                                if (isChecked) {
-                                  setSelectedSizes(selectedSizes.filter(s => s !== size));
-                                } else {
-                                  setSelectedSizes([...selectedSizes, size]);
-                                }
-                              }}
-                            >
-                              {size}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
 
-                {/* 5. Colors Accordion */}
-                <div className="filter-card-section color-accordion">
-                  <div className="section-title-row" onClick={() => setIsColorsAccordionOpen(!isColorsAccordionOpen)}>
-                    <h3 className="section-title-text">Colors</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isColorsAccordionOpen ? 'rotated' : ''}`} />
-                  </div>
-                  {isColorsAccordionOpen && (
-                    <div className="section-content" style={{ marginTop: '10px' }}>
-                      <div className="color-circles-list">
-                        {[
-                          { name: 'Pink', value: '#E94FA8' },
-                          { name: 'Red', value: '#FF0000' },
-                          { name: 'Yellow', value: '#FFCC00' },
-                          { name: 'Green', value: '#00CC66' },
-                          { name: 'Purple', value: '#8A2BE2' },
-                          { name: 'Black', value: '#000000' },
-                          { name: 'White', value: '#FFFFFF', border: '1px solid #ddd' },
-                          { name: 'Blue', value: '#051838' }
-                        ].map(color => {
-                          const isChecked = selectedColors.includes(color.name);
-                          return (
-                            <button 
-                              key={color.name}
-                              className={`color-bubble ${isChecked ? 'active' : ''}`}
-                              style={{ backgroundColor: color.value, border: color.border || 'none' }}
-                              onClick={() => {
-                                if (isChecked) {
-                                  setSelectedColors(selectedColors.filter(c => c !== color.name));
-                                } else {
-                                  setSelectedColors([...selectedColors, color.name]);
-                                }
-                              }}
-                              title={color.name}
-                            />
-                          );
-                        })}
+                {/* Dynamic Configuration-Driven Filters */}
+                {dynamicFilterNames.map(filterName => {
+                  const options = getFilterOptions(categoryProducts, filterName);
+                  if (options.length === 0) return null; // Hide if no values
+
+                  const isSectionOpen = openSections[filterName] !== false; // Default open
+                  const selectedVals = activeFilters[filterName] || [];
+
+                  return (
+                    <div key={filterName} className="filter-card-section dynamic-accordion">
+                      <div className="section-title-row" onClick={() => toggleSection(filterName)}>
+                        <h3 className="section-title-text">{filterName}</h3>
+                        <ChevronDown size={14} className={`section-chevron ${isSectionOpen ? 'rotated' : ''}`} />
                       </div>
+                      {isSectionOpen && (
+                        <div className="section-content" style={{ marginTop: '10px' }}>
+                          {/* Special case: Color circle bubbles */}
+                          {(filterName.toLowerCase() === 'color' || filterName.toLowerCase() === 'colors') ? (
+                            <div className="color-circles-list">
+                              {options.map(colorName => {
+                                const isChecked = selectedVals.includes(colorName);
+                                const colorVal = COLOR_MAP[colorName.toLowerCase()] || colorName;
+                                const borderStyle = colorName.toLowerCase() === 'white' ? '1px solid #ddd' : 'none';
+                                return (
+                                  <button 
+                                    key={colorName}
+                                    className={`color-bubble ${isChecked ? 'active' : ''}`}
+                                    style={{ backgroundColor: colorVal, border: borderStyle }}
+                                    onClick={() => handleToggleFilter(filterName, colorName)}
+                                    title={colorName}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : /* Special case: Size button grid */
+                          (filterName.toLowerCase() === 'size' || filterName.toLowerCase() === 'sizes') ? (
+                            <div className="size-buttons-grid">
+                              {options.map(sizeName => {
+                                const isChecked = selectedVals.includes(sizeName);
+                                return (
+                                  <button 
+                                    key={sizeName}
+                                    className={`size-btn ${isChecked ? 'active' : ''}`}
+                                    onClick={() => handleToggleFilter(filterName, sizeName)}
+                                  >
+                                    {sizeName}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            /* Standard check-box list */
+                            options.map(val => {
+                              const isChecked = selectedVals.includes(val);
+                              return (
+                                <label key={val} className="checkbox-filter-row">
+                                  <input 
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleToggleFilter(filterName, val)}
+                                  />
+                                  <span>{val}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })}
 
                 {/* 6. Availability Accordion */}
                 <div className="filter-card-section availability-accordion">
@@ -1311,12 +1383,17 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                         style={{ cursor: 'pointer' }}
                       >
                         <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}>
-                          {/* Discount Badge */}
-                          {discountPercentage > 0 && (
-                            <div className="clothing-discount-badge">
-                              {discountPercentage}% OFF
-                            </div>
-                          )}
+                          {/* Badge Logic */}
+                          {(() => {
+                            const badgeInfo = getProductBadge(product, discountPercentage);
+                            if (!badgeInfo) return null;
+                            if (badgeInfo.type === 'NEW') {
+                              return <div className="clothing-new-badge" style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#e91e63', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', zIndex: 2 }}>NEW</div>;
+                            } else if (badgeInfo.type === 'DISCOUNT') {
+                              return <div className="clothing-discount-badge">{badgeInfo.text}</div>;
+                            }
+                            return null;
+                          })()}
                           
                           {/* Wishlist float button (top-right of image) */}
                           <button 
@@ -1465,14 +1542,17 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                         style={{ cursor: 'pointer' }}
                       >
                         <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}>
-                          {/* Dedicated Red NEW Badge */}
-                          {product.isNewArrival ? (
-                            <div className="clothing-new-badge">NEW</div>
-                          ) : (
-                            discountPercentage > 0 && (
-                              <div className="clothing-discount-badge">{discountPercentage}% OFF</div>
-                            )
-                          )}
+                          {/* Badge Logic */}
+                          {(() => {
+                            const badgeInfo = getProductBadge(product, discountPercentage);
+                            if (!badgeInfo) return null;
+                            if (badgeInfo.type === 'NEW') {
+                              return <div className="clothing-new-badge">NEW</div>;
+                            } else if (badgeInfo.type === 'DISCOUNT') {
+                              return <div className="clothing-discount-badge">{badgeInfo.text}</div>;
+                            }
+                            return null;
+                          })()}
                           
                           {/* Wishlist float button (top-right of image) */}
                           <button 

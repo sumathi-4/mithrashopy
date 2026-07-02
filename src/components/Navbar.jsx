@@ -154,6 +154,22 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // Sync search query from URL parameter
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get('search');
+      if (searchParam) {
+        setSearchQuery(decodeURIComponent(searchParam));
+      } else {
+        setSearchQuery('');
+      }
+    };
+    handleUrlChange();
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
+
   const getUnifiedCategories = () => {
     const defaultGroups = [
       { name: 'Clothing', key: 'CLOTHING' },
@@ -249,12 +265,26 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
       setSearchResults([]);
       return;
     }
-    const lower = q.toLowerCase();
+    const lower = q.toLowerCase().trim();
     const filtered = allProducts
       .filter(p => {
         const name = (p.name || p.title || '').toLowerCase();
         const cat = (p.category || '').toLowerCase();
-        return name.includes(lower) || cat.includes(lower);
+        const subCat = (p.subCategory || '').toLowerCase();
+        const brand = (p.brand || p.attributes?.brand || '').toLowerCase();
+        const tags = Array.isArray(p.tags) 
+          ? p.tags.join(' ').toLowerCase() 
+          : (typeof p.tags === 'string' ? p.tags.toLowerCase() : '');
+        const keywords = Array.isArray(p.keywords) 
+          ? p.keywords.join(' ').toLowerCase() 
+          : (typeof p.keywords === 'string' ? p.keywords.toLowerCase() : '');
+
+        return name.includes(lower) || 
+               cat.includes(lower) || 
+               subCat.includes(lower) || 
+               brand.includes(lower) || 
+               tags.includes(lower) || 
+               keywords.includes(lower);
       })
       .slice(0, 8);
     setSearchResults(filtered);
@@ -270,7 +300,9 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
   };
 
   const handleSearchSubmit = (e) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
+    const isEnter = e && e.key === 'Enter';
+    const isClick = e && e.type === 'click';
+    if ((isEnter || isClick || !e) && searchQuery.trim()) {
       setSearchOpen(false);
       window.history.pushState({}, '', `/Shop?search=${encodeURIComponent(searchQuery.trim())}`);
       window.dispatchEvent(new Event('popstate'));
