@@ -2048,6 +2048,37 @@ export default function ShopView({ authUser, setAuthUser }) {
     });
   };
 
+  // Fetch full product (with all images) when opening detail or quickview
+  const enrichProductWithFullData = async (product) => {
+    try {
+      const full = await apiService.getProduct(product.id);
+      if (full) {
+        // Apply same mapping to ensure title/category fields are consistent
+        const [mapped] = mapProductsData([full]);
+        return mapped;
+      }
+    } catch (e) {
+      // fallback to cached product if fetch fails
+    }
+    return product;
+  };
+
+  const openProductDetail = async (product) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setFullDetailProduct(product); // show immediately with thumbnail
+    const full = await enrichProductWithFullData(product);
+    setFullDetailProduct(full); // update with full images
+  };
+
+  const openProductQuickView = async (product) => {
+    setActiveImageIndex(0);
+    setModalColor('');
+    setModalSize('M');
+    setQuickViewProduct(product); // show immediately with thumbnail
+    const full = await enrichProductWithFullData(product);
+    setQuickViewProduct(full); // update with full images
+  };
+
   useEffect(() => {
     setLoading(true);
     apiService.getProducts().then((data) => {
@@ -3887,10 +3918,10 @@ export default function ShopView({ authUser, setAuthUser }) {
                       <div 
                         key={product.id} 
                         className="clothing-product-card theme-clothing animate-fade-in-up"
-                        onClick={() => setFullDetailProduct(product)}
+                        onClick={() => openProductDetail(product)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(product); }}>
+                        <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); openProductDetail(product); }}>
                           {/* Badge Logic */}
                           {(() => {
                             const badgeInfo = getProductBadge(product, discountPercentage);
@@ -3933,7 +3964,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                             </button>
                             <button 
                               className="clothing-hover-action-btn hover-quickview-btn"
-                              onClick={(e) => { e.stopPropagation(); setActiveImageIndex(0); setModalColor(''); setModalSize('M'); setQuickViewProduct(product); }}
+                              onClick={(e) => { e.stopPropagation(); openProductQuickView(product); }}
                               title="Quick View"
                             >
                               <Eye size={16} />
@@ -3960,7 +3991,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                             </div>
                           </div>
 
-                          <h4 className="clothing-product-title" onClick={() => setFullDetailProduct(product)}>
+                          <h4 className="clothing-product-title" onClick={() => openProductDetail(product)}>
                             {product.title}
                           </h4>
 

@@ -66,6 +66,11 @@ export const apiService = {
     return res.products;
   },
 
+  async getProduct(id) {
+    const res = await apiRequest(`/api/products/${id}`);
+    return res.product;
+  },
+
   async createProduct(product) {
     try {
       const res = await apiRequest('/api/products', 'POST', product);

@@ -55,6 +55,7 @@ router.get('/', async (req, res) => {
       ];
     }
 
+    // Fetch raw products. Images are now stored as small path strings instead of huge base64.
     const rawProducts = await Product.find(filter).lean();
     const products = rawProducts.map(p => ({
       ...p,

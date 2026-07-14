@@ -1876,7 +1876,16 @@ export default function LuckyCharmPage({ authUser, setAuthUser, onNavigate }) {
                     {wonReward.rewardType === 'product' ? (
                       <>
                         <img
-                          src={wonReward.image?.startsWith('http') ? wonReward.image : `/uploads/${wonReward.image}`}
+                          src={(() => {
+                            if (!wonReward.image) return '';
+                            if (wonReward.image.startsWith('http')) return wonReward.image;
+                            const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                            if (wonReward.image.startsWith('/uploads/') || wonReward.image.startsWith('uploads/')) {
+                              const cleanPath = wonReward.image.startsWith('/') ? wonReward.image : `/${wonReward.image}`;
+                              return `${BASE_URL}${cleanPath}`;
+                            }
+                            return `${BASE_URL}/uploads/${wonReward.image}`;
+                          })()}
                           alt={wonReward.rewardName}
                           className="lc-won-img"
                           onError={(e) => {
