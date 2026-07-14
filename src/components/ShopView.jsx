@@ -2325,14 +2325,7 @@ export default function ShopView({ authUser, setAuthUser }) {
     });
   }
 
-  // 9. Availability Filter
-  filteredProducts = filteredProducts.filter(p => {
-    const inStock = isProductInStock(p);
-    if (showInStock && showOutOfStock) return true;
-    if (showInStock) return inStock;
-    if (showOutOfStock) return !inStock;
-    return false;
-  });
+
 
   // 10. Ratings Filter
   if (selectedRatings.length > 0) {
@@ -3764,33 +3757,7 @@ export default function ShopView({ authUser, setAuthUser }) {
                 );
               })}
 
-              {/* 6. Availability Accordion */}
-              <div className="filter-card-section availability-accordion">
-                <div className="section-title-row" onClick={() => setIsAvailabilityOpen(!isAvailabilityOpen)}>
-                  <h3 className="section-title-text">Availability</h3>
-                  <ChevronDown size={14} className={`section-chevron ${isAvailabilityOpen ? 'rotated' : ''}`} />
-                </div>
-                {isAvailabilityOpen && (
-                  <div className="section-content" style={{ marginTop: '10px' }}>
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox"
-                        checked={showInStock}
-                        onChange={(e) => setShowInStock(e.target.checked)}
-                      />
-                      <span>In Stock</span>
-                    </label>
-                    <label className="checkbox-filter-row">
-                      <input 
-                        type="checkbox"
-                        checked={showOutOfStock}
-                        onChange={(e) => setShowOutOfStock(e.target.checked)}
-                      />
-                      <span>Out of Stock</span>
-                    </label>
-                  </div>
-                )}
-              </div>
+
 
               {/* 7. Rating Accordion */}
               <div className="filter-card-section rating-accordion">

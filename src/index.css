@@ -1374,9 +1374,9 @@ ul {
 
 /* Exclusive Products View All Button - Premium Royal Blue & Gold */
 .exclusive-view-all-btn {
-  background-color: var(--primary-rose) !important; /* Royal Blue */
+  background-color: #051838 !important; /* Matches website header blue */
   color: #ffffff !important;
-  border: 2px solid var(--gold-accent) !important; /* Gold Border */
+  border: 2px solid #dfb743 !important; /* Gold Border */
   border-radius: 30px !important; /* Pill shape */
   padding: 14px 45px !important;
   font-size: 0.9rem !important;
@@ -1390,9 +1390,9 @@ ul {
 }
 
 .exclusive-view-all-btn:hover {
-  background-color: var(--gold-accent) !important; /* Gold background */
-  color: var(--primary-rose) !important; /* Royal Blue text */
-  border-color: var(--primary-rose) !important; /* Royal Blue border */
+  background-color: #dfb743 !important; /* Gold background */
+  color: #051838 !important; /* Premium Blue text */
+  border-color: #051838 !important; /* Premium Blue border */
   transform: translateY(-3px) !important;
   box-shadow: 0 8px 25px rgba(223, 183, 67, 0.45) !important;
 }
@@ -4427,12 +4427,12 @@ ul {
 }
 
 .checkbox-filter-row input[type="checkbox"]:checked {
-  background-color: #D4AF37;
-  border-color: #D4AF37;
+  background-color: #051838;
+  border-color: #051838;
 }
 
 .checkbox-filter-row input[type="checkbox"]:checked::after {
-  content: 'âœ“';
+  content: '\2713';
   position: absolute;
   color: #ffffff;
   font-size: 11px;
@@ -4443,7 +4443,7 @@ ul {
 }
 
 .checkbox-filter-row input[type="checkbox"]:hover {
-  border-color: #D4AF37;
+  border-color: #051838;
 }
 
 /* Right Products layout controls */
@@ -5574,7 +5574,7 @@ ul {
 }
 
 .shop-back-home-btn {
-  background-color: #000000;
+  background-color: #051838; /* Matches website header blue */
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -5589,9 +5589,10 @@ ul {
 }
 
 .shop-back-home-btn:hover {
-  background-color: var(--primary-rose);
+  background-color: #dfb743;
+  color: #051838;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(144, 89, 93, 0.2);
+  box-shadow: 0 4px 15px rgba(223, 183, 67, 0.25);
 }
 
 @media (max-width: 1024px) {
@@ -24685,7 +24686,7 @@ body .product-detail-similar-section .similar-products-grid .clothing-img-wrappe
 }
 .checkbox-filter-row input[type="checkbox"]:checked::after,
 .filter-checkbox-input:checked::after {
-  content: "âœ“";
+  content: "\2713";
   font-size: 12px;
   color: #edf3f8 !important;
   font-weight: bold;
