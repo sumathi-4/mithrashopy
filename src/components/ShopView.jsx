@@ -1976,86 +1976,83 @@ export default function ShopView({ authUser, setAuthUser }) {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const mapProductsData = (data) => {
+    if (!data) return [];
+    return data.map((p, idx) => {
+      let catUpper = (p.category || 'CLOTHING').toUpperCase();
+      let cleanCategory = 'CLOTHING';
+      let extractedSub = p.subCategory || '';
+
+      if (p.category && p.category.includes('>')) {
+        const parts = p.category.split('>').map(x => x.trim());
+        const rootCat = parts[0].toUpperCase();
+        if (rootCat.includes('CLOTHING') || rootCat.includes('DRESS')) cleanCategory = 'CLOTHING';
+        else if (rootCat.includes('STATIONERY') || rootCat.includes('PEN') || rootCat.includes('PENCIL') || rootCat.includes('NOTEBOOK') || rootCat.includes('WRITING') || rootCat.includes('PAPER')) cleanCategory = 'STATIONERY';
+        else if (rootCat.includes('GIFT') || rootCat.includes('VALENTINE')) cleanCategory = 'GIFTS';
+        else if (rootCat.includes('ACCESSORIES') || rootCat.includes('FANCY') || rootCat.includes('JEWEL') || rootCat.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+        else cleanCategory = rootCat;
+
+        extractedSub = parts[parts.length - 1];
+      } else {
+        if (catUpper.includes('CLOTHING') || catUpper.includes('DRESS')) cleanCategory = 'CLOTHING';
+        else if (catUpper.includes('STATIONERY') || catUpper.includes('PEN') || catUpper.includes('PENCIL') || catUpper.includes('NOTEBOOK') || catUpper.includes('WRITING') || catUpper.includes('PAPER')) cleanCategory = 'STATIONERY';
+        else if (catUpper.includes('GIFT') || catUpper.includes('VALENTINE')) cleanCategory = 'GIFTS';
+        else if (catUpper.includes('ACCESSORIES') || catUpper.includes('FANCY') || catUpper.includes('JEWEL') || catUpper.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+        else cleanCategory = catUpper;
+      }
+
+      const title = p.name || p.title || 'Product';
+      
+      const isRealImg = (img) => img && (img.startsWith('http') || img.startsWith('/') || img.includes('.') || img.startsWith('data:'));
+
+      let productImages = [];
+      const rawImagesArray = Array.isArray(p.images) ? p.images : (typeof p.images === 'string' ? p.images.split(',').map(s => s.trim()) : []);
+      if (rawImagesArray.length > 0) {
+        const realOnes = rawImagesArray.filter(isRealImg);
+        if (realOnes.length > 0) productImages = realOnes;
+      }
+
+      let finalImage;
+      if (productImages.length > 0) {
+        finalImage = productImages[0];
+      } else if (isRealImg(p.image)) {
+        finalImage = p.image;
+        productImages = [finalImage];
+      } else if (p.modelNo) {
+        productImages = getProductImages(p.modelNo, p.image);
+        finalImage = productImages[0] || p.image;
+      } else {
+        if (cleanCategory === 'CLOTHING') {
+          const isKids = p.subCategory === 'KIDS' ||
+                         catUpper.includes('KIDS') || catUpper.includes('CHILD') ||
+                         title.toLowerCase().includes('kids') || title.toLowerCase().includes('girl') ||
+                         title.toLowerCase().includes('boy') || title.toLowerCase().includes('baby') ||
+                         title.toLowerCase().includes('frock') || title.toLowerCase().includes('anarkali');
+          finalImage = isKids
+            ? ((idx % 2 === 0) ? clothingUser1 : clothingUser5)
+            : [clothingUser2, clothingUser3, clothingUser4][idx % 3];
+        } else {
+          finalImage = p.image || '';
+        }
+        productImages = [finalImage];
+      }
+
+      return {
+        ...p,
+        title,
+        category: cleanCategory,
+        subCategory: extractedSub,
+        image: finalImage,
+        images: productImages
+      };
+    });
+  };
+
   useEffect(() => {
     setLoading(true);
     apiService.getProducts().then((data) => {
       if (data && data.length > 0) {
-        const mapped = data.map((p, idx) => {
-          let catUpper = (p.category || 'CLOTHING').toUpperCase();
-          let cleanCategory = 'CLOTHING';
-          let extractedSub = p.subCategory || '';
-
-          if (p.category && p.category.includes('>')) {
-            const parts = p.category.split('>').map(x => x.trim());
-            const rootCat = parts[0].toUpperCase();
-            if (rootCat.includes('CLOTHING') || rootCat.includes('DRESS')) cleanCategory = 'CLOTHING';
-            else if (rootCat.includes('STATIONERY') || rootCat.includes('PEN') || rootCat.includes('PENCIL') || rootCat.includes('NOTEBOOK') || rootCat.includes('WRITING') || rootCat.includes('PAPER')) cleanCategory = 'STATIONERY';
-            else if (rootCat.includes('GIFT') || rootCat.includes('VALENTINE')) cleanCategory = 'GIFTS';
-            else if (rootCat.includes('ACCESSORIES') || rootCat.includes('FANCY') || rootCat.includes('JEWEL') || rootCat.includes('WATCH')) cleanCategory = 'ACCESSORIES';
-            else cleanCategory = rootCat;
-
-            extractedSub = parts[parts.length - 1];
-          } else {
-            if (catUpper.includes('CLOTHING') || catUpper.includes('DRESS')) cleanCategory = 'CLOTHING';
-            else if (catUpper.includes('STATIONERY') || catUpper.includes('PEN') || catUpper.includes('PENCIL') || catUpper.includes('NOTEBOOK') || catUpper.includes('WRITING') || catUpper.includes('PAPER')) cleanCategory = 'STATIONERY';
-            else if (catUpper.includes('GIFT') || catUpper.includes('VALENTINE')) cleanCategory = 'GIFTS';
-            else if (catUpper.includes('ACCESSORIES') || catUpper.includes('FANCY') || catUpper.includes('JEWEL') || catUpper.includes('WATCH')) cleanCategory = 'ACCESSORIES';
-            else cleanCategory = catUpper;
-          }
-
-          const title = p.name || p.title || 'Product';
-          
-          // ── Image resolution: real uploaded images always take priority ──
-          const isRealImg = (img) => img && (img.startsWith('http') || img.startsWith('/') || img.includes('.') || img.startsWith('data:'));
-
-          // Collect real images from the images array first
-          let productImages = [];
-          const rawImagesArray = Array.isArray(p.images) ? p.images : (typeof p.images === 'string' ? p.images.split(',').map(s => s.trim()) : []);
-          if (rawImagesArray.length > 0) {
-            const realOnes = rawImagesArray.filter(isRealImg);
-            if (realOnes.length > 0) productImages = realOnes;
-          }
-
-          // Determine the primary display image
-          let finalImage;
-          if (productImages.length > 0) {
-            // Admin uploaded images → use first real one
-            finalImage = productImages[0];
-          } else if (isRealImg(p.image)) {
-            // Single real image field
-            finalImage = p.image;
-            productImages = [finalImage];
-          } else if (p.modelNo) {
-            // Kids model-number based static gallery
-            productImages = getProductImages(p.modelNo, p.image);
-            finalImage = productImages[0] || p.image;
-          } else {
-            // Fallback static placeholder per category
-            if (cleanCategory === 'CLOTHING') {
-              const isKids = p.subCategory === 'KIDS' ||
-                             catUpper.includes('KIDS') || catUpper.includes('CHILD') ||
-                             title.toLowerCase().includes('kids') || title.toLowerCase().includes('girl') ||
-                             title.toLowerCase().includes('boy') || title.toLowerCase().includes('baby') ||
-                             title.toLowerCase().includes('frock') || title.toLowerCase().includes('anarkali');
-              finalImage = isKids
-                ? ((idx % 2 === 0) ? clothingUser1 : clothingUser5)
-                : [clothingUser2, clothingUser3, clothingUser4][idx % 3];
-            } else {
-              finalImage = p.image || '';
-            }
-            productImages = [finalImage];
-          }
-
-          console.log('MAPPED PRODUCT:', p.name || p.title, 'finalImage:', finalImage, 'productImages:', productImages);
-          return {
-            ...p,
-            title,
-            category: cleanCategory,
-            subCategory: extractedSub,
-            image: finalImage,
-            images: productImages
-          };
-        });
+        const mapped = mapProductsData(data);
         setAllProducts(mapped);
         
         const autoOpenId = sessionStorage.getItem('auto_open_product_id');
@@ -2106,9 +2103,10 @@ export default function ShopView({ authUser, setAuthUser }) {
       });
       apiService.getProducts().then((data) => {
         if (data) {
-          setAllProducts(data);
+          const mapped = mapProductsData(data);
+          setAllProducts(mapped);
           if (fullDetailProduct) {
-            const fresh = data.find(p => p.id === fullDetailProduct.id);
+            const fresh = mapped.find(p => p.id === fullDetailProduct.id);
             if (fresh) setFullDetailProduct(fresh);
           }
         }
