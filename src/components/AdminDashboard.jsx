@@ -271,7 +271,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [socialMediaSettings, setSocialMediaSettings] = useState({
     instagram: 'https://instagram.com/mithrashopy',
     facebook: 'https://facebook.com/mithrashopy',
-    whatsapp: '+91 98765 43210',
     youtube: 'https://youtube.com/@mithrashopy',
     twitter: 'https://twitter.com/mithrashopy',
   });
@@ -310,48 +309,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [prodCurrentPage, setProdCurrentPage] = useState(1);
 
   // --- Core Mock States (Stored in localStorage or state) ---
-  const [products, setProducts] = useState(() => {
-    const clearedFlag = localStorage.getItem('mithra_products_cleared_v2');
-    let rawProducts = [];
-    if (clearedFlag) {
-      const local = localStorage.getItem('mithra_admin_products');
-      if (local) {
-        try {
-          rawProducts = JSON.parse(local);
-        } catch (e) {
-          // Fallback
-        }
-      }
-    } else {
-      rawProducts = [
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
-      ];
-      localStorage.setItem('mithra_admin_products', JSON.stringify(rawProducts));
-      localStorage.setItem('mithra_products_cleared_v2', 'true');
-    }
-    
-    if (!rawProducts || rawProducts.length === 0) {
-      rawProducts = [
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
-      ];
-    }
-    
-    return rawProducts.map(p => {
-      let cat = p.category || 'Clothing > Kids';
-      // Auto-heal old subcategory formats
-      if (cat === 'Clothing > Girls') cat = 'Clothing > Kids';
-      if (cat === 'Stationery > Pens') cat = 'Stationery';
-      if (cat === 'Gifts > Birthday') cat = 'Gifts';
-      if (cat === 'Accessories > Bags') cat = 'Accessories';
-      
-      return {
-        ...p,
-        catalogue: p.catalogue || 'Catalogue A',
-        category: cat,
-        status: p.status || 'Active'
-      };
-    });
-  });
+  const [products, setProducts] = useState([]);
 
   const [orders, setOrders] = useState(() => {
     const local = localStorage.getItem('mithra_admin_orders');
@@ -707,7 +665,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     const syncBackendData = async () => {
       try {
         const prodData = await apiService.getProducts();
-        if (prodData && prodData.length > 0) setProducts(prodData);
+        if (prodData) setProducts(prodData);
         
         const catData = await apiService.getCategories();
         if (catData && catData.length > 0) {
@@ -3633,7 +3591,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                             <td className="action-cell">
                               <div className="action-buttons-wrap" style={{ justifyContent: 'flex-end', paddingRight: '8px' }}>
                                 <button 
-                                  className="table-act-btn edit" 
+                                  className="table-act-btn approve-btn" 
                                   title="Approve Review" 
                                   onClick={() => {
                                     apiService.moderateReview(rev.id, { status: 'Approved' }).then((updatedReview) => {
@@ -3643,10 +3601,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   disabled={rev.status === 'Approved'}
                                   style={{ opacity: rev.status === 'Approved' ? 0.4 : 1 }}
                                 >
-                                  <CheckCircle2 size={15} />
+                                  <CheckCircle2 size={17} />
                                 </button>
                                 <button 
-                                  className="table-act-btn edit" 
+                                  className="table-act-btn reject-btn" 
                                   title="Reject Review" 
                                   onClick={() => {
                                     apiService.moderateReview(rev.id, { status: 'Rejected' }).then((updatedReview) => {
@@ -3656,10 +3614,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                   disabled={rev.status === 'Rejected'}
                                   style={{ opacity: rev.status === 'Rejected' ? 0.4 : 1 }}
                                 >
-                                  <XCircle size={15} />
+                                  <XCircle size={17} />
                                 </button>
                                 <button 
-                                  className="table-act-btn edit" 
+                                  className="table-act-btn reply-btn" 
                                   title="Reply to Review" 
                                   onClick={() => {
                                     setReplyReviewItem(rev);
@@ -3667,10 +3625,10 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     setShowReplyReviewModal(true);
                                   }}
                                 >
-                                  <MessageSquare size={15} />
+                                  <MessageSquare size={17} />
                                 </button>
                                 <button 
-                                  className="table-act-btn delete" 
+                                  className="table-act-btn delete-btn" 
                                   title="Delete Review" 
                                   onClick={() => {
                                     if (confirm('Are you sure you want to delete this review?')) {
@@ -3680,7 +3638,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                                     }
                                   }}
                                 >
-                                  <Trash2 size={15} />
+                                  <Trash2 size={17} />
                                 </button>
                               </div>
                             </td>
@@ -4271,18 +4229,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         </div>
                       </div>
 
-                      <div style={{ border: '1px solid #eae6df', borderRadius: '16px', padding: '16px 20px', backgroundColor: '#faf9f6' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center', gap: '20px' }}>
-                          <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2b2b2b' }}>WhatsApp Number</label>
-                          <input 
-                            type="text" 
-                            value={socialMediaSettings.whatsapp} 
-                            onChange={(e) => setSocialMediaSettings(prev => ({ ...prev, whatsapp: e.target.value }))}
-                            className="form-input-re" 
-                            style={{ backgroundColor: '#fff', border: '1px solid #e2ded5', borderRadius: '10px' }}
-                          />
-                        </div>
-                      </div>
+
 
                       <div style={{ border: '1px solid #eae6df', borderRadius: '16px', padding: '16px 20px', backgroundColor: '#faf9f6' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center', gap: '20px' }}>

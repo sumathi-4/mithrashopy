@@ -49,13 +49,148 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const [selectedReviewProduct, setSelectedReviewProduct] = useState(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewImages, setReviewImages] = useState([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Order Details Modal States
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
 
+  // Active Sessions & Location States
+  const [sessions, setSessions] = useState([]);
+  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState('Hyderabad, India');
+  const [lastLogin, setLastLogin] = useState({
+    time: '',
+    device: ''
+  });
+
+  const getDeviceAndBrowser = () => {
+    const ua = navigator.userAgent;
+    let os = "Windows";
+    let browser = "Chrome";
+
+    if (ua.includes("Win")) os = "Windows";
+    else if (ua.includes("Mac")) os = "macOS";
+    else if (ua.includes("Linux")) os = "Linux";
+    else if (ua.includes("Android")) os = "Android";
+    else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+
+    if (ua.includes("Firefox")) browser = "Firefox";
+    else if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+    else if (ua.includes("Edg")) browser = "Edge";
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    return `${browser} on ${os}${isMobile ? ' (Mobile)' : ''}`;
+  };
+
   // Hidden File Input for Avatar Uploads
   const fileInputRef = useRef(null);
+
+  // Geolocation and session management effect
+  useEffect(() => {
+    // Get live location
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.city && data.country_name) {
+          setCurrentLocation(`${data.city}, ${data.country_name}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const [sessionToken, setSessionToken] = useState(() => {
+    let token = localStorage.getItem('mithirashoppy_session_id');
+    if (!token) {
+      token = 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem('mithirashoppy_session_id', token);
+    }
+    return token;
+  });
+
+  const fetchAndSyncSessions = () => {
+    if (!authUser) return;
+    const currentDeviceName = getDeviceAndBrowser();
+    
+    apiService.getSessions(sessionToken, currentDeviceName, currentLocation)
+      .then(data => {
+        if (data && Array.isArray(data)) {
+          // Check if current session is still in the active list
+          const stillActive = data.some(s => s.sessionId === sessionToken);
+          if (!stillActive && data.length > 0) {
+            addToast({ message: 'Your session has been revoked. Logging out.', type: 'warning' });
+            handleLogout();
+            return;
+          }
+
+          // Format backend sessions to match UI expectations
+          const formatted = data.map(s => {
+            const isCurrent = s.sessionId === sessionToken;
+            return {
+              id: s.sessionId,
+              deviceName: s.deviceName,
+              location: s.location,
+              isActive: isCurrent ? true : s.isActive,
+              lastActive: isCurrent ? 'Active' : new Date(s.lastActive).toLocaleString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })
+            };
+          });
+
+          // Sort current device to top
+          formatted.sort((a, b) => (a.id === sessionToken ? -1 : b.id === sessionToken ? 1 : 0));
+          setSessions(formatted);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (authUser) {
+      fetchAndSyncSessions();
+      // Periodically sync sessions list every 15 seconds to check if revoked from another device
+      const interval = setInterval(fetchAndSyncSessions, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [authUser, currentLocation]);
+
+  // Last login synchronization
+  useEffect(() => {
+    if (!authUser) return;
+    const userId = authUser.id || authUser._id || 'guest';
+    const lastLoginKey = `mithirashoppy_last_login_${userId}`;
+    const storedLast = localStorage.getItem(lastLoginKey);
+
+    const currentDeviceName = getDeviceAndBrowser();
+    const nowStr = new Date().toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    if (storedLast) {
+      try {
+        const parsed = JSON.parse(storedLast);
+        setLastLogin(parsed);
+      } catch (e) {
+        setLastLogin({ time: nowStr, device: `${currentLocation}  •  ${currentDeviceName}` });
+      }
+    } else {
+      const initial = { time: nowStr, device: `${currentLocation}  •  ${currentDeviceName}` };
+      setLastLogin(initial);
+      localStorage.setItem(lastLoginKey, JSON.stringify(initial));
+    }
+  }, [authUser, currentLocation]);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -109,6 +244,23 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     localStorage.removeItem('mithira_auth_user');
     setAuthUser(null);
     if (onNavigate) onNavigate('/');
+  };
+
+  const handleRevokeSession = (sessionId, deviceName) => {
+    if (!authUser) return;
+
+    apiService.revokeSession(sessionId)
+      .then(() => {
+        addToast({ message: `Session revoked for ${deviceName} successfully.`, type: 'success' });
+        if (sessionId === sessionToken) {
+          handleLogout();
+        } else {
+          fetchAndSyncSessions();
+        }
+      })
+      .catch(() => {
+        addToast({ message: 'Failed to revoke session. Please try again.', type: 'error' });
+      });
   };
 
 
@@ -562,6 +714,35 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   }, [addresses]);
 
   useEffect(() => {
+    if (!authUser) return;
+
+    const channel = new BroadcastChannel('mithirashoppy_reviews');
+    
+    const refreshReviews = () => {
+      apiService.getMyReviews().then(reviews => {
+        if (reviews) setMyReviews(reviews);
+      });
+    };
+
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'reviews_updated') {
+        refreshReviews();
+      }
+    };
+
+    const handleLocalUpdate = () => refreshReviews();
+    window.addEventListener('mithira_reviews_updated', handleLocalUpdate);
+
+    const interval = setInterval(refreshReviews, 4000);
+
+    return () => {
+      channel.close();
+      clearInterval(interval);
+      window.removeEventListener('mithira_reviews_updated', handleLocalUpdate);
+    };
+  }, [authUser?.id, activeTab]);
+
+  useEffect(() => {
     if (allProducts.length > 0) {
       let userCartItems = [];
       let userCartIds = [];
@@ -896,7 +1077,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
   const getReviewableProducts = () => {
     const purchased = [];
     userOrders.forEach(o => {
-      if (o.status && o.status.toLowerCase() !== 'cancelled' && o.status.toLowerCase() !== 'pending payment') {
+      if (o.status && o.status.toLowerCase() === 'delivered') {
         o.items?.forEach(item => {
           if (!purchased.some(p => String(p.productId) === String(item.productId))) {
             purchased.push(item);
@@ -909,29 +1090,135 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
     );
   };
 
+  const handleReviewImagesUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+    
+    if (reviewImages.length + files.length > 5) {
+      addToast({ message: 'You can upload up to 5 images in total.', type: 'error' });
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const uploadedUrls = [...reviewImages];
+
+    for (const file of files) {
+      if (file.size > 2 * 1024 * 1024) {
+        addToast({ message: `File ${file.name} is too large. Max size is 2MB.`, type: 'error' });
+        continue;
+      }
+
+      try {
+        const url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = async () => {
+            try {
+              const base64Data = reader.result.split(',')[1];
+              const uploaded = await apiService.uploadImage(file.name, base64Data);
+              if (uploaded) {
+                const url = typeof uploaded === 'string' ? uploaded : uploaded.url;
+                if (url) {
+                  resolve(url);
+                } else {
+                  reject(new Error('Failed to upload image'));
+                }
+              } else {
+                reject(new Error('Failed to upload image'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = error => reject(error);
+        });
+        uploadedUrls.push(url);
+      } catch (err) {
+        console.error('Image upload failed:', err);
+        addToast({ message: `Failed to upload image ${file.name}`, type: 'error' });
+      }
+    }
+
+    setReviewImages(uploadedUrls);
+    setIsUploadingImage(false);
+  };
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!selectedReviewProduct) return;
     try {
-      const res = await apiService.submitReview({
-        productName: selectedReviewProduct.name,
-        rating: reviewRating,
-        comment: reviewComment,
-        productImage: selectedReviewProduct.image || 'Kids',
-        productId: selectedReviewProduct.productId
-      });
-      if (res) {
-        addToast({ message: 'Review submitted successfully! It will appear once approved by Admin.', type: 'success' });
-        setIsReviewModalOpen(false);
-        setReviewComment('');
-        setReviewRating(5);
-        apiService.getMyReviews().then(reviews => {
-          if (reviews) setMyReviews(reviews);
+      if (editingReviewId) {
+        // Edit mode
+        const res = await apiService.moderateReview(editingReviewId, {
+          rating: reviewRating,
+          comment: reviewComment,
+          images: reviewImages
         });
+        if (res) {
+          addToast({ message: 'Review updated successfully and is now pending admin approval.', type: 'success' });
+          setIsReviewModalOpen(false);
+          setReviewComment('');
+          setReviewRating(5);
+          setReviewImages([]);
+          setEditingReviewId(null);
+          apiService.getMyReviews().then(reviews => {
+            if (reviews) setMyReviews(reviews);
+          });
+          const channel = new BroadcastChannel('mithirashoppy_reviews');
+          channel.postMessage({ type: 'reviews_updated' });
+          channel.close();
+          window.dispatchEvent(new CustomEvent('mithira_reviews_updated'));
+        }
+      } else {
+        // Create mode
+        const res = await apiService.submitReview({
+          productName: selectedReviewProduct.name,
+          rating: reviewRating,
+          comment: reviewComment,
+          productImage: selectedReviewProduct.image || 'Kids',
+          productId: selectedReviewProduct.productId,
+          images: reviewImages
+        });
+        if (res) {
+          addToast({ message: 'Review submitted successfully! It will appear once approved by Admin.', type: 'success' });
+          setIsReviewModalOpen(false);
+          setReviewComment('');
+          setReviewRating(5);
+          setReviewImages([]);
+          apiService.getMyReviews().then(reviews => {
+            if (reviews) setMyReviews(reviews);
+          });
+          const channel = new BroadcastChannel('mithirashoppy_reviews');
+          channel.postMessage({ type: 'reviews_updated' });
+          channel.close();
+          window.dispatchEvent(new CustomEvent('mithira_reviews_updated'));
+        }
       }
     } catch (err) {
       console.error(err);
-      addToast({ message: 'Failed to submit review.', type: 'error' });
+      addToast({ message: err.message || 'Failed to submit review.', type: 'error' });
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const success = await apiService.deleteReview(reviewId);
+      if (success) {
+        addToast({ message: 'Review deleted successfully.', type: 'success' });
+        apiService.getMyReviews().then(reviews => {
+          if (reviews) setMyReviews(reviews);
+        });
+        const channel = new BroadcastChannel('mithirashoppy_reviews');
+        channel.postMessage({ type: 'reviews_updated' });
+        channel.close();
+        window.dispatchEvent(new CustomEvent('mithira_reviews_updated'));
+      } else {
+        addToast({ message: 'Failed to delete review.', type: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      addToast({ message: 'Failed to delete review.', type: 'error' });
     }
   };
 
@@ -1743,17 +2030,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                               checked={paymentMethod === 'Razorpay'}
                               onChange={() => setPaymentMethod('Razorpay')}
                             />
-                            Razorpay / Card
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              name="payment_method" 
-                              value="UPI" 
-                              checked={paymentMethod === 'UPI'}
-                              onChange={() => setPaymentMethod('UPI')}
-                            />
-                            UPI / NetBanking
+                            Razorpay
                           </label>
                           <label>
                             <input 
@@ -2420,130 +2697,79 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
           )}
 
           {activeTab === 'security' && (
-            <div className="ua-security-view">
-              <div className="ua-sec-grid">
+            <div className="ua-security-view" style={{ maxWidth: '600px', margin: '0 auto' }}>
+              
+              {/* Change Password */}
+              <form className="ua-sec-card" onSubmit={handleUpdatePassword}>
+                <h3 className="ua-sec-card-title">Change Password</h3>
                 
-                {/* Left Card: Change Password */}
-                <form className="ua-sec-card" onSubmit={handleUpdatePassword}>
-                  <h3 className="ua-sec-card-title">Change Password</h3>
-                  
-                  <div className="ua-sec-group">
-                    <label className="ua-sec-label">Current Password</label>
-                    <div className="ua-sec-pwd-wrap">
-                      <input 
-                        type={showCurrentPwd ? 'text' : 'password'} 
-                        className="ua-form-input" 
-                        placeholder="••••••••••••"
-                        value={passwordForm.current}
-                        onChange={e => setPasswordForm({...passwordForm, current: e.target.value})}
-                        required
-                      />
-                      <button 
-                        type="button" 
-                        className="ua-sec-eye-btn"
-                        onClick={() => setShowCurrentPwd(!showCurrentPwd)}
-                      >
-                        <Settings size={14} />
-                      </button>
-                    </div>
+                <div className="ua-sec-group">
+                  <label className="ua-sec-label">Current Password</label>
+                  <div className="ua-sec-pwd-wrap">
+                    <input 
+                      type={showCurrentPwd ? 'text' : 'password'} 
+                      className="ua-form-input" 
+                      placeholder="••••••••••••"
+                      value={passwordForm.current}
+                      onChange={e => setPasswordForm({...passwordForm, current: e.target.value})}
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      className="ua-sec-eye-btn"
+                      onClick={() => setShowCurrentPwd(!showCurrentPwd)}
+                    >
+                      <Settings size={14} />
+                    </button>
                   </div>
-
-                  <div className="ua-sec-group">
-                    <label className="ua-sec-label">New Password</label>
-                    <div className="ua-sec-pwd-wrap">
-                      <input 
-                        type={showNewPwd ? 'text' : 'password'} 
-                        className="ua-form-input" 
-                        placeholder="••••••••••••"
-                        value={passwordForm.new}
-                        onChange={e => setPasswordForm({...passwordForm, new: e.target.value})}
-                        required
-                      />
-                      <button 
-                        type="button" 
-                        className="ua-sec-eye-btn"
-                        onClick={() => setShowNewPwd(!showNewPwd)}
-                      >
-                        <Settings size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="ua-sec-group">
-                    <label className="ua-sec-label">Confirm New Password</label>
-                    <div className="ua-sec-pwd-wrap">
-                      <input 
-                        type={showConfirmPwd ? 'text' : 'password'} 
-                        className="ua-form-input" 
-                        placeholder="••••••••••••"
-                        value={passwordForm.confirm}
-                        onChange={e => setPasswordForm({...passwordForm, confirm: e.target.value})}
-                        required
-                      />
-                      <button 
-                        type="button" 
-                        className="ua-sec-eye-btn"
-                        onClick={() => setShowConfirmPwd(!showConfirmPwd)}
-                      >
-                        <Settings size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="ua-sec-btn-update">
-                    Update Password
-                  </button>
-                </form>
-
-                {/* Right Card: Login Activity */}
-                <div className="ua-sec-card">
-                  <h3 className="ua-sec-card-title">Login Activity</h3>
-                  
-                  <div className="ua-sec-activity-section">
-                    <span className="ua-sec-sub-label">Last Login</span>
-                    <div className="ua-sec-last-login-info">
-                      <p className="ua-sec-login-time">17 May, 2025  •  10:30 AM</p>
-                      <p className="ua-sec-login-device">Hyderabad, India  •  Chrome on Windows</p>
-                    </div>
-                  </div>
-
-                  <div className="ua-sec-activity-section border-top">
-                    <span className="ua-sec-sub-label">Active Devices</span>
-                    <div className="ua-sec-devices-list">
-                      
-                      <div className="ua-sec-device-row">
-                        <div>
-                          <p className="ua-sec-device-name">Chrome on Windows</p>
-                          <p className="ua-sec-device-loc">Hyderabad, India</p>
-                        </div>
-                        <span className="ua-sec-badge-active">Active</span>
-                      </div>
-
-                      <div className="ua-sec-device-row">
-                        <div>
-                          <p className="ua-sec-device-name">iPhone 14 (Mobile)</p>
-                          <p className="ua-sec-device-loc">Hyderabad, India</p>
-                        </div>
-                        <span className="ua-sec-badge-active">Active</span>
-                      </div>
-
-                      <div className="ua-sec-device-row">
-                        <div>
-                          <p className="ua-sec-device-name">Chrome on MacBook</p>
-                          <p className="ua-sec-device-loc">Bangalore, India</p>
-                        </div>
-                        <span className="ua-sec-device-time">2 days ago</span>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  <button className="ua-sec-link-sessions">
-                    View All Sessions
-                  </button>
                 </div>
 
-              </div>
+                <div className="ua-sec-group">
+                  <label className="ua-sec-label">New Password</label>
+                  <div className="ua-sec-pwd-wrap">
+                    <input 
+                      type={showNewPwd ? 'text' : 'password'} 
+                      className="ua-form-input" 
+                      placeholder="••••••••••••"
+                      value={passwordForm.new}
+                      onChange={e => setPasswordForm({...passwordForm, new: e.target.value})}
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      className="ua-sec-eye-btn"
+                      onClick={() => setShowNewPwd(!showNewPwd)}
+                    >
+                      <Settings size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="ua-sec-group">
+                  <label className="ua-sec-label">Confirm New Password</label>
+                  <div className="ua-sec-pwd-wrap">
+                    <input 
+                      type={showConfirmPwd ? 'text' : 'password'} 
+                      className="ua-form-input" 
+                      placeholder="••••••••••••"
+                      value={passwordForm.confirm}
+                      onChange={e => setPasswordForm({...passwordForm, confirm: e.target.value})}
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      className="ua-sec-eye-btn"
+                      onClick={() => setShowConfirmPwd(!showConfirmPwd)}
+                    >
+                      <Settings size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="ua-sec-btn-update">
+                  Update Password
+                </button>
+              </form>
             </div>
           )}
 
@@ -2707,14 +2933,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                   {getReviewableProducts().length > 0 ? (
                     <div className="ua-reviews-product-grid">
                       {getReviewableProducts().map(prod => {
+                        const matchedProduct = allProducts.find(p => String(p.id) === String(prod.productId) || String(p._id) === String(prod.productId));
                         let resolvedImg = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
-                        if (prod.image) {
-                          resolvedImg = prod.image.startsWith('http') ? prod.image : resolveProductImage({ image: prod.image });
-                        } else {
-                          const matchedProduct = allProducts.find(p => p.id === prod.productId);
-                          if (matchedProduct?.image) {
-                            resolvedImg = matchedProduct.image.startsWith('http') ? matchedProduct.image : resolveProductImage({ image: matchedProduct.image });
-                          }
+                        if (matchedProduct?.image) {
+                          resolvedImg = matchedProduct.image.startsWith('http') ? matchedProduct.image : resolveProductImage(matchedProduct);
                         }
 
                         return (
@@ -2729,7 +2951,9 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                                   setSelectedReviewProduct({
                                     productId: prod.productId,
                                     name: prod.name,
-                                    image: prod.image || 'Kids'
+                                    image: (matchedProduct && matchedProduct.image) || 'Kids',
+                                    category: matchedProduct?.category,
+                                    subCategory: matchedProduct?.subCategory
                                   });
                                   setReviewRating(5);
                                   setReviewComment('');
@@ -2755,9 +2979,10 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                   {myReviews.length > 0 ? (
                     <div className="ua-submitted-reviews-list">
                       {myReviews.map(rev => {
+                        const matchedProduct = allProducts.find(p => p.name === rev.productName);
                         let resolvedImg = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
                         if (rev.productImage) {
-                          resolvedImg = rev.productImage.startsWith('http') ? rev.productImage : resolveProductImage({ image: rev.productImage });
+                          resolvedImg = rev.productImage.startsWith('http') ? rev.productImage : resolveProductImage(matchedProduct || { image: rev.productImage });
                         }
 
                         return (
@@ -2790,6 +3015,49 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                                   ✓ Verified Purchase
                                 </span>
                               )}
+                            </div>
+
+                            {rev.images && rev.images.length > 0 && (
+                              <div className="ua-rev-images-list" style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                                {rev.images.map((imgUrl, idx) => (
+                                  <img 
+                                    key={idx} 
+                                    src={imgUrl} 
+                                    alt={`Review ${idx + 1}`} 
+                                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #c5a880' }} 
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="ua-rev-actions" style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
+                              <button
+                                className="ua-rp-btn-review"
+                                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                                onClick={() => {
+                                  setEditingReviewId(rev.id);
+                                  setSelectedReviewProduct({
+                                    productId: rev.productId || 0,
+                                    name: rev.productName,
+                                    image: rev.productImage || 'Kids',
+                                    category: matchedProduct?.category,
+                                    subCategory: matchedProduct?.subCategory
+                                  });
+                                  setReviewRating(rev.rating);
+                                  setReviewComment(rev.comment);
+                                  setReviewImages(rev.images || []);
+                                  setIsReviewModalOpen(true);
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="ua-rp-btn-review"
+                                style={{ padding: '6px 12px', fontSize: '0.85rem', background: '#333333', color: '#ffffff', border: '1px solid #c5a880' }}
+                                onClick={() => handleDeleteReview(rev.id)}
+                              >
+                                Delete
+                              </button>
                             </div>
 
                             {rev.reply && (
@@ -2933,7 +3201,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
             
             <div className="ua-review-modal-product-summary">
               <img 
-                src={selectedReviewProduct.image.startsWith('http') ? selectedReviewProduct.image : resolveProductImage({ image: selectedReviewProduct.image })} 
+                src={selectedReviewProduct.image.startsWith('http') ? selectedReviewProduct.image : resolveProductImage(selectedReviewProduct)} 
                 alt={selectedReviewProduct.name} 
                 className="ua-rmps-img" 
               />
@@ -2976,16 +3244,82 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
                 />
               </div>
 
+              <div className="ua-form-group">
+                <label className="ua-form-label">Review Images (Up to 5)</label>
+                <div className="ua-review-images-uploader" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="file"
+                    id="review-image-input"
+                    multiple
+                    accept="image/*"
+                    onChange={handleReviewImagesUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    className="ua-rp-btn-review"
+                    style={{ width: 'fit-content', padding: '8px 16px', fontSize: '0.85rem' }}
+                    onClick={() => document.getElementById('review-image-input').click()}
+                    disabled={isUploadingImage || reviewImages.length >= 5}
+                  >
+                    {isUploadingImage ? 'Uploading...' : 'Choose Images'}
+                  </button>
+                  <span style={{ fontSize: '0.8rem', color: '#b392ac' }}>
+                    {reviewImages.length} of 5 images selected
+                  </span>
+                  
+                  {reviewImages.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                      {reviewImages.map((imgUrl, idx) => (
+                        <div key={idx} style={{ position: 'relative', width: '50px', height: '50px' }}>
+                          <img 
+                            src={imgUrl} 
+                            alt={`Preview ${idx}`} 
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px', border: '1px solid #c5a880' }} 
+                          />
+                          <button
+                            type="button"
+                            style={{
+                              position: 'absolute',
+                              top: '-5px',
+                              right: '-5px',
+                              background: '#C62828',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '18px',
+                              height: '18px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px'
+                            }}
+                            onClick={() => setReviewImages(prev => prev.filter((_, i) => i !== idx))}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="ua-modal-actions">
                 <button 
                   type="button" 
                   className="ua-modal-btn btn-cancel"
-                  onClick={() => setIsReviewModalOpen(false)}
+                  onClick={() => {
+                    setIsReviewModalOpen(false);
+                    setEditingReviewId(null);
+                    setReviewImages([]);
+                  }}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="ua-modal-btn btn-save" disabled={!reviewComment.trim()}>
-                  Submit Review
+                <button type="submit" className="ua-modal-btn btn-save" disabled={!reviewComment.trim() || isUploadingImage}>
+                  {editingReviewId ? 'Update Review' : 'Submit Review'}
                 </button>
               </div>
             </form>
@@ -2993,934 +3327,7 @@ export default function UserAccount({ authUser, setAuthUser, onNavigate }) {
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        /* Rewards & Reviews Tabs Redesign - Glassmorphism & SaaS Accents */
-        .ua-rewards-view, .ua-reviews-view {
-          padding: 10px 5px;
-          animation: ua-fade-in 0.4s ease forwards;
-        }
-
-        .ua-rewards-header, .ua-reviews-header {
-          margin-bottom: 28px;
-        }
-
-        .ua-rewards-title, .ua-reviews-title {
-          font-family: var(--font-serif);
-          font-size: 1.8rem;
-          font-weight: 800;
-          color: #051838;
-          margin-bottom: 6px;
-        }
-
-        .ua-rewards-sub, .ua-reviews-sub {
-          font-size: 0.9rem;
-          color: #666;
-          font-weight: 500;
-        }
-
-        /* Points Balance Card - Premium gradient with glow */
-        .ua-rewards-points-card {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: linear-gradient(135deg, #051838 0%, #aa7c11 100%);
-          padding: 28px;
-          border-radius: 20px;
-          color: #ffffff;
-          margin-bottom: 36px;
-          box-shadow: 0 10px 30px rgba(5, 24, 56, 0.15), 0 0 15px rgba(212, 175, 55, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .ua-rewards-points-left {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
-
-        .ua-trophy-icon {
-          color: #F2C94C;
-          filter: drop-shadow(0 2px 8px rgba(242, 201, 76, 0.4));
-        }
-
-        .ua-points-title {
-          font-family: var(--font-serif);
-          font-size: 1.35rem;
-          font-weight: 750;
-          margin: 0 0 6px 0;
-        }
-
-        .ua-points-sub {
-          font-size: 0.84rem;
-          color: rgba(255, 255, 255, 0.85);
-          margin: 0;
-          font-weight: 500;
-        }
-
-        .ua-rewards-points-right {
-          text-align: center;
-          background: rgba(255, 255, 255, 0.12);
-          padding: 12px 24px;
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          backdrop-filter: blur(4px);
-        }
-
-        .ua-points-number {
-          display: block;
-          font-size: 2.2rem;
-          font-weight: 850;
-          color: #F2C94C;
-          line-height: 1;
-          filter: drop-shadow(0 2px 6px rgba(242, 201, 76, 0.3));
-        }
-
-        .ua-points-lbl {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-weight: 700;
-          margin-top: 4px;
-        }
-
-        .ua-claims-section-title {
-          font-family: var(--font-serif);
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: #051838;
-          margin-bottom: 24px;
-        }
-
-        .ua-claims-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 24px;
-        }
-
-        /* Claim Cards */
-        .ua-claim-card {
-          background: #ffffff;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          border-radius: 20px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.015);
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .ua-claim-card:hover {
-          transform: translateY(-5px);
-          border-color: rgba(212, 175, 55, 0.35);
-          box-shadow: 0 12px 30px rgba(212, 175, 55, 0.1);
-        }
-
-        .ua-claim-img-wrapper {
-          position: relative;
-          height: 190px;
-          background: #faf9f6;
-          overflow: hidden;
-        }
-
-        .ua-claim-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.5s ease;
-        }
-
-        .ua-claim-card:hover .ua-claim-img {
-          transform: scale(1.04);
-        }
-
-        .ua-claim-status-badge {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          padding: 5px 12px;
-          border-radius: 20px;
-          font-size: 0.68rem;
-          font-weight: 750;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .ua-claim-status-badge.pending {
-          background: #FFF9E6;
-          color: #D4AF37;
-          border: 1px solid rgba(212, 175, 55, 0.3);
-        }
-
-        .ua-claim-status-badge.claimed {
-          background: #E8F5E9;
-          color: #2E7D32;
-          border: 1px solid rgba(46, 125, 50, 0.3);
-        }
-
-        .ua-claim-info {
-          padding: 18px;
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .ua-claim-name {
-          font-size: 0.94rem;
-          font-weight: 750;
-          color: #051838;
-          line-height: 1.4;
-        }
-
-        .ua-claim-meta {
-          font-size: 0.78rem;
-          color: #828282;
-          font-weight: 500;
-        }
-
-        .ua-claim-value {
-          font-size: 0.9rem;
-          font-weight: 800;
-          color: #D4AF37;
-          margin-top: 4px;
-        }
-
-        .ua-claim-actions {
-          padding: 0 18px 18px 18px;
-        }
-
-        .ua-claim-btn-action {
-          width: 100%;
-          padding: 10px;
-          border-radius: 30px;
-          font-size: 0.8rem;
-          font-weight: 750;
-          cursor: pointer;
-          transition: all 0.25s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .claim-pending-btn {
-          background: linear-gradient(135deg, #D4AF37, #B38F2D);
-          color: #ffffff;
-          border: none;
-          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2);
-        }
-
-        .claim-pending-btn:hover {
-          background: linear-gradient(135deg, #B38F2D, #aa7c11);
-          transform: translateY(-1px);
-          box-shadow: 0 6px 14px rgba(212, 175, 55, 0.3);
-        }
-
-        .claim-done-btn {
-          background: #f7f6f3;
-          color: #888;
-          border: 1px solid #eae6df;
-          cursor: not-allowed;
-        }
-
-        .ua-claims-empty-state, .ua-reviews-empty-state {
-          text-align: center;
-          padding: 60px 20px;
-          background: #ffffff;
-          border-radius: 20px;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .empty-sparkles-icon, .empty-reviews-icon {
-          color: rgba(212, 175, 55, 0.2);
-          margin-bottom: 5px;
-        }
-
-        .ua-claims-empty-state p, .ua-reviews-empty-state p {
-          color: #666;
-          font-size: 0.94rem;
-          margin-bottom: 12px;
-          font-weight: 500;
-        }
-
-        /* Review tabs subfilter headers */
-        .ua-reviews-tabs {
-          display: flex;
-          gap: 8px;
-          border-bottom: 2px solid rgba(212, 175, 55, 0.12);
-          margin-bottom: 32px;
-          overflow-x: auto;
-        }
-
-        .ua-review-tab-btn {
-          background: none;
-          border: none;
-          padding: 12px 20px;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #666;
-          cursor: pointer;
-          position: relative;
-          transition: all 0.25s ease;
-          white-space: nowrap;
-        }
-
-        .ua-review-tab-btn:hover {
-          color: #D4AF37;
-        }
-
-        .ua-review-tab-btn.active {
-          color: #D4AF37;
-          font-weight: 750;
-        }
-
-        .ua-review-tab-btn.active::after {
-          content: '';
-          position: absolute;
-          bottom: -2px;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: #D4AF37;
-          border-radius: 3px;
-        }
-
-        .ua-reviews-product-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 24px;
-        }
-
-        .ua-review-pending-card {
-          background: #ffffff;
-          border: 1px solid rgba(212, 175, 55, 0.12);
-          border-radius: 18px;
-          padding: 18px;
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.01);
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .ua-review-pending-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(212, 175, 55, 0.3);
-          box-shadow: 0 10px 24px rgba(212, 175, 55, 0.08);
-        }
-
-        .ua-rp-img {
-          width: 72px;
-          height: 72px;
-          border-radius: 12px;
-          object-fit: cover;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-        }
-
-        .ua-rp-info {
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-        }
-
-        .ua-rp-name {
-          font-size: 0.88rem;
-          font-weight: 750;
-          color: #051838;
-          margin: 0 0 4px 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .ua-rp-meta {
-          font-size: 0.74rem;
-          color: #828282;
-          margin-bottom: 8px;
-          font-weight: 500;
-        }
-
-        .ua-rp-btn-review {
-          align-self: flex-start;
-          background: linear-gradient(135deg, #D4AF37, #B38F2D);
-          color: #ffffff;
-          border: none;
-          padding: 6px 14px;
-          border-radius: 30px;
-          font-size: 0.72rem;
-          font-weight: 750;
-          cursor: pointer;
-          transition: all 0.25s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          box-shadow: 0 2px 6px rgba(212, 175, 55, 0.2);
-        }
-
-        .ua-rp-btn-review:hover {
-          background: linear-gradient(135deg, #B38F2D, #aa7c11);
-          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-          transform: translateY(-1px);
-        }
-
-        .ua-submitted-reviews-list {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .ua-review-item-card {
-          background: #ffffff;
-          border: 1px solid rgba(212, 175, 55, 0.12);
-          border-radius: 20px;
-          padding: 24px;
-          box-shadow: 0 4px 15px rgba(5, 24, 56, 0.01);
-          transition: all 0.3s ease;
-        }
-
-        .ua-review-item-card:hover {
-          border-color: rgba(212, 175, 55, 0.25);
-          box-shadow: 0 8px 24px rgba(212, 175, 55, 0.05);
-        }
-
-        .ua-rev-header {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          margin-bottom: 16px;
-        }
-
-        .ua-rev-img {
-          width: 54px;
-          height: 54px;
-          border-radius: 10px;
-          object-fit: cover;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-        }
-
-        .ua-rev-meta {
-          flex-grow: 1;
-        }
-
-        .ua-rev-product-name {
-          font-size: 0.94rem;
-          font-weight: 750;
-          color: #051838;
-          margin: 0 0 4px 0;
-        }
-
-        .ua-rev-stars-row {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .ua-rev-date {
-          font-size: 0.76rem;
-          color: #828282;
-          margin-left: 8px;
-          font-weight: 500;
-        }
-
-        .ua-rev-status-badge {
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.68rem;
-          font-weight: 750;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .ua-rev-status-badge.pending {
-          background: #FFF9E6;
-          color: #D4AF37;
-          border: 1px solid rgba(212, 175, 55, 0.2);
-        }
-
-        .ua-rev-status-badge.approved {
-          background: #E8F5E9;
-          color: #2E7D32;
-          border: 1px solid rgba(46, 125, 50, 0.2);
-        }
-
-        .ua-rev-status-badge.rejected {
-          background: #FFEBEE;
-          color: #C62828;
-          border: 1px solid rgba(198, 40, 40, 0.2);
-        }
-
-        .ua-rev-comment {
-          font-size: 0.88rem;
-          color: #4f4f4f;
-          line-height: 1.5;
-          margin-bottom: 16px;
-          font-weight: 500;
-        }
-
-        .ua-verified-purchase-badge {
-          display: inline-block;
-          font-size: 0.7rem;
-          color: #2E7D32;
-          font-weight: 750;
-          background: #E8F5E9;
-          padding: 3px 8px;
-          border-radius: 4px;
-          margin-top: 6px;
-          border: 1px solid rgba(46, 125, 50, 0.2);
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .ua-rev-admin-reply {
-          background: #faf9f6;
-          border-left: 3px solid #D4AF37;
-          padding: 14px 18px;
-          border-radius: 0 12px 12px 0;
-          margin-top: 16px;
-          border: 1px solid rgba(212, 175, 55, 0.08);
-          border-left-width: 3.5px;
-        }
-
-        .ua-reply-title {
-          font-size: 0.74rem;
-          font-weight: 800;
-          color: #051838;
-          margin: 0 0 5px 0;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .ua-reply-text {
-          font-size: 0.84rem;
-          font-style: italic;
-          color: #555;
-          margin: 0;
-          font-weight: 500;
-        }
-
-        .ua-modal-header-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1.5px solid rgba(212, 175, 55, 0.12);
-          padding-bottom: 16px;
-          margin-bottom: 20px;
-        }
-
-        .ua-modal-close-btn {
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: #828282;
-          padding: 6px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-
-        .ua-modal-close-btn:hover {
-          background: #f7f6f3;
-          color: #051838;
-          transform: scale(1.05);
-        }
-
-        .ua-review-modal-product-summary {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          background: #faf9f6;
-          padding: 16px;
-          border-radius: 12px;
-          margin-bottom: 24px;
-          border: 1px solid rgba(212, 175, 55, 0.1);
-        }
-
-        .ua-rmps-img {
-          width: 60px;
-          height: 60px;
-          border-radius: 10px;
-          object-fit: cover;
-          border: 1px solid rgba(212, 175, 55, 0.12);
-        }
-
-        .ua-review-modal-product-summary h4 {
-          font-size: 0.94rem;
-          font-weight: 750;
-          color: #051838;
-          margin: 0 0 4px 0;
-        }
-
-        .ua-review-modal-product-summary p {
-          font-size: 0.76rem;
-          color: #828282;
-          margin: 0;
-          font-weight: 500;
-        }
-
-        .ua-star-rating-selector {
-          display: flex;
-          gap: 10px;
-          margin: 12px 0;
-        }
-
-        .ua-star-selector-btn {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 2px;
-          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .ua-star-selector-btn:hover {
-          transform: scale(1.25);
-        }
-
-        .ua-form-textarea {
-          width: 100%;
-          border: 1.5px solid #eae6df;
-          border-radius: 10px;
-          padding: 14px 18px;
-          font-family: inherit;
-          font-size: 0.9rem;
-          line-height: 1.5;
-          resize: vertical;
-          background: #fff;
-          transition: all 0.3s ease;
-        }
-
-        .ua-form-textarea:focus {
-          outline: none;
-          border-color: #D4AF37;
-          box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.12);
-        }
-
-        /* Order Details Modal Styles */
-        .order-details-modal-card {
-          max-width: 680px;
-          width: 95%;
-          max-height: 90vh;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .order-details-subtitle {
-          font-size: 0.82rem;
-          color: #828282;
-          margin-top: 4px;
-          margin-bottom: 0;
-          font-weight: 500;
-        }
-
-        .order-details-header-btn {
-          background: #faf9f6;
-          border: 1.5px solid #eae6df;
-          color: #051838;
-          border-radius: 30px;
-          padding: 8px 16px;
-          font-size: 0.78rem;
-          font-weight: 750;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .order-details-header-btn:hover {
-          background: linear-gradient(135deg, #D4AF37, #B38F2D);
-          border-color: transparent;
-          color: #ffffff;
-          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
-          transform: translateY(-1px);
-        }
-
-        .order-details-modal-body {
-          max-height: 60vh;
-          overflow-y: auto;
-          padding: 10px 5px;
-          margin-bottom: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .order-details-section-title {
-          font-size: 0.78rem;
-          font-weight: 800;
-          color: #051838;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          margin: 0 0 16px 0;
-          border-left: 3.5px solid #D4AF37;
-          padding-left: 10px;
-        }
-
-        .order-tracking-section {
-          background: #faf9f6;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          border-radius: 16px;
-          padding: 24px;
-          box-shadow: inset 0 0 10px rgba(0,0,0,0.01);
-        }
-
-        /* Timeline Tracker Styles */
-        .tracking-timeline {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: relative;
-          margin: 20px 0 10px 0;
-          padding: 0 16px;
-        }
-
-        .cancelled-timeline {
-          justify-content: center;
-        }
-
-        .timeline-step {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          position: relative;
-          z-index: 2;
-          width: 84px;
-          text-align: center;
-        }
-
-        .timeline-circle {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 13px;
-          font-weight: 750;
-          transition: all 0.35s ease;
-          border: 2.5px solid #eae6df;
-        }
-
-        .timeline-label {
-          font-size: 0.74rem;
-          font-weight: 700;
-          margin-top: 10px;
-          color: #888;
-          transition: color 0.3s ease;
-        }
-
-        .timeline-line {
-          flex-grow: 1;
-          height: 4px;
-          background: #eae6df;
-          margin: 0 -22px;
-          position: relative;
-          top: -23px;
-          z-index: 1;
-          transition: all 0.35s ease;
-          border-radius: 4px;
-        }
-
-        /* Timeline States */
-        .timeline-step.completed .timeline-circle {
-          background: #E8F5E9;
-          color: #2E7D32;
-          border-color: #2E7D32;
-          box-shadow: 0 3px 8px rgba(46, 125, 50, 0.15);
-        }
-
-        .timeline-step.completed .timeline-label {
-          color: #2E7D32;
-        }
-
-        .timeline-step.active .timeline-circle {
-          background: #051838;
-          color: #ffffff;
-          border-color: #051838;
-          box-shadow: 0 0 0 5px rgba(5, 24, 56, 0.15);
-          animation: timelinePulse 2s infinite;
-        }
-
-        .timeline-step.active .timeline-label {
-          color: #051838;
-          font-weight: 800;
-        }
-
-        .timeline-step.upcoming .timeline-circle {
-          background: #ffffff;
-          color: #828282;
-          border-color: #eae6df;
-        }
-
-        .timeline-line.completed {
-          background: #2E7D32;
-        }
-
-        .timeline-line.upcoming {
-          background: #eae6df;
-        }
-
-        .timeline-step.completed.cancelled .timeline-circle {
-          background: #FFEBEE;
-          color: #C62828;
-          border-color: #C62828;
-          box-shadow: 0 3px 8px rgba(198, 40, 40, 0.15);
-        }
-
-        .timeline-step.completed.cancelled .timeline-label {
-          color: #C62828;
-        }
-
-        @keyframes timelinePulse {
-          0% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0.45); }
-          70% { box-shadow: 0 0 0 8px rgba(5, 24, 56, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(5, 24, 56, 0); }
-        }
-
-        /* Address & Payment Info Grid */
-        .order-info-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 24px;
-        }
-
-        .order-info-block {
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          border-radius: 16px;
-          padding: 20px;
-          background: #ffffff;
-          box-shadow: 0 4px 10px rgba(5, 24, 56, 0.01);
-        }
-
-        .block-title-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          border-bottom: 1.5px solid rgba(212, 175, 55, 0.08);
-          padding-bottom: 10px;
-          margin-bottom: 14px;
-        }
-
-        .block-icon {
-          color: #D4AF37;
-        }
-
-        .block-title-row h5 {
-          margin: 0;
-          font-size: 0.78rem;
-          font-weight: 800;
-          color: #051838;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .block-content {
-          font-size: 0.86rem;
-          line-height: 1.5;
-          color: #4f4f4f;
-          font-weight: 500;
-        }
-
-        /* Items Details */
-        .order-items-details-list {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .order-details-item-row {
-          display: flex;
-          gap: 18px;
-          align-items: center;
-          padding: 16px;
-          border: 1px solid rgba(212, 175, 55, 0.12);
-          border-radius: 14px;
-          background: #ffffff;
-          transition: all 0.25s ease;
-        }
-
-        .order-details-item-row:hover {
-          background-color: rgba(212, 175, 55, 0.03);
-          border-color: rgba(212, 175, 55, 0.25);
-        }
-
-        .item-thumbnail {
-          width: 60px;
-          height: 60px;
-          border-radius: 10px;
-          object-fit: cover;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          box-shadow: 0 2px 6px rgba(5,24,56,0.03);
-        }
-
-        .item-details {
-          flex-grow: 1;
-        }
-
-        .item-name {
-          margin: 0 0 4px 0;
-          font-size: 0.88rem;
-          font-weight: 750;
-          color: #051838;
-        }
-
-        .item-variant {
-          font-size: 0.74rem;
-          color: #D4AF37;
-          font-weight: 700;
-          margin-bottom: 6px;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .item-price-qty {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.82rem;
-          color: #666;
-          font-weight: 500;
-        }
-
-        .item-row-total {
-          font-weight: 800;
-          color: #051838;
-        }
-
-        /* Billing Details Breakdown */
-        .billing-details-breakdown {
-          border-top: 1.5px solid rgba(212, 175, 55, 0.08);
-          padding-top: 18px;
-          margin-top: 6px;
-        }
-
-        .billing-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.86rem;
-          color: #555;
-          margin-bottom: 10px;
-          font-weight: 500;
-        }
-
-        .discount-row {
-          font-weight: 700;
-        }
-
-        .order-details-footer {
-          border-top: 1.5px solid rgba(212, 175, 55, 0.12);
-          padding-top: 18px;
-          margin-top: 0;
-        }
-` }} />
+      {/* Premium styles migrated to global index.css */}
     </div>
   );
 }

@@ -1,0 +1,908 @@
+﻿diff --git a/src/components/ShopView.jsx b/src/components/ShopView.jsx
+index 0c28fff..a493746 100644
+--- a/src/components/ShopView.jsx
++++ b/src/components/ShopView.jsx
+@@ -5,9 +5,10 @@ import { categoryConfigService } from '../services/categoryConfigService';
+ import { useToast } from './ToastProvider';
+ import Breadcrumbs from './ui/Breadcrumbs';
+ import Skeleton, { ProductCardSkeleton } from './ui/Skeleton';
+-import { Heart, Star, ShoppingCart, Search, Eye, X, Phone, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles, RotateCcw } from 'lucide-react';
++import { Heart, Star, ShoppingCart, Search, Eye, X, ChevronDown, ChevronUp, ArrowLeft, Filter, Crown, Menu, Shirt, BookOpen, Gift, Shield, Globe, Award, Sparkles, RotateCcw, ThumbsUp, ImageOff, ChevronLeft, ChevronRight } from 'lucide-react';
+ import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
+-import { COLOR_MAP, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
++import { COLOR_MAP, getColorHex, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
++import { loadPersistentFilters, savePersistentFilters, clearPersistentFilters } from '../utils/filterPersistence';
+ import bannerVideo from '../assets/banner_video.mp4';
+ import logoImg from '../assets/logo.png';
+ import pHairUpdated from '../assets/p_hair_updated.jpg';
+@@ -436,12 +437,11 @@ const renderCategorySelectors = (
+                       width: '32px',
+                       height: '32px',
+                       borderRadius: '50%',
+-                      backgroundColor: c.hex,
+                       border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                       outline: modalColor === c.name ? '2px solid var(--primary-rose, #1d4ed8)' : 'none',
+                       cursor: 'pointer',
+                       opacity: isColAvail ? 1 : 0.45,
+-                      background: isColAvail ? undefined : `linear-gradient(45deg, ${c.hex} 48%, #94a3b8 49%, #94a3b8 51%, ${c.hex} 52%)`,
++                      background: isColAvail ? c.hex : `linear-gradient(45deg, ${c.hex} 48%, #94a3b8 49%, #94a3b8 51%, ${c.hex} 52%)`,
+                       boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                       transition: 'all 0.2s ease'
+                     }}
+@@ -580,7 +580,7 @@ const renderCategorySelectors = (
+                     width: '32px',
+                     height: '32px',
+                     borderRadius: '50%',
+-                    backgroundColor: c.hex,
++                    background: c.hex,
+                     border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                     outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                     cursor: 'pointer',
+@@ -943,35 +943,6 @@ const renderCategorySpecs = (prod) => {
+   return null;
+ };
+ 
+-const getColorHex = (name) => {
+-  if (!name) return '#cccccc';
+-  const colors = {
+-    'white': '#ffffff',
+-    'black': '#111111',
+-    'pink': '#ff80ab',
+-    'red': '#e53935',
+-    'yellow': '#fdd835',
+-    'green': '#43a047',
+-    'purple': '#8e24aa',
+-    'blue': 'hsla(225, 75%, 45%, 1)',
+-    'darkred': '#b71c1c',
+-    'crimson red': '#b32142',
+-    'champagne gold': '#D4AF37',
+-    'midnight black': '#111111',
+-    'lavender': '#ce93d8',
+-    'soft pink': '#f8bbd0',
+-    'plum': '#4a148c',
+-    'sage': '#81c784',
+-    'grey': '#9e9e9e',
+-    'peach': '#ffcc80',
+-    'cream': '#fff9c4',
+-    'aqua': '#80deea',
+-    'navy': '#051838',
+-    'olive': '#2e7d32'
+-  };
+-  const key = name.toLowerCase().trim();
+-  return colors[key] || name.trim() || '#cccccc';
+-};
+ 
+ const getSelectedVariant = (prod, color, size) => {
+   if (!prod || !prod.variants || prod.variants.length === 0) return null;
+@@ -1306,6 +1277,9 @@ export default function ShopView({ authUser, setAuthUser }) {
+   const [showMoreColors, setShowMoreColors] = useState(false);
+   const [activeDetailTab, setActiveDetailTab] = useState('description');
+   const [reviewsList, setReviewsList] = useState([]);
++  const [reviewSortOption, setReviewSortOption] = useState('Newest');
++  const [helpfulLoadingIds, setHelpfulLoadingIds] = useState(new Set());
++  const [reviewLightbox, setReviewLightbox] = useState(null); // { images: [], index: 0 }
+ 
+   // Reset page when filters change
+   useEffect(() => {
+@@ -1683,70 +1657,127 @@ export default function ShopView({ authUser, setAuthUser }) {
+ 
+       setActiveTab(cat);
+       setActiveSubTab(sub);
++      setFullDetailProduct(null);
++
++      // Always sync search query directly from URL param, never from sessionStorage
+       if (searchParam) {
+         setSearchQuery(decodeURIComponent(searchParam));
+       } else {
+         setSearchQuery('');
+       }
+ 
+-      // Parse query params for dynamic filters
+-      const dynamicFilters = {};
+-      const ignoredParams = ['category', 'subcategory', 'search', 'catalogue', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories'];
+-      params.forEach((value, key) => {
+-        if (!ignoredParams.includes(key.toLowerCase())) {
+-          dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+-        }
+-      });
+-      setActiveFilters(dynamicFilters);
++      // Check if URL contains any filter parameters
++      const hasUrlFilters = Array.from(params.keys()).some(k => 
++        ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories', 'offers', 'newarrivals', 'bestsellers'].includes(k.toLowerCase()) ||
++        !['category', 'subcategory'].includes(k.toLowerCase())
++      );
+ 
+-      const priceVal = params.get('price');
+-      if (priceVal) {
+-        setPriceRange(Number(priceVal));
+-      } else {
+-        setPriceRange(15000);
++      let loaded = null;
++      if (!hasUrlFilters) {
++        loaded = loadPersistentFilters();
+       }
+ 
+-      const instockVal = params.get('instock');
+-      if (instockVal === 'false') {
+-        setShowInStock(false);
++      if (loaded) {
++        if (loaded.priceRange !== undefined) setPriceRange(loaded.priceRange);
++        if (loaded.showInStock !== undefined) setShowInStock(loaded.showInStock);
++        if (loaded.showOutOfStock !== undefined) setShowOutOfStock(loaded.showOutOfStock);
++        if (loaded.selectedRatings !== undefined) setSelectedRatings(loaded.selectedRatings);
++        if (loaded.selectedDiscounts !== undefined) setSelectedDiscounts(loaded.selectedDiscounts);
++        if (loaded.selectedSubcategories !== undefined) setSelectedSubcategories(loaded.selectedSubcategories);
++        if (loaded.filterNewArrivals !== undefined) setFilterNewArrivals(loaded.filterNewArrivals);
++        if (loaded.filterBestSellers !== undefined) setFilterBestSellers(loaded.filterBestSellers);
++        if (loaded.filterOffers !== undefined) setFilterOffers(loaded.filterOffers);
++        if (loaded.activeFilters !== undefined) setActiveFilters(loaded.activeFilters);
++        if (loaded.catalogue !== undefined) setCatalogue(loaded.catalogue);
++        
++        if (loaded.filterNewArrivals || loaded.filterBestSellers || loaded.filterOffers) {
++          setIsNewArrivalsOpen(true);
++        }
+       } else {
+-        setShowInStock(true);
+-      }
++        // Parse query params for dynamic filters
++        const dynamicFilters = {};
++        const ignoredParams = ['category', 'subcategory', 'search', 'catalogue', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories', 'offers', 'newarrivals', 'bestsellers'];
++        params.forEach((value, key) => {
++          if (!ignoredParams.includes(key.toLowerCase())) {
++            dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
++          }
++        });
++        setActiveFilters(dynamicFilters);
+ 
+-      const outofstockVal = params.get('outofstock');
+-      if (outofstockVal === 'false') {
+-        setShowOutOfStock(false);
+-      } else {
+-        setShowOutOfStock(true);
+-      }
++        const priceVal = params.get('price');
++        if (priceVal) {
++          setPriceRange(Number(priceVal));
++        } else {
++          setPriceRange(15000);
++        }
+ 
+-      const ratingVal = params.get('rating');
+-      if (ratingVal) {
+-        setSelectedRatings(ratingVal.split(',').map(Number));
+-      } else {
+-        setSelectedRatings([]);
+-      }
++        const instockVal = params.get('instock');
++        if (instockVal === 'false') {
++          setShowInStock(false);
++        } else {
++          setShowInStock(true);
++        }
+ 
+-      const discountVal = params.get('discount');
+-      if (discountVal) {
+-        setSelectedDiscounts(discountVal.split(',').map(Number));
+-      } else {
+-        setSelectedDiscounts([]);
+-      }
++        const outofstockVal = params.get('outofstock');
++        if (outofstockVal === 'false') {
++          setShowOutOfStock(false);
++        } else {
++          setShowOutOfStock(true);
++        }
+ 
+-      const catalogueVal = params.get('catalogue');
+-      if (catalogueVal) {
+-        setCatalogue(catalogueVal);
+-      } else {
+-        setCatalogue('A');
+-      }
++        const ratingVal = params.get('rating');
++        if (ratingVal) {
++          setSelectedRatings(ratingVal.split(',').map(Number));
++        } else {
++          setSelectedRatings([]);
++        }
+ 
+-      const subcategoriesVal = params.get('subcategories');
+-      if (subcategoriesVal) {
+-        setSelectedSubcategories(subcategoriesVal.split(',').map(v => decodeURIComponent(v)));
+-      } else {
+-        setSelectedSubcategories([]);
++        const discountVal = params.get('discount');
++        if (discountVal) {
++          setSelectedDiscounts(discountVal.split(',').map(Number));
++        } else {
++          setSelectedDiscounts([]);
++        }
++
++        const catalogueVal = params.get('catalogue');
++        if (catalogueVal) {
++          setCatalogue(catalogueVal);
++        } else {
++          setCatalogue('A');
++        }
++
++        const subcategoriesVal = params.get('subcategories');
++        if (subcategoriesVal) {
++          setSelectedSubcategories(subcategoriesVal.split(',').map(v => decodeURIComponent(v)));
++        } else {
++          setSelectedSubcategories([]);
++        }
++
++        const offersVal = params.get('offers');
++        if (offersVal === 'true') {
++          setFilterOffers(true);
++          setIsNewArrivalsOpen(true);
++        } else {
++          setFilterOffers(false);
++        }
++
++        const newArrivalsVal = params.get('newarrivals');
++        if (newArrivalsVal === 'true') {
++          setFilterNewArrivals(true);
++          setIsNewArrivalsOpen(true);
++        } else {
++          setFilterNewArrivals(false);
++        }
++
++        const bestSellersVal = params.get('bestsellers');
++        if (bestSellersVal === 'true') {
++          setFilterBestSellers(true);
++          setIsBestSellersOpen(true);
++        } else {
++          setFilterBestSellers(false);
++        }
+       }
++
+       setIsUrlParsed(true);
+     };
+ 
+@@ -1767,6 +1798,9 @@ export default function ShopView({ authUser, setAuthUser }) {
+     if (selectedDiscounts.length > 0) params.set('discount', selectedDiscounts.join(','));
+     if (catalogue !== 'A') params.set('catalogue', catalogue);
+     if (selectedSubcategories.length > 0) params.set('subcategories', selectedSubcategories.map(v => encodeURIComponent(v)).join(','));
++    if (filterOffers) params.set('offers', 'true');
++    if (filterNewArrivals) params.set('newarrivals', 'true');
++    if (filterBestSellers) params.set('bestsellers', 'true');
+     
+     Object.entries(activeFilters).forEach(([key, values]) => {
+       if (values && values.length > 0) {
+@@ -1781,10 +1815,26 @@ export default function ShopView({ authUser, setAuthUser }) {
+     const queryString = params.toString();
+     const newUrl = `${path}${queryString ? '?' + queryString : ''}`;
+     
++    // Save to persistent filters storage
++    savePersistentFilters({
++      searchQuery: '',
++      priceRange,
++      showInStock,
++      showOutOfStock,
++      selectedRatings,
++      selectedDiscounts,
++      selectedSubcategories,
++      filterNewArrivals,
++      filterBestSellers,
++      filterOffers,
++      activeFilters,
++      catalogue
++    });
++
+     if (window.location.pathname + window.location.search !== newUrl) {
+       window.history.pushState(null, '', newUrl);
+     }
+-  }, [isUrlParsed, activeTab, activeSubTab, searchQuery, priceRange, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, catalogue, activeFilters, selectedSubcategories]);
++  }, [isUrlParsed, activeTab, activeSubTab, searchQuery, priceRange, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, catalogue, activeFilters, selectedSubcategories, filterOffers, filterNewArrivals, filterBestSellers]);
+ 
+ 
+   const { addToast } = useToast();
+@@ -1867,57 +1917,67 @@ export default function ShopView({ authUser, setAuthUser }) {
+     }
+   };
+ 
++  const handleToggleHelpful = async (reviewId) => {
++    const token = localStorage.getItem('mithira_auth_token');
++    if (!token) {
++      addToast({ message: 'Please log in to vote on reviews.', type: 'info' });
++      return;
++    }
++    if (helpfulLoadingIds.has(reviewId)) return; // prevent double-click
++    // Optimistic update
++    const prevReviews = reviewsList;
++    const authUser = (() => { try { return JSON.parse(localStorage.getItem('mithira_auth_user') || 'null'); } catch { return null; } })();
++    const uid = authUser?.id || authUser?._id || null;
++    setReviewsList(prev => prev.map(r => {
++      if (r.id !== reviewId && r._id !== reviewId && String(r.id) !== String(reviewId) && String(r._id) !== String(reviewId)) return r;
++      const alreadyVoted = uid && r.helpfulUsers && r.helpfulUsers.includes(uid);
++      return {
++        ...r,
++        helpfulCount: alreadyVoted ? Math.max(0, (r.helpfulCount || 0) - 1) : (r.helpfulCount || 0) + 1,
++        helpfulUsers: alreadyVoted
++          ? (r.helpfulUsers || []).filter(u => u !== uid)
++          : [...(r.helpfulUsers || []), uid]
++      };
++    }));
++    setHelpfulLoadingIds(prev => new Set([...prev, reviewId]));
++    try {
++      const res = await apiService.toggleHelpful(reviewId);
++      if (res && res.success) {
++        // Sync with real backend values
++        const updatedReviews = await apiService.getReviews();
++        if (updatedReviews) {
++          setReviewsList(updatedReviews);
++          const channel = new BroadcastChannel('mithirashoppy_reviews');
++          channel.postMessage({ type: 'reviews_updated' });
++          channel.close();
++          window.dispatchEvent(new CustomEvent('mithira_reviews_updated'));
++        }
++      } else {
++        setReviewsList(prevReviews); // rollback
++        addToast({ message: 'Failed to update helpful status.', type: 'error' });
++      }
++    } catch (err) {
++      console.error(err);
++      setReviewsList(prevReviews); // rollback on error
++      addToast({ message: 'Failed to update helpful status.', type: 'error' });
++    } finally {
++      setHelpfulLoadingIds(prev => { const next = new Set(prev); next.delete(reviewId); return next; });
++    }
++  };
++
++
+ 
+   const handleBackToHome = () => {
+     window.history.pushState({}, '', '/#home');
+     window.dispatchEvent(new Event('popstate'));
+   };
+ 
+-  const allProductsStatic = [
+-    {
+-      id: 'p_women_kurti',
+-      title: "Women Kurti",
+-      category: "CLOTHING",
+-      subCategory: "WOMEN",
+-      price: 899,
+-      rating: 5,
+-      reviews: 12,
+-      image: kids_tq_109,
+-      badge: "MITHRA WOMEN",
+-      modelNo: "TQ-109",
+-      size: "S, M, L, XL",
+-      moq: "Per size 3 pcs",
+-      colours: "5 colours",
+-      fabric: "COTTON",
+-      description: "Relaxed fit women kurti."
+-    }
+-  ].map((p, idx) => {
+-    let finalImage = p.image;
+-    if (p.category === 'CLOTHING') {
+-      const isKids = p.subCategory === 'KIDS' || p.title.toLowerCase().includes('kids') || p.title.toLowerCase().includes('girl') || p.title.toLowerCase().includes('boy');
+-      if (isKids) {
+-        finalImage = (idx % 2 === 0) ? clothingUser1 : clothingUser5;
+-      } else {
+-        const pool = [clothingUser2, clothingUser3, clothingUser4];
+-        finalImage = pool[idx % pool.length];
+-      }
+-    }
+-    if (p.modelNo) {
+-      return {
+-        ...p,
+-        image: finalImage,
+-        images: getProductImages(p.modelNo, finalImage)
+-      };
+-    }
+-    return {
+-      ...p,
+-      image: finalImage
+-    };
+-  });
+-
+-  const [allProducts, setAllProducts] = useState(allProductsStatic);
++  const allProductsStatic = [];
++  const [allProducts, setAllProducts] = useState([]);
++  const [loading, setLoading] = useState(true);
+ 
+   useEffect(() => {
++    setLoading(true);
+     apiService.getProducts().then((data) => {
+       if (data && data.length > 0) {
+         const mapped = data.map((p, idx) => {
+@@ -2019,15 +2079,60 @@ export default function ShopView({ authUser, setAuthUser }) {
+             setQuickViewProduct(found);
+           }
+         }
++      } else {
++        setAllProducts([]);
+       }
++    })
++    .catch((err) => {
++      console.error('Error fetching products:', err);
++      setAllProducts([]);
++    })
++    .finally(() => {
++      setLoading(false);
+     });
+   }, []);
+ 
+   useEffect(() => {
++    // Initial fetch of reviews
+     apiService.getReviews().then((data) => {
+       if (data) setReviewsList(data);
+     });
+-  }, []);
++
++    const channel = new BroadcastChannel('mithirashoppy_reviews');
++
++    const refreshData = () => {
++      apiService.getReviews().then((data) => {
++        if (data) setReviewsList(data);
++      });
++      apiService.getProducts().then((data) => {
++        if (data) {
++          setAllProducts(data);
++          if (fullDetailProduct) {
++            const fresh = data.find(p => p.id === fullDetailProduct.id);
++            if (fresh) setFullDetailProduct(fresh);
++          }
++        }
++      });
++    };
++
++    channel.onmessage = (event) => {
++      if (event.data && event.data.type === 'reviews_updated') {
++        refreshData();
++      }
++    };
++
++    const interval = setInterval(refreshData, 4000);
++
++    // Also listen to local window events for instant same-tab communication
++    const handleLocalUpdate = () => refreshData();
++    window.addEventListener('mithira_reviews_updated', handleLocalUpdate);
++
++    return () => {
++      channel.close();
++      clearInterval(interval);
++      window.removeEventListener('mithira_reviews_updated', handleLocalUpdate);
++    };
++  }, [fullDetailProduct]);
+ 
+   useEffect(() => {
+     if (fullDetailProduct) {
+@@ -2246,7 +2351,7 @@ export default function ShopView({ authUser, setAuthUser }) {
+     filteredProducts = filteredProducts.filter(p => {
+       const isNew = p.isNewArrival || p.badge === 'NEW' || p.badge === 'NEW ARRIVAL' || String(p.id).startsWith('n');
+       const isBest = p.badge === 'BEST SELLER' || p.sales > 20 || String(p.id).startsWith('t');
+-      const isOffer = p.isOffer || p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL') || p.discount > 0;
++      const isOffer = p.isOffer || p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL') || getProductDiscount(p) > 0;
+       
+       if (filterNewArrivals && filterBestSellers && filterOffers) return isNew || isBest || isOffer;
+       if (filterNewArrivals && filterBestSellers) return isNew || isBest;
+@@ -2443,7 +2548,7 @@ export default function ShopView({ authUser, setAuthUser }) {
+               <span>Back to Shop</span>
+             </button>
+             <span className="breadcrumb-divider">/</span>
+-            <span className="breadcrumb-category" style={{ cursor: 'pointer' }} onClick={() => { setActiveTab(fullDetailProduct.category.toUpperCase()); setFullDetailProduct(null); }}>
++            <span className="breadcrumb-category" style={{ cursor: 'pointer' }} onClick={() => { setActiveTab(fullDetailProduct.category.toUpperCase()); setSearchQuery(''); setFullDetailProduct(null); }}>
+               {fullDetailProduct.category}
+             </span>
+             <span className="breadcrumb-divider">/</span>
+@@ -2564,9 +2669,11 @@ export default function ShopView({ authUser, setAuthUser }) {
+                   )}
+                   
+                   {/* Floating badge */}
+-                  <div className="product-detail-badge-pill">
+-                    {fullDetailProduct.badge || "Premium Collection"}
+-                  </div>
++                  {fullDetailProduct.badge && (
++                    <div className="product-detail-badge-pill">
++                      {fullDetailProduct.badge}
++                    </div>
++                  )}
+                 </div>
+               </div>
+             </div>
+@@ -2579,11 +2686,24 @@ export default function ShopView({ authUser, setAuthUser }) {
+               <h1 className="product-detail-title">{fullDetailProduct.title}</h1>
+               <p className="product-detail-tagline">{fullDetailProduct.attributes?.shortDescription || fullDetailProduct.shortDescription || "Bloom with elegance. Designed exclusively for your premium collection."}</p>
+ 
+-              {/* Rating and reviews */}
+-              <div className="product-detail-rating-row">
+-                <span className="product-detail-rating-stars">Γÿà {fullDetailProduct.rating || "4.8"}</span>
+-                <span className="product-detail-reviews">({fullDetailProduct.reviews || "120"} reviews)</span>
+-              </div>
++              {/* Rating and reviews ΓÇö computed dynamically from Approved reviews */}
++              {(() => {
++                const approvedRevs = reviewsList.filter(r =>
++                  (r.productName === fullDetailProduct.title || r.productName === fullDetailProduct.name) &&
++                  r.status === 'Approved'
++                );
++                const dynamicCount = approvedRevs.length;
++                const dynamicRating = dynamicCount > 0
++                  ? (approvedRevs.reduce((s, r) => s + (r.rating || 0), 0) / dynamicCount).toFixed(1)
++                  : (fullDetailProduct.rating || '4.8');
++                const displayCount = dynamicCount > 0 ? dynamicCount : (fullDetailProduct.reviews || 0);
++                return (
++                  <div className="product-detail-rating-row">
++                    <span className="product-detail-rating-stars">Γÿà {dynamicRating}</span>
++                    <span className="product-detail-reviews">({displayCount} {displayCount === 1 ? 'review' : 'reviews'})</span>
++                  </div>
++                );
++              })()}
+ 
+               {/* Price Row */}
+               <div className="product-detail-price-row">
+@@ -2703,19 +2823,7 @@ export default function ShopView({ authUser, setAuthUser }) {
+                 </div>
+               </div>
+ 
+-              {/* WhatsApp Inquiry */}
+-              {fullDetailProduct.modelNo && (
+-                <a 
+-                  href={`https://wa.me/916384438557?text=Hi, I am interested in TIKQ Kidswear product: ${fullDetailProduct.title} (Model: ${fullDetailProduct.modelNo}). Please provide details.`}
+-                  target="_blank"
+-                  rel="noopener noreferrer"
+-                  className="product-detail-whatsapp-btn"
+-                  style={{ alignSelf: 'center', width: 'fit-content', padding: '10px 24px', fontSize: '0.85rem' }}
+-                >
+-                  <Phone size={14} />
+-                  <span>Inquire via WhatsApp</span>
+-                </a>
+-              )}
++
+ 
+               {/* Horizontal Tabs for Product Details */}
+               <div className="detail-tabs-container">
+@@ -2814,41 +2922,261 @@ export default function ShopView({ authUser, setAuthUser }) {
+ 
+                   {activeDetailTab === 'reviews' && (
+                     <div className="detail-tab-content reviews-panel">
++
++                      {/* Image Lightbox Overlay */}
++                      {reviewLightbox && (
++                        <div
++                          style={{
++                            position: 'fixed', inset: 0, zIndex: 9999,
++                            background: 'rgba(0,0,0,0.92)',
++                            display: 'flex', alignItems: 'center', justifyContent: 'center',
++                            flexDirection: 'column', gap: '12px'
++                          }}
++                          onClick={() => setReviewLightbox(null)}
++                        >
++                          <button
++                            onClick={() => setReviewLightbox(null)}
++                            style={{
++                              position: 'absolute', top: '18px', right: '24px',
++                              background: 'rgba(255,255,255,0.12)', border: 'none',
++                              color: '#fff', borderRadius: '50%', width: '40px', height: '40px',
++                              cursor: 'pointer', display: 'flex',
++                              alignItems: 'center', justifyContent: 'center', zIndex: 10000
++                            }}
++                          ><X size={20} /></button>
++                          <div
++                            style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
++                            onClick={e => e.stopPropagation()}
++                          >
++                            {reviewLightbox.images.length > 1 && (
++                              <button
++                                onClick={() => setReviewLightbox(prev => ({ ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }))}
++                                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
++                              ><ChevronLeft size={22} /></button>
++                            )}
++                            <img
++                              src={reviewLightbox.images[reviewLightbox.index]}
++                              alt={`Review image ${reviewLightbox.index + 1}`}
++                              style={{ maxHeight: '80vh', maxWidth: '80vw', borderRadius: '10px', objectFit: 'contain', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
++                            />
++                            {reviewLightbox.images.length > 1 && (
++                              <button
++                                onClick={() => setReviewLightbox(prev => ({ ...prev, index: (prev.index + 1) % prev.images.length }))}
++                                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
++                              ><ChevronRight size={22} /></button>
++                            )}
++                          </div>
++                          {reviewLightbox.images.length > 1 && (
++                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
++                              {reviewLightbox.images.map((_, di) => (
++                                <button key={di} onClick={e => { e.stopPropagation(); setReviewLightbox(prev => ({ ...prev, index: di })); }} style={{ width: '8px', height: '8px', borderRadius: '50%', border: 'none', background: di === reviewLightbox.index ? '#D4AF37' : 'rgba(255,255,255,0.35)', cursor: 'pointer', padding: 0 }} />
++                              ))}
++                            </div>
++                          )}
++                          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginTop: '4px' }}>{reviewLightbox.index + 1} / {reviewLightbox.images.length}</p>
++                        </div>
++                      )}
++
+                       {(() => {
+-                        const productReviews = reviewsList.filter(rev => 
+-                          rev.productName === fullDetailProduct.title || 
+-                          rev.productName === fullDetailProduct.name
++                        const productReviews = reviewsList.filter(rev =>
++                          (rev.productName === fullDetailProduct.title || rev.productName === fullDetailProduct.name) &&
++                          rev.status === 'Approved'
+                         );
+-                        if (productReviews.length === 0) {
+-                          return <p className="no-reviews-text">No reviews yet. Be the first to review this product!</p>;
++
++                        const totalCount = productReviews.length;
++                        const avgRating = totalCount > 0
++                          ? (productReviews.reduce((s, r) => s + (r.rating || 0), 0) / totalCount)
++                          : 0;
++                        const starCounts = [5, 4, 3, 2, 1].map(star => ({
++                          star,
++                          count: productReviews.filter(r => r.rating === star).length
++                        }));
++
++                        const sortedReviews = [...productReviews].sort((a, b) => {
++                          if (reviewSortOption === 'Most Helpful') return (b.helpfulCount || 0) - (a.helpfulCount || 0);
++                          if (reviewSortOption === 'Highest Rating') return b.rating - a.rating;
++                          if (reviewSortOption === 'Lowest Rating') return a.rating - b.rating;
++                          return (b.id || 0) - (a.id || 0);
++                        });
++
++                        const meUser = (() => { try { return JSON.parse(localStorage.getItem('mithira_auth_user') || 'null'); } catch { return null; } })();
++                        const meId = meUser?.id || meUser?._id || null;
++
++                        const avatarColor = (name) => {
++                          const colors = ['#1E3A5F','#2D5016','#6B2D3E','#1A4A5C','#4A2D6B','#5C3A1A','#2D4A1A'];
++                          let h = 0; for (let c of (name || 'U')) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
++                          return colors[Math.abs(h) % colors.length];
++                        };
++
++                        if (totalCount === 0) {
++                          return (
++                            <div style={{ textAlign: 'center', padding: '48px 24px' }}>
++                              <Star size={40} stroke="#c5a880" fill="none" style={{ marginBottom: '14px', opacity: 0.4 }} />
++                              <p style={{ color: '#c5a880', fontSize: '1rem', fontWeight: 600, marginBottom: '6px' }}>No approved reviews yet</p>
++                              <p style={{ color: 'rgba(197,168,128,0.6)', fontSize: '0.875rem' }}>Be the first to share your experience with this product!</p>
++                            </div>
++                          );
+                         }
++
+                         return (
+-                          <div className="reviews-accordion-list">
+-                            {productReviews.map(rev => (
+-                              <div key={rev.id} className="review-accordion-card">
+-                                <div className="review-card-top">
+-                                  <span className="review-cust-name">{rev.customerName}</span>
+-                                  <span className="review-date">{rev.date}</span>
+-                                </div>
+-                                <div className="review-rating-stars">
+-                                  {Array.from({ length: 5 }, (_, i) => (
+-                                    <Star 
+-                                      key={i} 
+-                                      size={12} 
+-                                      fill={i < rev.rating ? "#FFCC00" : "none"} 
+-                                      stroke={i < rev.rating ? "#FFCC00" : "#ccc"} 
++                          <div>
++                            <div style={{
++                              display: 'flex', gap: '32px', alignItems: 'flex-start',
++                              background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(30,58,95,0.12) 100%)',
++                              border: '1px solid rgba(212,175,55,0.18)',
++                              borderRadius: '14px', padding: '24px 28px', marginBottom: '28px',
++                              flexWrap: 'wrap'
++                            }}>
++                              <div style={{ textAlign: 'center', minWidth: '110px' }}>
++                                <div style={{ fontSize: '3.2rem', fontWeight: 800, color: '#D4AF37', lineHeight: 1 }}>{avgRating.toFixed(1)}</div>
++                                <div style={{ display: 'flex', justifyContent: 'center', gap: '3px', margin: '8px 0 4px' }}>
++                                  {[1,2,3,4,5].map(s => (
++                                    <Star key={s} size={16}
++                                      fill={s <= Math.round(avgRating) ? '#D4AF37' : 'none'}
++                                      stroke={s <= Math.round(avgRating) ? '#D4AF37' : 'rgba(212,175,55,0.35)'}
+                                     />
+                                   ))}
+                                 </div>
+-                                <p className="review-comment-text">{rev.comment}</p>
+-                                {rev.reply && (
+-                                  <div className="review-admin-reply">
+-                                    <span className="reply-badge">Seller Reply:</span>
+-                                    <p className="reply-text">{rev.reply}</p>
+-                                  </div>
+-                                )}
++                                <div style={{ fontSize: '0.78rem', color: 'rgba(197,168,128,0.7)', marginTop: '2px' }}>{totalCount} {totalCount === 1 ? 'review' : 'reviews'}</div>
+                               </div>
+-                            ))}
++                              <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '7px', justifyContent: 'center' }}>
++                                {starCounts.map(({ star, count }) => {
++                                  const pct = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
++                                  return (
++                                    <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
++                                      <span style={{ fontSize: '0.78rem', color: '#D4AF37', minWidth: '18px', textAlign: 'right', fontWeight: 600 }}>{star}</span>
++                                      <Star size={12} fill="#D4AF37" stroke="#D4AF37" />
++                                      <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '6px', overflow: 'hidden' }}>
++                                        <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #D4AF37, #F0C84A)', borderRadius: '6px', transition: 'width 0.5s ease' }} />
++                                      </div>
++                                      <span style={{ fontSize: '0.73rem', color: 'rgba(197,168,128,0.65)', minWidth: '32px' }}>{count > 0 ? `${count}` : "ΓÇö"}</span>
++                                    </div>
++                                  );
++                                })}
++                              </div>
++                            </div>
++
++                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
++                              <span style={{ fontSize: '0.85rem', color: 'rgba(197,168,128,0.7)' }}>
++                                Showing <strong style={{ color: '#D4AF37' }}>{totalCount}</strong> verified {totalCount === 1 ? 'review' : 'reviews'}
++                              </span>
++                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
++                                {['Newest', 'Most Helpful', 'Highest Rating', 'Lowest Rating'].map(opt => (
++                                  <button
++                                    key={opt}
++                                    onClick={() => setReviewSortOption(opt)}
++                                    style={{
++                                      padding: '5px 12px', borderRadius: '20px', border: '1px solid',
++                                      borderColor: reviewSortOption === opt ? '#D4AF37' : 'rgba(197,168,128,0.3)',
++                                      background: reviewSortOption === opt ? 'rgba(212,175,55,0.15)' : 'transparent',
++                                      color: reviewSortOption === opt ? '#D4AF37' : 'rgba(197,168,128,0.6)',
++                                      fontSize: '0.75rem', fontWeight: reviewSortOption === opt ? 700 : 400,
++                                      cursor: 'pointer', transition: 'all 0.2s ease'
++                                    }}
++                                  >{opt}</button>
++                                ))}
++                              </div>
++                            </div>
++
++                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
++                              {sortedReviews.map(rev => {
++                                const name = rev.customerName || 'Customer';
++                                const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
++                                const bgColor = avatarColor(name);
++                                const isVoted = meId && rev.helpfulUsers && rev.helpfulUsers.includes(meId);
++                                const isLoading = helpfulLoadingIds.has(rev.id);
++                                const hasImages = rev.images && rev.images.length > 0;
++
++                                return (
++                                  <div key={rev.id || rev._id} style={{
++                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(30,58,95,0.06) 100%)',
++                                    border: '1px solid rgba(212,175,55,0.12)',
++                                    borderRadius: '14px', padding: '20px 22px',
++                                    transition: 'border-color 0.2s ease'
++                                  }}>
++                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px', gap: '12px' }}>
++                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
++                                        <div style={{
++                                          width: '42px', height: '42px', borderRadius: '50%',
++                                          background: bgColor, border: '2px solid rgba(212,175,55,0.3)',
++                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
++                                          fontSize: '0.85rem', fontWeight: 700, color: '#D4AF37',
++                                          flexShrink: 0, letterSpacing: '0.5px'
++                                        }}>{initials}</div>
++                                        <div>
++                                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#e8d5b0' }}>{name}</div>
++                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
++                                            <div style={{ display: 'flex', gap: '2px' }}>
++                                              {[1,2,3,4,5].map(s => (
++                                                <Star key={s} size={14}
++                                                  fill={s <= rev.rating ? '#D4AF37' : 'none'}
++                                                  stroke={s <= rev.rating ? '#D4AF37' : 'rgba(212,175,55,0.3)'}
++                                                />
++                                              ))}
++                                            </div>
++                                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#D4AF37' }}>{rev.rating}/5</span>
++                                          </div>
++                                        </div>
++                                      </div>
++                                      <span style={{ fontSize: '0.78rem', color: 'rgba(197,168,128,0.55)', whiteSpace: 'nowrap', marginTop: '4px' }}>{rev.date}</span>
++                                    </div>
++                                    <p style={{ fontSize: '0.9rem', lineHeight: 1.65, color: 'rgba(232,213,176,0.85)', margin: '0 0 14px 0' }}>{rev.comment}</p>
++                                    {hasImages && (
++                                      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
++                                        {rev.images.map((imgUrl, idx) => (
++                                          <div
++                                            key={idx}
++                                            onClick={() => setReviewLightbox({ images: rev.images, index: idx })}
++                                            style={{
++                                              width: '72px', height: '72px', borderRadius: '8px', overflow: 'hidden',
++                                              border: '1.5px solid rgba(212,175,55,0.25)', cursor: 'pointer',
++                                              background: 'rgba(30,58,95,0.2)', flexShrink: 0,
++                                              transition: 'transform 0.18s ease, border-color 0.18s ease'
++                                            }}
++                                            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.borderColor = '#D4AF37'; }}
++                                            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; }}
++                                          >
++                                            <img
++                                              src={imgUrl}
++                                              alt={`Review image ${idx + 1}`}
++                                              loading="lazy"
++                                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
++                                              onError={e => {
++                                                e.currentTarget.style.display = 'none';
++                                                e.currentTarget.parentElement.style.background = 'rgba(30,58,95,0.35)';
++                                              }}
++                                            />
++                                          </div>
++                                        ))}
++                                      </div>
++                                    )}
++                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '4px' }}>
++                                      <span style={{ fontSize: '0.78rem', color: 'rgba(197,168,128,0.5)' }}>Helpful?</span>
++                                      <button
++                                        onClick={() => handleToggleHelpful(rev.id !== undefined ? rev.id : rev._id)}
++                                        disabled={isLoading}
++                                        style={{
++                                          display: 'flex', alignItems: 'center', gap: '6px',
++                                          padding: '5px 14px', borderRadius: '20px', border: '1.5px solid',
++                                          borderColor: isVoted ? '#D4AF37' : 'rgba(197,168,128,0.3)',
++                                          background: isVoted ? 'rgba(212,175,55,0.15)' : 'transparent',
++                                          color: isVoted ? '#D4AF37' : 'rgba(197,168,128,0.6)',
++                                          fontSize: '0.78rem', fontWeight: isVoted ? 700 : 400,
++                                          cursor: isLoading ? 'not-allowed' : 'pointer',
++                                          opacity: isLoading ? 0.6 : 1, transition: 'all 0.2s ease'
++                                        }}
++                                      >
++                                        {isLoading
++                                          ? <span style={{ width: '14px', height: '14px', border: '2px solid rgba(212,175,55,0.4)', borderTopColor: '#D4AF37', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
++                                          : <ThumbsUp size={13} fill={isVoted ? '#D4AF37' : 'none'} stroke={isVoted ? '#D4AF37' : 'rgba(197,168,128,0.6)'} />
++                                        }
++                                        <span>Helpful ({rev.helpfulCount || 0})</span>
++                                      </button>
++                                    </div>
++                                  </div>
++                                );
++                              })}
++                            </div>
+                           </div>
+                         );
+                       })()}
+@@ -3385,7 +3713,7 @@ export default function ShopView({ authUser, setAuthUser }) {
+                           <div className="color-circles-list">
+                             {options.map(colorName => {
+                               const isChecked = selectedVals.includes(colorName);
+-                              const colorVal = COLOR_MAP[colorName.toLowerCase()] || colorName;
++                              const colorVal = getColorHex(colorName);
+                               const borderStyle = colorName.toLowerCase() === 'white' ? '1px solid #ddd' : 'none';
+                               return (
+                                 <button 
+@@ -3495,37 +3823,6 @@ export default function ShopView({ authUser, setAuthUser }) {
+                 )}
+               </div>
+ 
+-              {/* 8. Discount & Offers Accordion */}
+-              <div className="filter-card-section offers-accordion">
+-                <div className="section-title-row" onClick={() => setIsOffersOpen(!isOffersOpen)}>
+-                  <h3 className="section-title-text">Discount & Offers</h3>
+-                  <ChevronDown size={14} className={`section-chevron ${isOffersOpen ? 'rotated' : ''}`} />
+-                </div>
+-                {isOffersOpen && (
+-                  <div className="section-content" style={{ marginTop: '10px' }}>
+-                    {[10, 20, 30, 40].map(pct => {
+-                      const isChecked = selectedDiscounts.includes(pct);
+-                      return (
+-                        <label key={pct} className="checkbox-filter-row">
+-                          <input 
+-                            type="checkbox"
+-                            checked={isChecked}
+-                            onChange={() => {
+-                              if (isChecked) {
+-                                setSelectedDiscounts(selectedDiscounts.filter(d => d !== pct));
+-                              } else {
+-                                setSelectedDiscounts([...selectedDiscounts, pct]);
+-                              }
+-                            }}
+-                          />
+-                          <span>{pct}% and above</span>
+-                        </label>
+-                      );
+-                    })}
+-                  </div>
+-                )}
+-              </div>
+-
+               {/* 9. Collections Accordion */}
+               <div className="filter-card-section collections-accordion">
+                 <div className="section-title-row" onClick={() => setIsNewArrivalsOpen(!isNewArrivalsOpen)}>
+@@ -3597,7 +3894,13 @@ export default function ShopView({ authUser, setAuthUser }) {
+             </div>
+ 
+             {/* Product Grid View */}
+-            {currentProducts.length > 0 ? (
++            {loading ? (
++              <div className="shop-products-grid animate-fade-in-up">
++                {Array.from({ length: 8 }).map((_, idx) => (
++                  <ProductCardSkeleton key={idx} />
++                ))}
++              </div>
++            ) : currentProducts.length > 0 ? (
+               <>
+                 <div className="shop-products-grid animate-fade-in-up">
+                   {currentProducts.map((product) => {

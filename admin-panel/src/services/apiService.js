@@ -64,14 +64,8 @@ export const apiService = {
 
   // ─── Products ───
   async getProducts() {
-    try {
-      const res = await apiRequest('/api/products');
-      return res.products;
-    } catch (err) {
-      console.warn('Backend products offline, loading local products...');
-      const local = localStorage.getItem('mithra_admin_products');
-      return local ? JSON.parse(local) : [];
-    }
+    const res = await apiRequest('/api/products');
+    return res.products;
   },
 
   async createProduct(product) {

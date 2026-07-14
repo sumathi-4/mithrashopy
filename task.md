@@ -31,6 +31,7 @@
   - [x] Implement `GET /api/reviews/my-reviews` in `backend/routes/reviews.js`
   - [x] Update `PUT /api/user/profile` to support updating `profileImage` in `backend/routes/user.js`
   - [x] Implement `GET /api/lucky-charms/my-claims` in `backend/routes/luckyCharm.js`
+  - [x] Apply vendor product filters in backend lucky charm routing (`backend/routes/luckyCharm.js`)
 - [x] Frontend service hookups
   - [x] Add `cancelOrder` in `src/services/apiService.js`
   - [x] Add `getMyReviews` in `src/services/apiService.js`
@@ -67,3 +68,12 @@
 - [x] Verification and validation
   - [x] Verify frontend and backend build/run status
   - [x] Create walkthrough report with screenshots/logs
+- [x] Review & Rating System UI Redesign & Dynamic Sync
+  - [x] Premium UI redesign matching Amazon/Myntra/Flipkart style
+  - [x] Dynamic calculation of rating summary from Approved reviews only
+  - [x] Interactive Helpful button with optimistic updates and loading states
+  - [x] Image lightbox modal for review images gallery
+  - [x] Remove Verified Purchase badge completely
+  - [x] Real-time synchronization across ports/tabs via BroadcastChannel + 4s periodic polling
+  - [x] Admin Dashboard review action buttons with loading states and auto-refresh
+

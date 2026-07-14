@@ -1155,6 +1155,14 @@
   display: block;
 }
 
+.mobile-nav-item.active a {
+  color: #dfb743 !important;
+}
+
+.mobile-nav-sub-link.active {
+  color: #dfb743 !important;
+}
+
 .mobile-nav-sub-list {
   padding: 10px 0;
   display: flex;

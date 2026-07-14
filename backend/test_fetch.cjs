@@ -1,12 +1,1 @@
-const http = require('http');
-
-http.get('http://127.0.0.1:5000/api/health', (res) => {
-  let data = '';
-  res.on('data', (chunk) => { data += chunk; });
-  res.on('end', () => {
-    console.log('STATUS:', res.statusCode);
-    console.log('RESPONSE:', data);
-  });
-}).on('error', (err) => {
-  console.error('ERROR:', err.message);
-});
+async function run() { console.time('fetch'); const res = await fetch('http://127.0.0.1:5000/api/products'); const data = await res.json(); console.timeEnd('fetch'); console.log('Status:', res.ok, 'Count:', data.products?.length); } run();

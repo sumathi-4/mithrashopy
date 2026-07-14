@@ -20265,16 +20265,16 @@ ul {
 .shop-product-detail-page-view.theme-clothing .clothing-hover-action-btn:hover,
 .theme-clothing .clothing-hover-action-btn:hover,
 .clothing-product-card.theme-clothing .clothing-hover-action-btn:hover {
-  background: #4E1A29 !important; /* Banner color background on hover */
+  background: #051838 !important; /* Royal blue background on hover */
   color: #ffffff !important; /* White icon color on hover */
-  box-shadow: 0 6px 20px rgba(78, 26, 41, 0.35) !important;
+  box-shadow: 0 6px 20px rgba(5, 24, 56, 0.35) !important;
 }
 
 .shop-view-page.clothing-wine-theme .clothing-hover-action-btn.hover-cart-btn.in-cart,
 .shop-product-detail-page-view.theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart,
 .theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart,
 .clothing-product-card.theme-clothing .clothing-hover-action-btn.hover-cart-btn.in-cart {
-  background: #4E1A29 !important;
+  background: #051838 !important;
   color: #ffffff !important;
 }
 
@@ -26662,5 +26662,66 @@ body .admin-modal-box .modal-hdr h3 {
   color: #051838 !important;
   font-weight: 700 !important;
   font-size: 1.25rem !important;
+}
+
+/* Reviews Admin Action Buttons Color and Hover Effects */
+body .admin-app-layout .table-act-btn.approve-btn {
+  color: #10b981 !important;
+  border-color: #d1fae5 !important;
+  background-color: #f0fdf4 !important;
+}
+body .admin-app-layout .table-act-btn.approve-btn:hover:not(:disabled) {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25) !important;
+}
+
+body .admin-app-layout .table-act-btn.reject-btn {
+  color: #f97316 !important;
+  border-color: #ffedd5 !important;
+  background-color: #fff7ed !important;
+}
+body .admin-app-layout .table-act-btn.reject-btn:hover:not(:disabled) {
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.25) !important;
+}
+
+body .admin-app-layout .table-act-btn.reply-btn {
+  color: #3b82f6 !important;
+  border-color: #dbeafe !important;
+  background-color: #eff6ff !important;
+}
+body .admin-app-layout .table-act-btn.reply-btn:hover:not(:disabled) {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25) !important;
+}
+
+body .admin-app-layout .table-act-btn.delete-btn {
+  color: #ef4444 !important;
+  border-color: #fee2e2 !important;
+  background-color: #fef2f2 !important;
+}
+body .admin-app-layout .table-act-btn.delete-btn:hover:not(:disabled) {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25) !important;
+}
+
+body .admin-app-layout .table-act-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 

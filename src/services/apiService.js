@@ -34,6 +34,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   const options = {
     method,
     headers,
+    cache: 'no-store',
     ...(body ? { body: JSON.stringify(body) } : {})
   };
 
@@ -61,14 +62,8 @@ export const apiService = {
 
   // ─── Products ───
   async getProducts() {
-    try {
-      const res = await apiRequest('/api/products');
-      return res.products;
-    } catch (err) {
-      console.warn('Backend products offline, loading local products...');
-      const local = localStorage.getItem('mithra_admin_products');
-      return local ? JSON.parse(local) : [];
-    }
+    const res = await apiRequest('/api/products');
+    return res.products;
   },
 
   async createProduct(product) {
@@ -286,6 +281,16 @@ export const apiService = {
     } catch (err) {
       if (isBackendReachable) throw err;
       return true;
+    }
+  },
+
+  async toggleHelpful(id) {
+    try {
+      const res = await apiRequest(`/api/reviews/${id}/helpful`, 'POST');
+      return res;
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      return null;
     }
   },
 
@@ -698,6 +703,28 @@ export const apiService = {
       return res.claims;
     } catch (err) {
       return [];
+    }
+  },
+
+  async getSessions(sessionId, device, location) {
+    try {
+      const q = new URLSearchParams();
+      if (sessionId) q.set('sessionId', sessionId);
+      if (device) q.set('device', device);
+      if (location) q.set('location', location);
+      const res = await apiRequest(`/api/user/sessions?${q.toString()}`);
+      return res.sessions;
+    } catch (err) {
+      return [];
+    }
+  },
+
+  async revokeSession(sessionId) {
+    try {
+      return await apiRequest(`/api/user/sessions/${sessionId}`, 'DELETE');
+    } catch (err) {
+      if (isBackendReachable) throw err;
+      return { success: true };
     }
   }
 };

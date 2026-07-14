@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Tag, Clock, Copy, Check, Gift, Sparkles, AlertCircle } from 'lucide-react';
+import { Tag, Clock, Copy, Check, Gift } from 'lucide-react';
 import { apiService } from '../services/apiService';
+import { resolveProductImage } from '../utils/imageHelper';
 import logoImg from '../assets/logo.png';
-import pHairUpdated from '../assets/p_hair_updated.jpg';
-import pRing from '../assets/p_ring.jpg';
-import pNeck from '../assets/p_neck.jpg';
 
 export default function OffersView() {
   const [copiedCode, setCopiedCode] = useState(null);
@@ -34,38 +32,7 @@ export default function OffersView() {
     }
   ]);
 
-  const [offerProducts, setOfferProducts] = useState([
-    {
-      id: 'p1',
-      title: "Royal Jasmine Hair Gajra Ornament",
-      originalPrice: 750,
-      price: 450,
-      discount: "40% OFF",
-      image: pHairUpdated,
-      badge: "LIMITED DEAL",
-      category: "accessories"
-    },
-    {
-      id: 'p2',
-      title: "Antique Ginkgo Leaf Premium Ring",
-      originalPrice: 999,
-      price: 500,
-      discount: "50% OFF",
-      image: pRing,
-      badge: "HALF PRICE",
-      category: "accessories"
-    },
-    {
-      id: 'p3',
-      title: "Exquisite Kundan Choker Necklace",
-      originalPrice: 2499,
-      price: 1500,
-      discount: "40% OFF",
-      image: pNeck,
-      badge: "FESTIVE DEAL",
-      category: "accessories"
-    }
-  ]);
+  const [offerProducts, setOfferProducts] = useState([]);
 
   // 1. Live Countdown Timer running every second
   useEffect(() => {
@@ -91,8 +58,9 @@ export default function OffersView() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch data from API
+  // Fetch real data from API
   useEffect(() => {
+    // Fetch real active coupons
     apiService.getCoupons().then(data => {
       if (data && data.length > 0) {
         const active = data
@@ -100,36 +68,66 @@ export default function OffersView() {
           .map(c => ({
             code: c.code,
             discount: c.discount,
-            desc: `Min Cart Value: ${c.minCart || '₹0'}`,
+            desc: `Min Cart Value: ₹${c.minCart || '0'}`,
             expiry: `Expires on ${c.expiry}`
           }));
         if (active.length > 0) {
           setCoupons(active);
         }
       }
-    });
+    }).catch(() => {});
 
+    // Fetch real products for specially discounted section
     apiService.getProducts().then(data => {
       if (data && data.length > 0) {
-        // Map top products as offers
-        const mappedOffers = data.slice(0, 3).map((p, idx) => {
-          const discountPercent = 30 + (idx * 10); // 30%, 40%, 50%
-          const originalPrice = Math.round(p.price / (1 - (discountPercent / 100)));
-          const badges = ["LIMITED DEAL", "HALF PRICE", "FESTIVE DEAL"];
+        // Filter products that have offers (isOffer is true, or badge contains 'OFFER'/'DEAL', or discount/originalPrice > price)
+        let filtered = data.filter(p => {
+          const hasOfferBadge = p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL');
+          const hasDiscount = p.originalPrice && parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) > (typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')));
+          return p.isOffer || hasOfferBadge || hasDiscount;
+        });
+
+        // Fallback: If no products have offer indicators in backend, take the first 3 products as fallback
+        if (filtered.length === 0) {
+          filtered = data.slice(0, 3);
+        }
+
+        // Limit to 3 items for the grid section
+        const sliced = filtered.slice(0, 3);
+
+        const mappedOffers = sliced.map((p, idx) => {
+          // Parse price
+          const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 299;
+          
+          // Determine discount percentage
+          let discountPercent = 30 + (idx * 10); // fallback default
+          let originalPriceNum = Math.round(priceNum / (1 - (discountPercent / 100)));
+
+          // If product has originalPrice, use it
+          if (p.originalPrice) {
+            const rawOrig = parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, ''));
+            if (rawOrig > priceNum) {
+              originalPriceNum = Math.round(rawOrig);
+              discountPercent = Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100);
+            }
+          }
+
+          const resolvedImg = resolveProductImage(p);
+
           return {
             id: p.id,
             title: p.name || p.title || 'Exclusive Product',
-            originalPrice,
-            price: p.price,
+            originalPrice: originalPriceNum,
+            price: priceNum,
             discount: `${discountPercent}% OFF`,
-            image: p.image || 'Kids',
-            badge: badges[idx % badges.length],
+            image: resolvedImg,
+            badge: p.badge || '', // ONLY show badge added by admin, no hardcoding
             category: p.category ? p.category.toLowerCase() : 'clothing'
           };
         });
         setOfferProducts(mappedOffers);
       }
-    });
+    }).catch(() => {});
   }, []);
 
   // 2. Copy Code helper
@@ -152,6 +150,20 @@ export default function OffersView() {
       setScratching(false);
       setRevealedGift(true);
     }, 1200);
+  };
+
+  // Navigate to Shop and auto-open quick view for the product
+  const handleViewProduct = (prodId) => {
+    sessionStorage.setItem('auto_open_product_id', String(prodId));
+    window.history.pushState({}, '', '/shop');
+    window.dispatchEvent(new Event('popstate'));
+  };
+
+  // Navigate to Shop with offers filter enabled
+  const handleViewAllOffers = () => {
+    window.history.pushState({}, '', '/shop?offers=true');
+    window.dispatchEvent(new Event('popstate'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -229,7 +241,7 @@ export default function OffersView() {
                 <span className="timer-label">Minutes</span>
               </div>
               <span className="timer-colon">:</span>
-              <div className="timer-block font-glow-rose">
+              <div className="timer-block">
                 <span className="timer-number">{String(timeLeft.seconds).padStart(2, '0')}</span>
                 <span className="timer-label">Seconds</span>
               </div>
@@ -275,10 +287,10 @@ export default function OffersView() {
           <h2 className="section-block-title">Specially Discounted Products</h2>
           <div className="offers-grid-cards">
             {offerProducts.map((prod) => (
-              <div key={prod.id} className="offer-product-item">
+              <div key={prod.id} className="offer-product-item" onClick={() => handleViewProduct(prod.id)} style={{ cursor: 'pointer' }}>
                 <div className="offer-img-box-wrapper">
                   <div className="offer-badge-percent">{prod.discount}</div>
-                  <div className="offer-badge-status">{prod.badge}</div>
+                  {prod.badge && <div className="offer-badge-status">{prod.badge}</div>}
                   <img src={prod.image} alt={prod.title} className="offer-product-img" />
                   <div className="offer-img-overlay"></div>
                 </div>
@@ -292,9 +304,9 @@ export default function OffersView() {
                   
                   <button 
                     className="offer-btn-examine"
-                    onClick={() => {
-                      window.history.pushState({}, '', `/Shop?category=accessories`);
-                      window.dispatchEvent(new Event('popstate'));
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewProduct(prod.id);
                     }}
                   >
                     View in Shop
@@ -302,6 +314,16 @@ export default function OffersView() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* View All Products Button */}
+          <div className="view-all-offers-container" style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+            <button 
+              onClick={handleViewAllOffers}
+              className="view-all-offers-btn"
+            >
+              View All Products
+            </button>
           </div>
         </section>
 

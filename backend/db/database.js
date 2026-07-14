@@ -159,6 +159,16 @@ const UserSchema = new mongoose.Schema({
 	orderIds: {
 		type: [String],
 		default: []
+	},
+	sessions: {
+		type: [{
+			sessionId: String,
+			deviceName: String,
+			location: String,
+			lastActive: { type: Date, default: Date.now },
+			isActive: { type: Boolean, default: true }
+		}],
+		default: []
 	}
 });
 const ProductVariantSchema = new mongoose.Schema({
@@ -642,6 +652,18 @@ const ReviewSchema = new mongoose.Schema({
 	verifiedPurchase: {
 		type: Boolean,
 		default: false
+	},
+	images: {
+		type: [String],
+		default: []
+	},
+	helpfulCount: {
+		type: Number,
+		default: 0
+	},
+	helpfulUsers: {
+		type: [String],
+		default: []
 	}
 });
 const BannerSchema = new mongoose.Schema({

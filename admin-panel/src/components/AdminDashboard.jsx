@@ -337,7 +337,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [socialMediaSettings, setSocialMediaSettings] = useState({
     instagram: 'https://instagram.com/mithrashopy',
     facebook: 'https://facebook.com/mithrashopy',
-    whatsapp: '+91 98765 43210',
     youtube: 'https://youtube.com/@mithrashopy',
     twitter: 'https://twitter.com/mithrashopy',
   });
@@ -375,52 +374,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   const [prodCurrentPage, setProdCurrentPage] = useState(1);
 
   // --- Core Mock States (Stored in localStorage or state) ---
-  const [products, setProducts] = useState(() => {
-    const clearedFlag = localStorage.getItem('mithra_products_cleared_v2');
-    let rawProducts = [];
-    if (clearedFlag) {
-      const local = localStorage.getItem('mithra_admin_products');
-      if (local) {
-        try {
-          rawProducts = JSON.parse(local);
-        } catch (e) {
-          // Fallback
-        }
-      }
-    } else {
-      rawProducts = [
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
-      ];
-      try {
-        localStorage.setItem('mithra_admin_products', JSON.stringify(rawProducts));
-        localStorage.setItem('mithra_products_cleared_v2', 'true');
-      } catch (err) {
-        console.warn('Failed to initialize default products in localStorage:', err.message);
-      }
-    }
-    
-    if (!rawProducts || rawProducts.length === 0) {
-      rawProducts = [
-        { id: 2, name: 'Women Kurti', category: 'Clothing > Women', catalogue: 'Catalogue A', price: 899, stock: 40, sales: 48, status: 'Active', image: kidsDressImg }
-      ];
-    }
-    
-    return rawProducts.map(p => {
-      let cat = p.category || 'Clothing > Kids';
-      // Auto-heal old subcategory formats
-      if (cat === 'Clothing > Girls') cat = 'Clothing > Kids';
-      if (cat === 'Stationery > Pens') cat = 'Stationery';
-      if (cat === 'Gifts > Birthday') cat = 'Gifts';
-      if (cat === 'Accessories > Bags') cat = 'Accessories';
-      
-      return {
-        ...p,
-        catalogue: p.catalogue || 'Catalogue A',
-        category: cat,
-        status: p.status || 'Active'
-      };
-    });
-  });
+  const [products, setProducts] = useState([]);
 
   const [orders, setOrders] = useState(() => {
     const local = localStorage.getItem('mithra_admin_orders');
@@ -758,9 +712,13 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   });
 
   const [activeReviewsSubTab, setActiveReviewsSubTab] = useState('All Reviews');
+  const [reviewsSearchQuery, setReviewsSearchQuery] = useState('');
+  const [reviewsSortOption, setReviewsSortOption] = useState('Newest');
+  const [reviewsCurrentPage, setReviewsCurrentPage] = useState(1);
   const [showReplyReviewModal, setShowReplyReviewModal] = useState(false);
   const [replyReviewItem, setReplyReviewItem] = useState(null);
   const [reviewReplyText, setReviewReplyText] = useState('');
+  const [reviewActionLoadingIds, setReviewActionLoadingIds] = useState(new Set());
 
 
   // Form states & Modals states
@@ -1027,7 +985,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
     const syncBackendData = async () => {
       try {
         const prodData = await apiService.getProducts();
-        if (prodData && prodData.length > 0) setProducts(prodData);
+        if (prodData) setProducts(prodData);
         
         try {
           const configData = await categoryConfigService.getCategoryConfigurations();
@@ -1063,7 +1021,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         if (couponsData && couponsData.length > 0) setCoupons(couponsData);
         
         const reviewsData = await apiService.getReviews();
-        if (reviewsData && reviewsData.length > 0) setReviews(reviewsData);
+        if (reviewsData) setReviews(reviewsData);
         
         const bannersData = await apiService.getBanners();
         if (bannersData && bannersData.length > 0) setBanners(bannersData);
@@ -1125,6 +1083,29 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
   useEffect(() => {
     setProdCurrentPage(1);
   }, [prodSearchQuery, prodCatalogueFilter, prodCategoryFilter, prodStatusFilter]);
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('mithirashoppy_reviews');
+    
+    const refreshReviews = () => {
+      apiService.getReviews().then((data) => {
+        if (data) setReviews(data);
+      });
+    };
+
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'reviews_updated') {
+        refreshReviews();
+      }
+    };
+
+    const interval = setInterval(refreshReviews, 4000);
+
+    return () => {
+      channel.close();
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleSaveSettings = async (updatedFields) => {
     try {
@@ -5511,148 +5492,283 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
           )}
 
           {/* TAB 9: REVIEWS VIEW */}
-          {activeTab === 'Reviews' && (
-            <div className="admin-view-tab-content">
-              {/* Header actions with sub-tab buttons on left */}
-              <div className="coupons-re-header-row">
-                <div className="coupon-sub-tabs-wrap">
-                  {['All Reviews', 'Pending', 'Approved', 'Rejected'].map((subtab) => (
-                    <button 
-                      key={subtab}
-                      className={`coupon-sub-tab-btn ${activeReviewsSubTab === subtab ? 'active' : ''}`}
-                      onClick={() => setActiveReviewsSubTab(subtab)}
-                    >
-                      {subtab}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {activeTab === 'Reviews' && (() => {
+            const filteredAndSortedReviews = (() => {
+              let list = reviews.filter((rev) => activeReviewsSubTab === 'All Reviews' || rev.status === activeReviewsSubTab);
+              
+              if (reviewsSearchQuery.trim()) {
+                const query = reviewsSearchQuery.toLowerCase().trim();
+                list = list.filter(rev => 
+                  (rev.customerName && rev.customerName.toLowerCase().includes(query)) ||
+                  (rev.comment && rev.comment.toLowerCase().includes(query)) ||
+                  (rev.productName && rev.productName.toLowerCase().includes(query))
+                );
+              }
 
-              {/* Reviews List Table */}
-              <div className="admin-re-section-card reviews-table-section">
-                <div className="admin-re-table-wrapper">
-                  <table className="admin-re-table reviews-table-re">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Customer</th>
-                        <th>Rating</th>
-                        <th>Review</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: 'right', paddingRight: '24px' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reviews
-                        .filter((rev) => activeReviewsSubTab === 'All Reviews' || rev.status === activeReviewsSubTab)
-                        .map((rev) => (
-                          <tr key={rev.id}>
-                            <td className="rev-product-cell">
-                              <div className="rev-product-wrap">
-                                <div className="rev-thumb-box">
-                                  <img src={rev.productImage} alt={rev.productName} className="rev-thumb-img" />
-                                </div>
-                                <span className="bold text-black">{rev.productName}</span>
-                              </div>
-                            </td>
-                            <td className="text-gray">{rev.customerName}</td>
-                            <td>
-                              <div className="stars-row" style={{ display: 'flex', gap: '2px' }}>
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    size={14} 
-                                    fill={i < rev.rating ? '#C59B6C' : 'none'} 
-                                    stroke={i < rev.rating ? '#C59B6C' : '#ccc'} 
-                                  />
-                                ))}
-                              </div>
-                            </td>
-                            <td className="text-gray review-comment-cell">
-                              <div className="comment-text-wrap">
-                                <span className="comment-main">"{rev.comment}"</span>
-                                {rev.reply && (
-                                  <div className="store-reply-badge">
-                                    <span className="reply-lbl">Store Reply:</span>
-                                    <span className="reply-val">"{rev.reply}"</span>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="text-gray">{rev.date}</td>
-                            <td>
-                              <span className={`orders-status-badge ${rev.status.toLowerCase()}`}>
-                                {rev.status}
-                              </span>
-                            </td>
-                            <td className="action-cell">
-                              <div className="action-buttons-wrap" style={{ justifyContent: 'flex-end', paddingRight: '8px' }}>
-                                <button 
-                                  className="table-act-btn edit" 
-                                  title="Approve Review" 
-                                  onClick={() => {
-                                    apiService.moderateReview(rev.id, { status: 'Approved' }).then((updatedReview) => {
-                                      setReviews(reviews.map(r => r.id === rev.id ? (updatedReview || { ...r, status: 'Approved' }) : r));
-                                    });
-                                  }}
-                                  disabled={rev.status === 'Approved'}
-                                  style={{ opacity: rev.status === 'Approved' ? 0.4 : 1 }}
-                                >
-                                  <CheckCircle2 size={15} />
-                                </button>
-                                <button 
-                                  className="table-act-btn edit" 
-                                  title="Reject Review" 
-                                  onClick={() => {
-                                    apiService.moderateReview(rev.id, { status: 'Rejected' }).then((updatedReview) => {
-                                      setReviews(reviews.map(r => r.id === rev.id ? (updatedReview || { ...r, status: 'Rejected' }) : r));
-                                    });
-                                  }}
-                                  disabled={rev.status === 'Rejected'}
-                                  style={{ opacity: rev.status === 'Rejected' ? 0.4 : 1 }}
-                                >
-                                  <XCircle size={15} />
-                                </button>
-                                <button 
-                                  className="table-act-btn edit" 
-                                  title="Reply to Review" 
-                                  onClick={() => {
-                                    setReplyReviewItem(rev);
-                                    setReviewReplyText(rev.reply || '');
-                                    setShowReplyReviewModal(true);
-                                  }}
-                                >
-                                  <MessageSquare size={15} />
-                                </button>
-                                <button 
-                                  className="table-act-btn delete" 
-                                  title="Delete Review" 
-                                  onClick={() => {
-                                    if (confirm('Are you sure you want to delete this review?')) {
-                                      apiService.deleteReview(rev.id).then(() => {
-                                        setReviews(reviews.filter(r => r.id !== rev.id));
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      {reviews.filter((rev) => activeReviewsSubTab === 'All Reviews' || rev.status === activeReviewsSubTab).length === 0 && (
-                        <tr>
-                          <td colSpan="7" className="empty-table-cell">No reviews registered under this filter.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+              list.sort((a, b) => {
+                if (reviewsSortOption === 'Highest Rating') {
+                  return b.rating - a.rating;
+                } else if (reviewsSortOption === 'Lowest Rating') {
+                  return a.rating - b.rating;
+                } else if (reviewsSortOption === 'Oldest') {
+                  return a.id - b.id;
+                } else {
+                  return b.id - a.id;
+                }
+              });
+
+              return list;
+            })();
+
+            const reviewsPerPage = 10;
+            const totalReviewsCount = filteredAndSortedReviews.length;
+            const totalReviewsPages = Math.ceil(totalReviewsCount / reviewsPerPage) || 1;
+            const startIndex = (reviewsCurrentPage - 1) * reviewsPerPage;
+            const paginatedReviews = filteredAndSortedReviews.slice(startIndex, startIndex + reviewsPerPage);
+
+            return (
+              <div className="admin-view-tab-content">
+                {/* Search, Sort and Filters Row */}
+                <div className="coupons-re-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' }}>
+                  <div className="coupon-sub-tabs-wrap">
+                    {['All Reviews', 'Pending', 'Approved', 'Rejected'].map((subtab) => (
+                      <button 
+                        key={subtab}
+                        className={`coupon-sub-tab-btn ${activeReviewsSubTab === subtab ? 'active' : ''}`}
+                        onClick={() => {
+                          setActiveReviewsSubTab(subtab);
+                          setReviewsCurrentPage(1);
+                        }}
+                      >
+                        {subtab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="reviews-table-controls" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Search Input */}
+                    <input 
+                      type="text" 
+                      placeholder="Search reviews..." 
+                      value={reviewsSearchQuery}
+                      onChange={(e) => {
+                        setReviewsSearchQuery(e.target.value);
+                        setReviewsCurrentPage(1);
+                      }}
+                      className="modal-input"
+                      style={{ padding: '8px 12px', width: '250px', background: '#111b2b', color: '#fff', border: '1px solid #c59b6c', borderRadius: '4px' }}
+                    />
+
+                    {/* Sort Select */}
+                    <div className="sort-box-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '0.85rem', color: '#fff' }}>Sort By:</label>
+                      <select
+                        value={reviewsSortOption}
+                        onChange={(e) => {
+                          setReviewsSortOption(e.target.value);
+                          setReviewsCurrentPage(1);
+                        }}
+                        className="modal-input"
+                        style={{ padding: '8px 12px', background: '#111b2b', color: '#fff', border: '1px solid #c59b6c', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        <option value="Newest">Newest</option>
+                        <option value="Oldest">Oldest</option>
+                        <option value="Highest Rating">Highest Rating</option>
+                        <option value="Lowest Rating">Lowest Rating</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Reviews List Table */}
+                <div className="admin-re-section-card reviews-table-section">
+                  <div className="admin-re-table-wrapper">
+                    <table className="admin-re-table reviews-table-re">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Customer</th>
+                          <th>Rating</th>
+                          <th>Review</th>
+                          <th>Date</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedReviews.map((rev) => {
+                          const matchedProduct = products.find(p => p.name === rev.productName);
+                          let resolvedProductImg = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=150&q=80';
+                          if (rev.productImage) {
+                            resolvedProductImg = rev.productImage.startsWith('http') 
+                              ? rev.productImage 
+                              : resolveProductImage(matchedProduct || { image: rev.productImage });
+                          }
+
+                          return (
+                            <tr key={rev.id}>
+                              <td className="rev-product-cell">
+                                <div className="rev-product-wrap">
+                                  <div className="rev-thumb-box">
+                                    <img src={resolvedProductImg} alt={rev.productName} className="rev-thumb-img" />
+                                  </div>
+                                  <span className="bold text-black">{rev.productName}</span>
+                                </div>
+                              </td>
+                              <td className="text-gray">{rev.customerName}</td>
+                              <td>
+                                <div className="stars-row" style={{ display: 'flex', gap: '2px' }}>
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star 
+                                      key={i} 
+                                      size={14} 
+                                      fill={i < rev.rating ? '#C59B6C' : 'none'} 
+                                      stroke={i < rev.rating ? '#C59B6C' : '#ccc'} 
+                                    />
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="text-gray review-comment-cell">
+                                <div className="comment-text-wrap">
+                                  <span className="comment-main">"{rev.comment}"</span>
+                                  
+                                  {rev.images && rev.images.length > 0 && (
+                                    <div className="rev-images-list" style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                      {rev.images.map((imgUrl, idx) => (
+                                        <img 
+                                          key={idx} 
+                                          src={imgUrl} 
+                                          alt={`Review ${idx + 1}`} 
+                                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #c59b6c', cursor: 'pointer' }} 
+                                          onClick={() => window.open(imgUrl, '_blank')}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-gray">{rev.date}</td>
+                              <td>
+                                <span className={`orders-status-badge ${rev.status.toLowerCase()}`}>
+                                  {rev.status}
+                                </span>
+                              </td>
+                              <td className="action-cell">
+                                <div className="action-buttons-wrap" style={{ justifyContent: 'flex-end', paddingRight: '8px' }}>
+                                  <button 
+                                    className="table-act-btn approve-btn" 
+                                    title="Approve Review" 
+                                    onClick={async () => {
+                                      if (reviewActionLoadingIds.has(rev.id)) return;
+                                      setReviewActionLoadingIds(prev => new Set([...prev, rev.id]));
+                                      try {
+                                        await apiService.moderateReview(rev.id, { status: 'Approved' });
+                                        const refreshed = await apiService.getReviews();
+                                        if (refreshed) {
+                                          setReviews(refreshed);
+                                          const channel = new BroadcastChannel('mithirashoppy_reviews');
+                                          channel.postMessage({ type: 'reviews_updated' });
+                                          channel.close();
+                                        }
+                                      } catch(e) { console.error(e); }
+                                      finally { setReviewActionLoadingIds(prev => { const n = new Set(prev); n.delete(rev.id); return n; }); }
+                                    }}
+                                    disabled={rev.status === 'Approved' || reviewActionLoadingIds.has(rev.id)}
+                                    style={{ opacity: (rev.status === 'Approved' || reviewActionLoadingIds.has(rev.id)) ? 0.4 : 1 }}
+                                  >
+                                    <CheckCircle2 size={17} />
+                                  </button>
+                                  <button 
+                                    className="table-act-btn reject-btn" 
+                                    title="Reject Review" 
+                                    onClick={async () => {
+                                      if (reviewActionLoadingIds.has(rev.id)) return;
+                                      setReviewActionLoadingIds(prev => new Set([...prev, rev.id]));
+                                      try {
+                                        await apiService.moderateReview(rev.id, { status: 'Rejected' });
+                                        const refreshed = await apiService.getReviews();
+                                        if (refreshed) {
+                                          setReviews(refreshed);
+                                          const channel = new BroadcastChannel('mithirashoppy_reviews');
+                                          channel.postMessage({ type: 'reviews_updated' });
+                                          channel.close();
+                                        }
+                                      } catch(e) { console.error(e); }
+                                      finally { setReviewActionLoadingIds(prev => { const n = new Set(prev); n.delete(rev.id); return n; }); }
+                                    }}
+                                    disabled={rev.status === 'Rejected' || reviewActionLoadingIds.has(rev.id)}
+                                    style={{ opacity: (rev.status === 'Rejected' || reviewActionLoadingIds.has(rev.id)) ? 0.4 : 1 }}
+                                  >
+                                    <XCircle size={17} />
+                                  </button>
+                                  <button 
+                                    className="table-act-btn delete-btn" 
+                                    title="Delete Review" 
+                                    onClick={async () => {
+                                      if (reviewActionLoadingIds.has(rev.id)) return;
+                                      if (!confirm('Are you sure you want to delete this review?')) return;
+                                      setReviewActionLoadingIds(prev => new Set([...prev, rev.id]));
+                                      try {
+                                        await apiService.deleteReview(rev.id);
+                                        const refreshed = await apiService.getReviews();
+                                        if (refreshed) {
+                                          setReviews(refreshed);
+                                          const channel = new BroadcastChannel('mithirashoppy_reviews');
+                                          channel.postMessage({ type: 'reviews_updated' });
+                                          channel.close();
+                                        } else {
+                                          setReviews(reviews.filter(r => r.id !== rev.id));
+                                        }
+                                      } catch(e) { console.error(e); }
+                                      finally { setReviewActionLoadingIds(prev => { const n = new Set(prev); n.delete(rev.id); return n; }); }
+                                    }}
+                                    disabled={reviewActionLoadingIds.has(rev.id)}
+                                    style={{ opacity: reviewActionLoadingIds.has(rev.id) ? 0.4 : 1 }}
+                                  >
+                                    <Trash2 size={17} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {paginatedReviews.length === 0 && (
+                          <tr>
+                            <td colSpan="7" className="empty-table-cell">No reviews registered under this filter.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalReviewsPages > 1 && (
+                  <div className="pagination-row" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+                    <button 
+                      disabled={reviewsCurrentPage === 1}
+                      onClick={() => setReviewsCurrentPage(prev => Math.max(1, prev - 1))}
+                      className="coupon-sub-tab-btn"
+                      style={{ opacity: reviewsCurrentPage === 1 ? 0.5 : 1, cursor: reviewsCurrentPage === 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      Previous
+                    </button>
+                    <span style={{ display: 'flex', alignItems: 'center', color: '#fff', fontSize: '0.9rem', padding: '0 10px' }}>
+                      Page {reviewsCurrentPage} of {totalReviewsPages}
+                    </span>
+                    <button 
+                      disabled={reviewsCurrentPage === totalReviewsPages}
+                      onClick={() => setReviewsCurrentPage(prev => Math.min(totalReviewsPages, prev + 1))}
+                      className="coupon-sub-tab-btn"
+                      style={{ opacity: reviewsCurrentPage === totalReviewsPages ? 0.5 : 1, cursor: reviewsCurrentPage === totalReviewsPages ? 'not-allowed' : 'pointer' }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* TAB 10: SETTINGS VIEW */}
           {activeTab === 'Settings' && (
@@ -6227,18 +6343,7 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
                         </div>
                       </div>
 
-                      <div style={{ border: '1px solid #eae6df', borderRadius: '16px', padding: '16px 20px', backgroundColor: '#faf9f6' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center', gap: '20px' }}>
-                          <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2b2b2b' }}>WhatsApp Number</label>
-                          <input 
-                            type="text" 
-                            value={socialMediaSettings.whatsapp} 
-                            onChange={(e) => setSocialMediaSettings(prev => ({ ...prev, whatsapp: e.target.value }))}
-                            className="form-input-re" 
-                            style={{ backgroundColor: '#fff', border: '1px solid #e2ded5', borderRadius: '10px' }}
-                          />
-                        </div>
-                      </div>
+
 
                       <div style={{ border: '1px solid #eae6df', borderRadius: '16px', padding: '16px 20px', backgroundColor: '#faf9f6' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', alignItems: 'center', gap: '20px' }}>
@@ -9315,71 +9420,6 @@ export default function AdminDashboard({ authUser, setAuthUser, onNavigate }) {
         </div>
       )}
 
-      {showReplyReviewModal && replyReviewItem && (
-        <div className="admin-modal-overlay" onClick={() => { setShowReplyReviewModal(false); setReplyReviewItem(null); }}>
-          <div className="admin-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-hdr">
-              <h3>Review Response Portal</h3>
-              <button className="close-btn" onClick={() => { setShowReplyReviewModal(false); setReplyReviewItem(null); }}><X size={18} /></button>
-            </div>
-            
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                apiService.moderateReview(replyReviewItem.id, { reply: reviewReplyText, status: 'Approved' }).then((updatedReview) => {
-                  setReviews(reviews.map(r => r.id === replyReviewItem.id ? (updatedReview || { ...r, reply: reviewReplyText, status: 'Approved' }) : r));
-                });
-                setShowReplyReviewModal(false);
-                setReplyReviewItem(null);
-                setReviewReplyText('');
-              }} 
-              className="modal-body-form"
-            >
-              <div className="view-prod-details" style={{ paddingLeft: 0, marginBottom: '16px' }}>
-                <h4 className="view-title" style={{ color: '#C59B6C' }}>Customer Review</h4>
-                <div className="view-spec-table">
-                  <div className="spec-row">
-                    <span className="spec-lbl">Product:</span>
-                    <span className="spec-val bold">{replyReviewItem.productName}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Customer:</span>
-                    <span className="spec-val bold">{replyReviewItem.customerName}</span>
-                  </div>
-                  <div className="spec-row">
-                    <span className="spec-lbl">Rating:</span>
-                    <span className="spec-val bold text-orange">{replyReviewItem.rating} / 5 Stars</span>
-                  </div>
-                  <div className="spec-row" style={{ display: 'block', marginTop: '10px' }}>
-                    <span className="spec-lbl" style={{ display: 'block', marginBottom: '4px' }}>Review Comment:</span>
-                    <div className="spec-val" style={{ background: '#faf9f6', padding: '12px', borderRadius: '8px', border: '1px solid #eae6df', fontStyle: 'italic' }}>
-                      "{replyReviewItem.comment}"
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label>Official Store Response <span className="req">*</span></label>
-                <textarea 
-                  value={reviewReplyText}
-                  onChange={(e) => setReviewReplyText(e.target.value)}
-                  placeholder="e.g. Thank you for your feedback! We are thrilled you liked the product..."
-                  required 
-                  rows="4"
-                  className="modal-input"
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="modal-actions-row">
-                <button type="button" className="btn-secondary" onClick={() => { setShowReplyReviewModal(false); setReplyReviewItem(null); }}>Cancel</button>
-                <button type="submit" className="btn-primary">Post Reply</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ─── REJECT VENDOR MODAL ───────────────────────────────────────────────── */}
       {showRejectVendorModal && rejectVendorTarget && (

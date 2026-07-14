@@ -61,5 +61,32 @@
     "orderId": "#ORD4183",
     "status": "Processing",
     "timestamp": "2026-07-01T08:42:52.035Z"
+  },
+  {
+    "to": "mathi@example.com",
+    "subject": "Order Status Updated: ##ORD2887",
+    "body": "Dear mathi,\n\nYour order status has been updated.\n\nOrder ID: ##ORD2887\nUpdated Status: Delivered\nOrder Date: Jul 14, 2026\nTotal Amount: ₹1383\n\nItems Ordered:\n- Kids Jacquard Classic T-Shirt x 1 (₹179)\n- Cozy Hat Design T-Shirt x 1 (₹631)\n- Kids Printed Set x 1 (₹163)\n- Kids Printed Cotton Set x 1 (₹199)\n\nThank you for shopping with us!\nMithraShoppy Team",
+    "type": "customer_order_status",
+    "orderId": "#ORD2887",
+    "status": "Delivered",
+    "timestamp": "2026-07-14T05:05:46.567Z"
+  },
+  {
+    "to": "mathi@example.com",
+    "subject": "Order Status Updated: ##ORD2887",
+    "body": "Dear mathi,\n\nYour order status has been updated.\n\nOrder ID: ##ORD2887\nUpdated Status: Delivered\nOrder Date: Jul 14, 2026\nTotal Amount: ₹1383\n\nItems Ordered:\n- Kids Jacquard Classic T-Shirt x 1 (₹179)\n- Cozy Hat Design T-Shirt x 1 (₹631)\n- Kids Printed Set x 1 (₹163)\n- Kids Printed Cotton Set x 1 (₹199)\n\nThank you for shopping with us!\nMithraShoppy Team",
+    "type": "customer_order_status",
+    "orderId": "#ORD2887",
+    "status": "Delivered",
+    "timestamp": "2026-07-14T05:05:47.467Z"
+  },
+  {
+    "to": "mathi@example.com",
+    "subject": "Order Status Updated: ##ORD2887",
+    "body": "Dear mathi,\n\nYour order status has been updated.\n\nOrder ID: ##ORD2887\nUpdated Status: Delivered\nOrder Date: Jul 14, 2026\nTotal Amount: ₹1383\n\nItems Ordered:\n- Kids Jacquard Classic T-Shirt x 1 (₹179)\n- Cozy Hat Design T-Shirt x 1 (₹631)\n- Kids Printed Set x 1 (₹163)\n- Kids Printed Cotton Set x 1 (₹199)\n\nThank you for shopping with us!\nMithraShoppy Team",
+    "type": "customer_order_status",
+    "orderId": "#ORD2887",
+    "status": "Delivered",
+    "timestamp": "2026-07-14T05:05:48.460Z"
   }
 ]

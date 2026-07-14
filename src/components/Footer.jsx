@@ -1,165 +1,232 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Gift, Tag, Mail, MapPin, Phone, MessageSquare 
-} from 'lucide-react';
+import { ChevronRight, Shirt, BookOpen, Gift, Crown, Star, Tag, Users } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import newsletterGiftsImg from '../assets/newsletter_gifts.png';
 import newsletterPerfumeImg from '../assets/newsletter_perfume.png';
+import logoImg from '../assets/logo.png';
 
-export default function Footer() {
+// --- Navigation helper (same pattern as Navbar) ---
+const navigate = (path) => {
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new Event('popstate'));
+};
+
+// --- Razorpay visible badge ---
+const RazorpayBadge = () => (
+  <span className="footer-razorpay-badge" aria-label="Razorpay">
+    <svg viewBox="0 0 90 28" width="86" height="26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="90" height="28" rx="5" fill="#ffffff" />
+      {/* Blue lightning bolt */}
+      <polygon points="18,5 12,15 17,15 11,23 21,11 16,11" fill="#3395FF" />
+      <text x="26" y="18" fill="#072654" fontSize="10" fontWeight="800" fontFamily="Arial, sans-serif" letterSpacing="0.5">Razorpay</text>
+    </svg>
+  </span>
+);
+
+// ─── SHOP links — real routes only ───────────────────────
+const SHOP_LINKS = [
+  { label: 'All Products',  path: '/shop',              exact: true },
+  { label: 'Clothing',      path: '/shop/clothing',     exact: false },
+  { label: 'Stationery',    path: '/shop/stationery',   exact: false },
+  { label: 'Gifts',         path: '/shop/gifts',        exact: false },
+  { label: 'Accessories',   path: '/shop/accessories',  exact: false },
+  { label: 'New Arrivals',  path: '/newarrivals',       exact: false },
+  { label: 'Offers',        path: '/offers',            exact: false },
+  { label: 'Celebrity',     path: '/celebrity',         exact: false },
+];
+
+// ─── MY ACCOUNT links — real routes only ─────────────────
+const ACCOUNT_LINKS = [
+  { label: 'My Account',    path: '/account',            tab: null,     exact: false },
+  { label: 'My Orders',     path: '/account?tab=orders', tab: 'orders', exact: false },
+  { label: 'My Wishlist',   path: '/account?tab=wishlist', tab: 'wishlist', exact: false },
+  { label: 'Login / Register', path: null, openAuth: true },
+];
+
+// ─── Helper: is a path active? ───────────────────────────
+const isActive = (linkPath, currentPath) => {
+  if (!linkPath) return false;
+  const clean = linkPath.split('?')[0].toLowerCase();
+  const cur   = currentPath.split('?')[0].toLowerCase();
+  if (clean === '/shop' && cur === '/shop') return true;
+  if (clean !== '/shop' && cur.startsWith(clean)) return true;
+  return false;
+};
+
+export default function Footer({ authUser }) {
   const [settings, setSettings] = useState({
-    storeName: 'Mithira Shoppy',
-    supportEmail: 'support@mithrashopy.com'
+    storeName: 'MithiraShopy',
   });
+  const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.search);
+
+  // Track current path for active link highlighting
+  useEffect(() => {
+    const onNav = () => setCurrentPath(window.location.pathname + window.location.search);
+    window.addEventListener('popstate', onNav);
+    return () => window.removeEventListener('popstate', onNav);
+  }, []);
 
   useEffect(() => {
     apiService.getSettings().then(data => {
       if (data) {
-        setSettings({
-          storeName: data.storeName || 'Mithira Shoppy',
-          supportEmail: data.supportEmail || 'support@mithrashopy.com'
-        });
+        setSettings({ storeName: data.storeName || 'MithiraShopy' });
       }
-    }).catch(console.error);
+    }).catch(() => {});
   }, []);
-
-  const handleNavigation = (path) => {
-    window.history.pushState({}, '', path);
-    window.dispatchEvent(new Event('popstate'));
-  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
-    alert("Thank you for subscribing to our newsletter!");
+    alert('Thank you for subscribing to our newsletter!');
   };
+
+  const handleShopNav = (e, link) => {
+    e.preventDefault();
+    navigate(link.path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAccountNav = (e, link) => {
+    e.preventDefault();
+    if (link.openAuth) {
+      window.dispatchEvent(new CustomEvent('mithira_open_auth_modal', { detail: { type: 'user' } }));
+      return;
+    }
+    navigate(link.path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="footer-area">
-      
 
-      {/* 2. Premium Gold Newsletter Banner */}
+      {/* ─── Newsletter Banner (UNTOUCHED) ─────────────────── */}
       <div className="newsletter-banner">
         <div className="newsletter-content-wrapper">
-          
-          {/* Left Decorative Image */}
           <div className="newsletter-side-img-container left-side">
-            <img 
-              src={newsletterGiftsImg} 
-              alt="Gifts and offers" 
-              className="newsletter-side-img"
-            />
+            <img src={newsletterGiftsImg} alt="Gifts and offers" className="newsletter-side-img" />
           </div>
-
-          {/* Center Content Section */}
           <div className="newsletter-center-content">
             <h3 className="newsletter-title">Stay Updated</h3>
-            <p className="newsletter-subtitle">Subscribe to get special offers, new arrivals & more</p>
-            
+            <p className="newsletter-subtitle">Subscribe to get special offers, new arrivals &amp; more</p>
             <form className="newsletter-form" onSubmit={handleSubscribe}>
               <div className="newsletter-input-group">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email address" 
-                  required 
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  required
                   className="newsletter-input"
                 />
-                <button type="submit" className="newsletter-btn">
-                  SUBSCRIBE
-                </button>
+                <button type="submit" className="newsletter-btn">SUBSCRIBE</button>
               </div>
             </form>
           </div>
-
-          {/* Right Decorative Image */}
           <div className="newsletter-side-img-container right-side">
-            <img 
-              src={newsletterPerfumeImg} 
-              alt="Premium products" 
-              className="newsletter-side-img"
-            />
+            <img src={newsletterPerfumeImg} alt="Premium products" className="newsletter-side-img" />
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Main Footer Columns ─────────────────────────── */}
+      <div className="footer-main">
+        <div className="footer-main-inner">
+
+          {/* Brand Column */}
+          <div className="footer-brand-col">
+            <a
+              href="/"
+              onClick={e => { e.preventDefault(); navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="footer-logo-link"
+            >
+              <img src={logoImg} alt={settings.storeName} className="footer-logo-img" />
+            </a>
+            <p className="footer-brand-tagline">Style for Every Moment</p>
+            <p className="footer-brand-desc">
+              Premium ethnic wear, stationery, gifts &amp; accessories — curated for the moments that matter.
+            </p>
+          </div>
+
+          {/* Shop Column */}
+          <div className="footer-links-col">
+            <h4 className="footer-col-heading">
+              <span className="footer-col-heading-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+              </span>
+              Shop
+            </h4>
+            <ul className="footer-nav-list">
+              {SHOP_LINKS.map(link => {
+                const active = isActive(link.path, currentPath);
+                return (
+                  <li key={link.path}>
+                    <a
+                      href={link.path}
+                      className={`footer-nav-link${active ? ' footer-nav-link--active' : ''}`}
+                      onClick={e => handleShopNav(e, link)}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <ChevronRight size={12} className="footer-nav-chevron" />
+                      {link.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* My Account Column */}
+          <div className="footer-links-col">
+            <h4 className="footer-col-heading">
+              <span className="footer-col-heading-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+              My Account
+            </h4>
+            <ul className="footer-nav-list">
+              {ACCOUNT_LINKS.map(link => {
+                const active = link.path ? isActive(link.path, currentPath) : false;
+                return (
+                  <li key={link.label}>
+                    <a
+                      href={link.path || '#'}
+                      className={`footer-nav-link${active ? ' footer-nav-link--active' : ''}`}
+                      onClick={e => handleAccountNav(e, link)}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <ChevronRight size={12} className="footer-nav-chevron" />
+                      {link.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
         </div>
       </div>
 
-      {/* 3. Sitemap Footer */}
-      <div className="sitemap-section">
-        <div className="sitemap-container">
-          
-          {/* Brand block */}
-          <div className="sitemap-column brand-column">
-            <h2 className="brand-logo">{settings.storeName}</h2>
-            
-            <p className="brand-tagline">Style for Every Moment</p>
-            <div className="social-links">
-              <a href="#facebook" className="social-circle" aria-label="Facebook">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/></svg>
-              </a>
-              <a href="#instagram" className="social-circle" aria-label="Instagram">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-              </a>
-              <a href="#twitter" className="social-circle" aria-label="Twitter">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a href="#pinterest" className="social-circle" aria-label="Pinterest"><Tag size={16} /></a>
-            </div>
+      {/* ─── Footer Bottom Bar ───────────────────────────── */}
+      <div className="footer-bottom-bar">
+        <div className="footer-bottom-inner">
+          <div className="footer-bottom-left">
+            <span className="footer-copyright">
+              © {currentYear}{' '}
+              <strong className="footer-copyright-brand">{settings.storeName}</strong>
+              . All rights reserved. Designed &amp; Developed by{' '}
+              <span className="footer-copyright-dev">Atriowings Technologies India Private Limited</span>
+            </span>
           </div>
-
-          {/* Information Links */}
-          <div id="about" className="sitemap-column">
-
-            <h4>Information</h4>
-            <ul>
-              <li><a href="#privacy">Privacy Policy</a></li>
-              <li><a href="#terms">Terms & Conditions</a></li>
-              <li><a href="#faq">FAQ</a></li>
-            </ul>
+          <div className="footer-bottom-right">
+            <span className="footer-payment-label">Secure payments via</span>
+            <RazorpayBadge />
           </div>
-
-          {/* Customer Service Links */}
-          <div className="sitemap-column">
-            <h4>Customer Service</h4>
-            <ul>
-              <li><a href="#track">Track Order</a></li>
-              <li><a href="#shipping">Shipping Policy</a></li>
-              <li><a href="#return">Return Policy</a></li>
-              <li><a href="#cancel">Cancellation Policy</a></li>
-              <li><a href="#support">Help & Support</a></li>
-            </ul>
-          </div>
-
-          {/* My Account Links */}
-          <div className="sitemap-column">
-            <h4>My Account</h4>
-            <ul>
-              <li><a href="#account">My Account</a></li>
-              <li><a href="#orders">Orders</a></li>
-              <li><a href="#wishlist">Wishlist</a></li>
-              <li><a href="#addresses">Addresses</a></li>
-              <li><a href="#logout">Logout</a></li>
-            </ul>
-          </div>
-
-          {/* Contact Details */}
-          <div id="contact" className="sitemap-column contact-column">
-
-            <h4>Contact Us</h4>
-            <div className="contact-details-list">
-              <div className="contact-detail-item">
-                <MapPin size={18} className="contact-icon" />
-                <span>123 Fashion Street, New York, NY 10001</span>
-              </div>
-              <div className="contact-detail-item">
-                <Phone size={18} className="contact-icon" />
-                <span>+1 (555) 123-4567</span>
-              </div>
-              <div className="contact-detail-item">
-                <Mail size={18} className="contact-icon" />
-                <span>{settings.supportEmail}</span>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 

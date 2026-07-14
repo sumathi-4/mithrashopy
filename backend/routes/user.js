@@ -229,4 +229,58 @@ router.post('/wishlist', authenticate, async (req, res) => {
   }
 });
 
+// ─── Session Management ────────────────────────────────────────────────────────
+router.get('/sessions', authenticate, async (req, res) => {
+  try {
+    const { sessionId, device, location } = req.query;
+    const user = await User.findOne({ id: req.user.id });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    let sessions = user.sessions || [];
+    
+    // Check if the current session token has been registered in user document
+    if (sessionId) {
+      const matchIndex = sessions.findIndex(s => s.sessionId === sessionId);
+      if (matchIndex === -1) {
+        // Register new session
+        sessions.push({
+          sessionId,
+          deviceName: device || 'Unknown Device',
+          location: location || 'Unknown Location',
+          lastActive: new Date(),
+          isActive: true
+        });
+        await User.updateOne({ id: req.user.id }, { $set: { sessions } });
+      } else {
+        // Update lastActive time
+        sessions[matchIndex].lastActive = new Date();
+        sessions[matchIndex].deviceName = device || sessions[matchIndex].deviceName;
+        sessions[matchIndex].location = location || sessions[matchIndex].location;
+        await User.updateOne({ id: req.user.id }, { $set: { sessions } });
+      }
+    }
+
+    res.json({ success: true, sessions });
+  } catch (err) {
+    console.error('Fetch sessions error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch sessions.' });
+  }
+});
+
+router.delete('/sessions/:sessionId', authenticate, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const user = await User.findOne({ id: req.user.id });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    let sessions = user.sessions || [];
+    sessions = sessions.filter(s => s.sessionId !== sessionId);
+    
+    await User.updateOne({ id: req.user.id }, { $set: { sessions } });
+    res.json({ success: true, message: 'Session revoked successfully.', sessions });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to revoke session.' });
+  }
+});
+
 module.exports = router;

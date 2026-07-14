@@ -7,7 +7,8 @@ import clothingUser1 from '../assets/clothing_user_1.jpg';
 import clothingUser2 from '../assets/clothing_user_2.jpg';
 import { useToast } from './ToastProvider';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
-import { COLOR_MAP, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
+import { COLOR_MAP, getColorHex, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
+import { loadPersistentFilters, savePersistentFilters, clearPersistentFilters } from '../utils/filterPersistence';
 
 export default function ProductsSection({ authUser, setAuthUser }) {
   const { addToast } = useToast();
@@ -30,6 +31,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   const [selectedDiscounts, setSelectedDiscounts] = useState([]);
   const [filterNewArrivals, setFilterNewArrivals] = useState(false);
   const [filterBestSellers, setFilterBestSellers] = useState(false);
+  const [filterOffers, setFilterOffers] = useState(false);
   
   const [maxPrice, setMaxPrice] = useState(10000); // price slider
   const [searchQuery, setSearchQuery] = useState(''); // search products
@@ -372,260 +374,8 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     }
   };
 
-  const trendingProductsFallback = [
-    {
-      id: 104,
-      title: "White Lace Gown",
-      category: "CLOTHING",
-      rawCategory: "Clothing > Kids > Girls > Gowns",
-      subCategory: "Gowns",
-      price: "₹1,899",
-      originalPrice: "₹2,235",
-      discount: "15% off",
-      rating: 5,
-      reviews: 64,
-      image: resolveProductImage({ image: 'white_gown.jpg' }),
-      badge: ""
-    },
-    {
-      id: 105,
-      title: "Premium Gift Set",
-      category: "GIFTS",
-      rawCategory: "Gifts",
-      subCategory: "Gift Hamper",
-      price: "₹1,499",
-      originalPrice: "₹1,665",
-      discount: "10% off",
-      rating: 5,
-      reviews: 112,
-      image: resolveProductImage({ image: 'premium_gift_set.jpg' }),
-      badge: ""
-    },
-    {
-      id: 106,
-      title: "Kids Formal Suit",
-      category: "CLOTHING",
-      rawCategory: "Clothing > Kids > Formal",
-      subCategory: "Formal",
-      price: "₹2,299",
-      originalPrice: "₹2,613",
-      discount: "12% off",
-      rating: 5,
-      reviews: 45,
-      image: resolveProductImage({ image: 'kids_formal_suit.jpg' }),
-      badge: ""
-    },
-    {
-      id: 107,
-      title: "Gold Anklets",
-      category: "ACCESSORIES",
-      rawCategory: "Accessories > Jewellery > Anklets",
-      subCategory: "Anklets",
-      price: "₹899",
-      originalPrice: "₹1,124",
-      discount: "20% off",
-      rating: 5,
-      reviews: 132,
-      image: resolveProductImage({ image: 'gold_anklets.jpg' }),
-      badge: ""
-    },
-    {
-      id: 108,
-      title: "Diamond Ginkgo Ring",
-      category: "ACCESSORIES",
-      rawCategory: "Accessories > Jewellery > Ring",
-      subCategory: "Ring",
-      price: "₹7,499",
-      originalPrice: "₹7,894",
-      discount: "5% off",
-      rating: 5,
-      reviews: 28,
-      image: resolveProductImage({ image: 'diamond_ring.jpg' }),
-      badge: ""
-    },
-    {
-      id: 109,
-      title: "Heavy Worked Joker Necklace",
-      category: "ACCESSORIES",
-      rawCategory: "Accessories > Jewellery > Heavy Worked Joker",
-      subCategory: "Heavy Worked Joker",
-      price: "₹12,999",
-      originalPrice: "₹14,130",
-      discount: "8% off",
-      rating: 5,
-      reviews: 19,
-      image: resolveProductImage({ image: 'heavy_joker_necklace.jpg' }),
-      badge: ""
-    },
-    {
-      id: 110,
-      title: "Simple Chain Jewellery Set",
-      category: "ACCESSORIES",
-      rawCategory: "Accessories > Jewellery > Simple Chain",
-      subCategory: "Simple Chain",
-      price: "₹2,499",
-      originalPrice: "₹3,048",
-      discount: "18% off",
-      rating: 5,
-      reviews: 87,
-      image: resolveProductImage({ image: 'simple_chain_jewellery.jpg' }),
-      badge: ""
-    },
-    {
-      id: 111,
-      title: "Luxe Leather Notebook",
-      category: "STATIONERY",
-      rawCategory: "Stationery > Book",
-      subCategory: "Book",
-      price: "₹749",
-      originalPrice: "₹851",
-      discount: "12% off",
-      rating: 5,
-      reviews: 61,
-      image: resolveProductImage({ image: 'luxe_leather_notebook.jpg' }),
-      badge: ""
-    },
-    {
-      id: 112,
-      title: "Anarkali",
-      category: "CLOTHING",
-      rawCategory: "Clothing > Women > Kurti",
-      subCategory: "Kurti",
-      price: "₹3,299",
-      originalPrice: "₹4,229",
-      discount: "22% off",
-      rating: 5,
-      reviews: 103,
-      image: resolveProductImage({ image: 'green_anarkali2.jpg' }),
-      badge: ""
-    },
-    {
-      id: 113,
-      title: "Blue Formal Suit",
-      category: "CLOTHING",
-      rawCategory: "Clothing > Men > Formal Suites",
-      subCategory: "Formal Suites",
-      price: "₹5,999",
-      originalPrice: "₹7,058",
-      discount: "15% off",
-      rating: 5,
-      reviews: 47,
-      image: resolveProductImage({ image: 'blue_formal_suit2.jpg' }),
-      badge: ""
-    },
-    {
-      id: 114,
-      title: "School Stationery Kit",
-      category: "STATIONERY",
-      rawCategory: "Stationery",
-      subCategory: "School Items",
-      price: "₹599",
-      originalPrice: "₹749",
-      discount: "20% off",
-      rating: 5,
-      reviews: 94,
-      image: resolveProductImage({ image: 'school_stationery_kit.jpg' }),
-      badge: ""
-    },
-    {
-      id: 115,
-      title: "Bridal Floral Hair Accessory",
-      category: "ACCESSORIES",
-      rawCategory: "Accessories > Hair Accessories",
-      subCategory: "Hair Accessories",
-      price: "₹1,299",
-      originalPrice: "₹1,529",
-      discount: "15% off",
-      rating: 5,
-      reviews: 58,
-      image: resolveProductImage({ image: 'bridal_hair_accessory.jpg' }),
-      badge: ""
-    },
-    {
-      id: 116,
-      title: "Teal Ruffle Frock",
-      category: "CLOTHING",
-      rawCategory: "Clothing > Kids > Girls > Frock",
-      subCategory: "Frock",
-      price: "₹899",
-      originalPrice: "₹999",
-      discount: "10% off",
-      rating: 5,
-      reviews: 72,
-      image: resolveProductImage({ image: 'teal_ruffle_frock.jpg' }),
-      badge: ""
-    }
-  ];
-
-
-  const newArrivalsProducts = [
-    {
-      id: 'n1',
-      title: "Floral Frock Dress",
-      category: "CLOTHING",
-      price: "₹1,499",
-      rating: 5,
-      reviews: 42,
-      image: clothingUser1,
-      badge: "NEW",
-      desc: "Vibrant traditional children's frock crafted in premium south cotton, featuring bright ethnic accents and details."
-    },
-    {
-      id: 'n2',
-      title: "Blue School Kit",
-      category: "STATIONERY",
-      price: "₹899",
-      rating: 4,
-      reviews: 18,
-      image: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW",
-      desc: "An all-in-one premium study organizer set featuring pastel blue binders, designer pencils, and note kits."
-    },
-    {
-      id: 'n3',
-      title: "Birthday Gift Box",
-      category: "GIFTS",
-      price: "₹1,099",
-      rating: 5,
-      reviews: 35,
-      image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW",
-      desc: "Thoughtfully curated celebration bundle containing custom premium boxes, ribbons, and hampers."
-    },
-    {
-      id: 'n4',
-      title: "Traditional Jhumka",
-      category: "ACCESSORIES",
-      price: "₹1,799",
-      rating: 5,
-      reviews: 58,
-      image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW",
-      desc: "Exquisite gold-plated jhumka earrings featuring premium micro-filigree beads and traditional temple design."
-    },
-    {
-      id: 'n5',
-      title: "Premium Notebook",
-      category: "STATIONERY",
-      price: "₹399",
-      rating: 4,
-      reviews: 14,
-      image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=1000&q=80",
-      badge: "NEW",
-      desc: "Soft-bound luxury journal containing acid-free pages, ideal for sketching, calligraphy, and planning."
-    },
-    {
-      id: 'n6',
-      title: "Cotton Kurta Set",
-      category: "CLOTHING",
-      price: "₹1,299",
-      rating: 5,
-      reviews: 64,
-      image: clothingUser2,
-      badge: "NEW",
-      desc: "Premium organic cotton kurta paired with a matching dupatta, reflecting heritage ethnic motifs."
-    }
-  ];
+  const trendingProductsFallback = [];
+  const newArrivalsProducts = [];
 
   // Fetch real products from backend or localStorage on mount
   useEffect(() => {
@@ -704,35 +454,121 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     const parseUrl = () => {
       const params = new URLSearchParams(window.location.search);
       const searchParam = params.get('search');
-      if (searchParam) setSearchQuery(decodeURIComponent(searchParam));
+      if (searchParam) {
+        setSearchQuery(decodeURIComponent(searchParam));
+      } else {
+        setSearchQuery('');
+      }
 
-      // Parse dynamic filters
-      const dynamicFilters = {};
-      const ignoredParams = ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategory'];
-      params.forEach((value, key) => {
-        if (!ignoredParams.includes(key.toLowerCase())) {
-          dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+      // Check if URL contains any filter parameters
+      const hasUrlFilters = Array.from(params.keys()).some(k => 
+        ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategory', 'offers', 'newarrivals', 'bestsellers'].includes(k.toLowerCase())
+      );
+
+      let loaded = null;
+      if (!hasUrlFilters) {
+        loaded = loadPersistentFilters();
+      }
+
+      if (loaded) {
+        if (loaded.priceRange !== undefined) setMaxPrice(loaded.priceRange);
+        if (loaded.showInStock !== undefined) setShowInStock(loaded.showInStock);
+        if (loaded.showOutOfStock !== undefined) setShowOutOfStock(loaded.showOutOfStock);
+        if (loaded.selectedRatings !== undefined) setSelectedRatings(loaded.selectedRatings);
+        if (loaded.selectedDiscounts !== undefined) setSelectedDiscounts(loaded.selectedDiscounts);
+        if (loaded.selectedSubcategories !== undefined) setSelectedSubcategories(loaded.selectedSubcategories);
+        if (loaded.filterNewArrivals !== undefined) setFilterNewArrivals(loaded.filterNewArrivals);
+        if (loaded.filterBestSellers !== undefined) setFilterBestSellers(loaded.filterBestSellers);
+        if (loaded.filterOffers !== undefined) setFilterOffers(loaded.filterOffers);
+        if (loaded.activeFilters !== undefined) setActiveFilters(loaded.activeFilters);
+      } else if (hasUrlFilters) {
+
+        // Parse dynamic filters
+        const dynamicFilters = {};
+        const ignoredParams = ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategory', 'offers', 'newarrivals', 'bestsellers'];
+        params.forEach((value, key) => {
+          if (!ignoredParams.includes(key.toLowerCase())) {
+            dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+          }
+        });
+        setActiveFilters(dynamicFilters);
+
+        const subParam = params.get('subcategory');
+        if (subParam) {
+          setSelectedSubcategories(subParam.split(',').map(v => decodeURIComponent(v)));
+        } else {
+          setSelectedSubcategories([]);
         }
-      });
-      setActiveFilters(dynamicFilters);
 
-      const subParam = params.get('subcategory');
-      if (subParam) setSelectedSubcategories(subParam.split(',').map(v => decodeURIComponent(v)));
+        const priceVal = params.get('price');
+        if (priceVal) {
+          setMaxPrice(Number(priceVal));
+        } else {
+          setMaxPrice(10000);
+        }
 
-      const priceVal = params.get('price');
-      if (priceVal) setMaxPrice(Number(priceVal));
+        const instockVal = params.get('instock');
+        if (instockVal === 'false') {
+          setShowInStock(false);
+        } else {
+          setShowInStock(true);
+        }
 
-      const instockVal = params.get('instock');
-      if (instockVal === 'false') setShowInStock(false);
+        const outofstockVal = params.get('outofstock');
+        if (outofstockVal === 'false') {
+          setShowOutOfStock(false);
+        } else {
+          setShowOutOfStock(true);
+        }
 
-      const outofstockVal = params.get('outofstock');
-      if (outofstockVal === 'false') setShowOutOfStock(false);
+        const ratingVal = params.get('rating');
+        if (ratingVal) {
+          setSelectedRatings(ratingVal.split(',').map(Number));
+        } else {
+          setSelectedRatings([]);
+        }
 
-      const ratingVal = params.get('rating');
-      if (ratingVal) setSelectedRatings(ratingVal.split(',').map(Number));
+        const discountVal = params.get('discount');
+        if (discountVal) {
+          setSelectedDiscounts(discountVal.split(',').map(Number));
+        } else {
+          setSelectedDiscounts([]);
+        }
 
-      const discountVal = params.get('discount');
-      if (discountVal) setSelectedDiscounts(discountVal.split(',').map(Number));
+        const offersVal = params.get('offers');
+        if (offersVal === 'true') {
+          setFilterOffers(true);
+        } else {
+          setFilterOffers(false);
+        }
+
+        const newArrivalsVal = params.get('newarrivals');
+        if (newArrivalsVal === 'true') {
+          setFilterNewArrivals(true);
+        } else {
+          setFilterNewArrivals(false);
+        }
+
+        const bestSellersVal = params.get('bestsellers');
+        if (bestSellersVal === 'true') {
+          setFilterBestSellers(true);
+        } else {
+          setFilterBestSellers(false);
+    setFilterOffers(false);
+        }
+      } else {
+        setSearchQuery('');
+        setMaxPrice(10000);
+        setShowInStock(true);
+        setShowOutOfStock(true);
+        setSelectedRatings([]);
+        setSelectedDiscounts([]);
+        setSelectedSubcategories([]);
+        setFilterNewArrivals(false);
+        setFilterBestSellers(false);
+        setFilterOffers(false);
+        setActiveFilters({});
+      }
       setIsUrlParsed(true);
     };
 
@@ -752,6 +588,9 @@ export default function ProductsSection({ authUser, setAuthUser }) {
     if (selectedRatings.length > 0) params.set('rating', selectedRatings.join(','));
     if (selectedDiscounts.length > 0) params.set('discount', selectedDiscounts.join(','));
     if (selectedSubcategories.length > 0) params.set('subcategory', selectedSubcategories.map(v => encodeURIComponent(v)).join(','));
+    if (filterOffers) params.set('offers', 'true');
+    if (filterNewArrivals) params.set('newarrivals', 'true');
+    if (filterBestSellers) params.set('bestsellers', 'true');
     
     Object.entries(activeFilters).forEach(([key, values]) => {
       if (values && values.length > 0) {
@@ -759,15 +598,30 @@ export default function ProductsSection({ authUser, setAuthUser }) {
       }
     });
 
+    // Save to persistent filters storage
+    savePersistentFilters({
+      searchQuery: '',
+      priceRange: maxPrice,
+      showInStock,
+      showOutOfStock,
+      selectedRatings,
+      selectedDiscounts,
+      selectedSubcategories,
+      filterNewArrivals,
+      filterBestSellers,
+      filterOffers,
+      activeFilters
+    });
+
     const queryString = params.toString();
-    const newUrl = `${window.location.pathname}${queryString ? '?' + queryString : ''}`;
+    const newUrl = window.location.pathname + (queryString ? '?' + queryString : '');
     
     if (window.location.pathname + window.location.search !== newUrl) {
       window.history.pushState(null, '', newUrl);
     }
-  }, [isUrlParsed, searchQuery, maxPrice, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, selectedSubcategories, activeFilters]);
+  }, [isUrlParsed, searchQuery, maxPrice, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, selectedSubcategories, activeFilters, filterNewArrivals, filterBestSellers, filterOffers]);
 
-  // Auto slider setup for New Arrivals
+    // Auto slider setup for New Arrivals
   useEffect(() => {
     if (newArrivalsProducts.length === 0) return;
     const timer = setInterval(() => {
@@ -1004,14 +858,17 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   }
 
   // 10. Collections Filter
-  if (filterNewArrivals || filterBestSellers) {
+  if (filterNewArrivals || filterBestSellers || filterOffers) {
     displayProducts = displayProducts.filter(p => {
       const isNew = p.badge === 'NEW' || p.badge === 'NEW ARRIVAL' || String(p.id).startsWith('n');
       const isBest = p.badge === 'BEST SELLER' || String(p.id).startsWith('t');
-      if (filterNewArrivals && filterBestSellers) return isNew || isBest;
-      if (filterNewArrivals) return isNew;
-      if (filterBestSellers) return isBest;
-      return true;
+      const isOffer = p.isOffer || p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL') || getProductDiscount(p) > 0;
+      
+      const matches = [];
+      if (filterNewArrivals) matches.push(isNew);
+      if (filterBestSellers) matches.push(isBest);
+      if (filterOffers) matches.push(isOffer);
+      return matches.some(Boolean);
     });
   }
 
@@ -1262,37 +1119,6 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                   )}
                 </div>
 
-                {/* 8. Discount & Offers Accordion */}
-                <div className="filter-card-section offers-accordion">
-                  <div className="section-title-row" onClick={() => setIsOffersAccordionOpen(!isOffersAccordionOpen)}>
-                    <h3 className="section-title-text">Discount & Offers</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isOffersAccordionOpen ? 'rotated' : ''}`} />
-                  </div>
-                  {isOffersAccordionOpen && (
-                    <div className="section-content" style={{ marginTop: '10px' }}>
-                      {[10, 20, 30, 40].map(pct => {
-                        const isChecked = selectedDiscounts.includes(pct);
-                        return (
-                          <label key={pct} className="checkbox-filter-row">
-                            <input 
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                if (isChecked) {
-                                  setSelectedDiscounts(selectedDiscounts.filter(d => d !== pct));
-                                } else {
-                                  setSelectedDiscounts([...selectedDiscounts, pct]);
-                                }
-                              }}
-                            />
-                            <span>{pct}% and above</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
                 {/* 9. Bestsellers & New Arrivals Accordion */}
                 <div className="filter-card-section collections-accordion">
                   <div className="section-title-row" onClick={() => setIsCollectionAccordionOpen(!isCollectionAccordionOpen)}>
@@ -1316,6 +1142,14 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                           onChange={(e) => setFilterBestSellers(e.target.checked)}
                         />
                         <span>Best Sellers</span>
+                      </label>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={filterOffers}
+                          onChange={(e) => setFilterOffers(e.target.checked)}
+                        />
+                        <span>Offers</span>
                       </label>
                     </div>
                   )}
@@ -1481,16 +1315,15 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                   })}
                 </div>
               )}
+              <div className="section-footer-btn">
+                <button 
+                  className="view-all-btn exclusive-view-all-btn flex-center"
+                  onClick={() => handleNavigation('/Shop')}
+                >
+                  View All Products
+                </button>
+              </div>
             </main>
-          </div>
-
-          <div className="section-footer-btn">
-            <button 
-              className="view-all-btn flex-center"
-              onClick={() => handleNavigation('/Shop')}
-            >
-              View All Products
-            </button>
           </div>
 
         </div>
@@ -1515,7 +1348,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
               <div className="new-arrivals-carousel-track">
                 {(() => {
                   const dbNewArrivals = productsList.filter(p => p.isNewArrival);
-                  const finalNewArrivals = dbNewArrivals.length > 0 ? dbNewArrivals : newArrivalsProducts;
+                  const finalNewArrivals = dbNewArrivals;
                   // Duplicate the array 3 times to ensure infinite smooth marquee scrolling across all screen widths
                   const marqueeItems = [...finalNewArrivals, ...finalNewArrivals, ...finalNewArrivals];
                   
@@ -1837,36 +1670,6 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   );
 }
 
-// Helper functions for local Quick View modal
-const getColorHex = (name) => {
-  if (!name) return '#cccccc';
-  const colors = {
-    'white': '#ffffff',
-    'black': '#111111',
-    'pink': '#ff80ab',
-    'red': '#e53935',
-    'yellow': '#fdd835',
-    'green': '#43a047',
-    'purple': '#8e24aa',
-    'blue': 'hsla(225, 75%, 45%, 1)',
-    'darkred': '#b71c1c',
-    'crimson red': '#b32142',
-    'champagne gold': '#D4AF37',
-    'midnight black': '#111111',
-    'lavender': '#ce93d8',
-    'soft pink': '#f8bbd0',
-    'plum': '#4a148c',
-    'sage': '#81c784',
-    'grey': '#9e9e9e',
-    'peach': '#ffcc80',
-    'cream': '#fff9c4',
-    'aqua': '#80deea',
-    'navy': '#051838',
-    'olive': '#2e7d32'
-  };
-  const key = name.toLowerCase().trim();
-  return colors[key] || name.trim() || '#cccccc';
-};
 
 const getSelectedVariant = (prod, color, size) => {
   if (!prod || !prod.variants || prod.variants.length === 0) return null;
@@ -1965,7 +1768,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
                 <button 
                   key={idx}
                   className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ background: c.hex }}
                   onClick={() => {
                     handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize);
                   }}
@@ -2012,7 +1815,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
                 <button 
                   key={idx}
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ background: c.hex }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);
@@ -2060,7 +1863,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
               <button 
                 key={idx}
                 className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                style={{ backgroundColor: c.hex }}
+                style={{ background: c.hex }}
                 onClick={() => setModalColor(c.name)}
                 title={c.name}
               />
@@ -2149,7 +1952,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
                 <button 
                   key={idx}
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ background: c.hex }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);

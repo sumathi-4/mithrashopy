@@ -43,6 +43,47 @@ const PROMO_CARDS = {
 };
 
 export default function Navbar({ authUser, setAuthUser, onNavigate }) {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.hash + window.location.search);
+
+  useEffect(() => {
+    const updatePath = () => {
+      setCurrentPath(window.location.pathname + window.location.hash + window.location.search);
+    };
+    window.addEventListener('popstate', updatePath);
+    window.addEventListener('hashchange', updatePath);
+    return () => {
+      window.removeEventListener('popstate', updatePath);
+      window.removeEventListener('hashchange', updatePath);
+    };
+  }, []);
+
+  const isHomeActive = () => {
+    const pathname = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    return (pathname === '/' || pathname === '/index.html') && (hash === '' || hash === '#home');
+  };
+
+  const isShopActive = () => {
+    const pathname = window.location.pathname.toLowerCase();
+    const segments = pathname.split('/').filter(Boolean);
+    return segments.length === 1 && segments[0] === 'shop';
+  };
+
+  const isCategoryActive = (groupKey) => {
+    const pathname = window.location.pathname.toLowerCase();
+    return pathname.includes(`/shop/${groupKey.toLowerCase()}`);
+  };
+
+  const isNewArrivalsActive = () => {
+    const pathname = window.location.pathname.toLowerCase();
+    return pathname.includes('/newarrivals') || pathname.includes('/new-arrivals');
+  };
+
+  const isOffersActive = () => {
+    const pathname = window.location.pathname.toLowerCase();
+    return pathname.includes('/offers');
+  };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [scrolled, setScrolled] = useState(false);
@@ -324,7 +365,6 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
     setActiveTab('login');
     setUserEmail(''); setUserPassword(''); setUserLoginError('');
     setRegName(''); setRegEmail(''); setRegPhone(''); setRegPassword(''); setRegError('');
-    setAdminEmail(''); setAdminPassword(''); setAdminError('');
   };
 
   const closeModal = () => setAuthModal(null);
@@ -565,21 +605,21 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
         {/* ROW 2: Horizontal Categories & Hover Mega Menu */}
         <div className="navbar-row-two">
           <ul className="nav-menu-meesho">
-            <li className="nav-item-meesho">
+            <li className={`nav-item-meesho ${isHomeActive() ? 'active' : ''}`}>
               <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
             </li>
-            <li className="nav-item-meesho">
+            <li className={`nav-item-meesho ${isShopActive() ? 'active' : ''}`}>
               <a href="/shop" onClick={(e) => handleLinkClick(e, '/shop')}>Shop</a>
             </li>
             {getUnifiedCategories().map((group) => {
               return (
                 <li
                   key={group.key}
-                  className="nav-item-meesho has-mega-menu"
+                  className={`nav-item-meesho has-mega-menu ${isCategoryActive(group.key) ? 'active' : ''}`}
                 >
                   <a
                     href={`/shop/${group.key.toLowerCase()}`}
-                    className="category-link-meesho"
+                    className={`category-link-meesho ${isCategoryActive(group.key) ? 'active' : ''}`}
                     onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}`)}
                   >
                     {group.name}
@@ -651,10 +691,10 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                 </li>
               );
             })}
-            <li className="nav-item-meesho">
+            <li className={`nav-item-meesho ${isNewArrivalsActive() ? 'active' : ''}`}>
               <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
             </li>
-            <li className="nav-item-meesho">
+            <li className={`nav-item-meesho ${isOffersActive() ? 'active' : ''}`}>
               <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
             </li>
           </ul>
@@ -674,10 +714,10 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
       >
         <div className="mobile-nav-container">
           <ul className="mobile-nav-menu">
-            <li className="mobile-nav-item">
+            <li className={`mobile-nav-item ${isHomeActive() ? 'active' : ''}`}>
               <a href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>Home</a>
             </li>
-            <li className="mobile-nav-item">
+            <li className={`mobile-nav-item ${isShopActive() ? 'active' : ''}`}>
               <a href="/shop" onClick={(e) => handleLinkClick(e, '/shop')}>Shop</a>
             </li>
           </ul>
@@ -697,36 +737,42 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
                   <div className="mobile-nav-sub-list">
                     <a
                       href={`/shop/${group.key.toLowerCase()}`}
-                      className="mobile-nav-sub-link heading"
+                      className={`mobile-nav-sub-link heading ${isCategoryActive(group.key) ? 'active' : ''}`}
                       onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}`)}
                     >
                       All {group.name}
                     </a>
-                    {group.subcategories.map(sub => (
-                      <div key={sub.key} className="mobile-nav-sub-group">
-                        <a
-                          href={`/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`}
-                          className="mobile-nav-sub-link title"
-                          onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
-                        >
-                          {sub.label}
-                        </a>
-                        {sub.children && sub.children.length > 0 && (
-                          <div className="mobile-nav-child-list">
-                            {sub.children.map(child => (
-                              <a
-                                key={child.key}
-                                href={`/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`}
-                                className="mobile-nav-sub-link child"
-                                onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
-                              >
-                                {child.label}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {group.subcategories.map(sub => {
+                      const isSubActive = window.location.pathname.toLowerCase() === `/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`;
+                      return (
+                        <div key={sub.key} className="mobile-nav-sub-group">
+                          <a
+                            href={`/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                            className={`mobile-nav-sub-link title ${isSubActive ? 'active' : ''}`}
+                            onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${sub.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
+                          >
+                            {sub.label}
+                          </a>
+                          {sub.children && sub.children.length > 0 && (
+                            <div className="mobile-nav-child-list">
+                              {sub.children.map(child => {
+                                const isChildActive = window.location.pathname.toLowerCase() === `/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`;
+                                return (
+                                  <a
+                                    key={child.key}
+                                    href={`/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`}
+                                    className={`mobile-nav-sub-link child ${isChildActive ? 'active' : ''}`}
+                                    onClick={(e) => handleLinkClick(e, `/shop/${group.key.toLowerCase()}/${child.dbName.toLowerCase().replace(/\s+/g, '-')}`)}
+                                  >
+                                    {child.label}
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )
               };
@@ -734,10 +780,10 @@ export default function Navbar({ authUser, setAuthUser, onNavigate }) {
           />
 
           <ul className="mobile-nav-menu" style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '16px' }}>
-            <li className="mobile-nav-item">
+            <li className={`mobile-nav-item ${isNewArrivalsActive() ? 'active' : ''}`}>
               <a href="/NewArrivals" onClick={(e) => handleLinkClick(e, '/NewArrivals')}>New Arrivals</a>
             </li>
-            <li className="mobile-nav-item">
+            <li className={`mobile-nav-item ${isOffersActive() ? 'active' : ''}`}>
               <a href="/Offers" onClick={(e) => handleLinkClick(e, '/Offers')}>Offers</a>
             </li>
           </ul>

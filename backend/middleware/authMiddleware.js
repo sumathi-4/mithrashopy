@@ -12,7 +12,7 @@ function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
     let token = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
       token = authHeader.split(' ')[1];
     }
 
@@ -51,7 +51,7 @@ async function authenticateVendor(req, res, next) {
     const authHeader = req.headers.authorization;
     let token = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
       token = authHeader.split(' ')[1];
     }
 

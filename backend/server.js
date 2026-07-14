@@ -66,6 +66,15 @@ const authLimiter = rateLimit({
 
 app.use(globalLimiter);
 
+// ─── Disable HTTP caching for all /api routes ─────────────────────────────────
+// This prevents the browser from serving stale product/order/review data from cache
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 // ─── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));

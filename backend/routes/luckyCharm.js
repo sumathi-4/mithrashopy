@@ -12,7 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'mithirashoppy_secret_key';
 function getUserIdFromRequest(req) {
   try {
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
       return decoded.id || decoded.userId || null;
@@ -139,7 +139,12 @@ router.get('/campaign-products', async (req, res) => {
     const activeProducts = await Product.find({
       includeInLuckyCharm: true,
       luckyStock: { $gt: 0 },
-      status: 'Active'
+      status: 'Active',
+      $or: [
+        { vendorId: null },
+        { vendorId: "" },
+        { vendorId: { $exists: false } }
+      ]
     }).limit(limit).lean();
 
     const unifiedList = activeProducts.map(p => ({
@@ -273,7 +278,12 @@ router.post('/check-eligibility', async (req, res) => {
       includeInLuckyCharm: true,
       luckyStock: { $gt: 0 },
       price: { $lte: activeCampaign.rewardBudget },
-      status: 'Active'
+      status: 'Active',
+      $or: [
+        { vendorId: null },
+        { vendorId: "" },
+        { vendorId: { $exists: false } }
+      ]
     });
 
     if (candidateProducts.length === 0) {
@@ -388,7 +398,12 @@ router.post('/spin', async (req, res) => {
       _id: { $in: wheelSession.wheelProducts },
       includeInLuckyCharm: true,
       luckyStock: { $gt: 0 },
-      status: 'Active'
+      status: 'Active',
+      $or: [
+        { vendorId: null },
+        { vendorId: "" },
+        { vendorId: { $exists: false } }
+      ]
     });
 
     if (candidateProducts.length === 0) {

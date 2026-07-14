@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
   try {
     let isAdmin = false;
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
       const token = authHeader.split(' ')[1];
       try {
         const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
@@ -48,6 +48,11 @@ router.get('/', async (req, res) => {
     const filter = {};
     if (!isAdmin) {
       filter.status = 'Active';
+      filter.$or = [
+        { vendorId: null },
+        { vendorId: "" },
+        { vendorId: { $exists: false } }
+      ];
     }
 
     const rawProducts = await Product.find(filter).lean();
@@ -55,6 +60,9 @@ router.get('/', async (req, res) => {
       ...p,
       attributes: formatAttributesForFrontend(p.attributes)
     }));
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json({ success: true, products });
   } catch (err) {
     console.error('Fetch products error:', err);
@@ -70,7 +78,7 @@ router.get('/:id', async (req, res) => {
 
     let isAdmin = false;
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
       const token = authHeader.split(' ')[1];
       try {
         const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
@@ -85,6 +93,11 @@ router.get('/:id', async (req, res) => {
     const filter = { id };
     if (!isAdmin) {
       filter.status = 'Active';
+      filter.$or = [
+        { vendorId: null },
+        { vendorId: "" },
+        { vendorId: { $exists: false } }
+      ];
     }
 
     const rawProduct = await Product.findOne(filter).lean();

@@ -14,7 +14,52 @@ export const COLOR_MAP = {
   brown: '#8B4513',
   gold: '#D4AF37',
   silver: '#C0C0C0',
-  beige: '#F5F5DC'
+  beige: '#F5F5DC',
+  maroon: '#800000',
+  lavender: '#E6E6FA',
+  teal: '#008080',
+  coral: '#FF7F50',
+  peach: '#FFDAB9',
+  cream: '#FFFDD0',
+  khaki: '#F0E68C',
+  olive: '#808000',
+  plum: '#8E44AD',
+  sage: '#BC8F8F',
+  charcoal: '#36454F',
+  magenta: '#FF00FF',
+  cyan: '#00FFFF',
+  mustard: '#FFDB58',
+  violet: '#EE82EE',
+  indigo: '#4B0082',
+  bronze: '#CD7F32',
+  copper: '#B87333',
+  rust: '#B7410E',
+  turquoise: '#40E0D0',
+  apricot: '#FBCEB1',
+  rose: '#FF007F',
+  wine: '#722F37',
+  mint: '#98FF98',
+  'sage green': '#99b399',
+  'mint green': '#66e0a3',
+  'light blue': '#88ccff',
+  'purple-white': '#b39ddb',
+  'yellow-white': '#fff59d',
+  'pink-white': '#f8bbd0',
+  'green-white': '#a5d6a7',
+  'black-white': '#e0e0e0',
+  'crimson red': '#b32142',
+  'champagne gold': '#D4AF37',
+  'midnight black': '#111111',
+  'pure white': '#ffffff',
+  'ocean blue': '#051838',
+  'soft pink': '#f8bbd0',
+  'blue-white': '#051838'
+};
+
+export const getColorHex = (name) => {
+  if (!name) return '#cccccc';
+  const key = name.toLowerCase().trim();
+  return COLOR_MAP[key] || name.trim() || '#cccccc';
 };
 
 export const getValuesForFilter = (product, filterName) => {

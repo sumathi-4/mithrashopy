@@ -10,43 +10,14 @@ import { apiService } from '../services/apiService';
 import { resolveProductImage, resolveProductGallery, isRealImg } from '../utils/imageHelper';
 import { useToast } from './ToastProvider';
 import { categoryConfigService } from '../services/categoryConfigService';
-import { COLOR_MAP, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
+import { COLOR_MAP, getColorHex, getValuesForFilter, getFilterOptions, applyDynamicFilters, getProductBadge, getMergedFiltersForPath } from '../utils/filterUtils';
+import { loadPersistentFilters, savePersistentFilters, clearPersistentFilters } from '../utils/filterPersistence';
 
 import imgClothing from '../assets/hero_clothing_banner.jpg';
 import imgStationery from '../assets/hero_stationery.jpg';
 import imgGifts from '../assets/hero_gifts.jpg';
 import imgAccessories from '../assets/hero_accessories.jpg';
 
-// Helper to get hex colors for bullets
-const getColorHex = (name) => {
-  if (!name) return '#cccccc';
-  const colors = {
-    'white': '#ffffff',
-    'black': '#111111',
-    'pink': '#ff80ab',
-    'red': '#e53935',
-    'yellow': '#fdd835',
-    'green': '#43a047',
-    'purple': '#8e24aa',
-    'blue': 'hsla(225, 75%, 45%, 1)',
-    'darkred': '#b71c1c',
-    'crimson red': '#b32142',
-    'champagne gold': '#D4AF37',
-    'midnight black': '#111111',
-    'lavender': '#ce93d8',
-    'soft pink': '#f8bbd0',
-    'plum': '#4a148c',
-    'sage': '#81c784',
-    'grey': '#9e9e9e',
-    'peach': '#ffcc80',
-    'cream': '#fff9c4',
-    'aqua': '#80deea',
-    'navy': '#051838',
-    'olive': '#2e7d32'
-  };
-  const key = name.toLowerCase().trim();
-  return colors[key] || name.trim() || '#cccccc';
-};
 
 // Helper to check stock status
 const isProductInStock = (p) => {
@@ -195,7 +166,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
                 <button
                   key={c.name}
                   className={`color-dot ${activeColor.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{ background: c.hex }}
                   onClick={() => {
                     setModalColor(c.name);
                     const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
@@ -247,7 +218,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
               <button
                 key={c.name}
                 className={`color-dot ${ (modalColor || (flatColors[0] && flatColors[0].name) || '').toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-                style={{ backgroundColor: c.hex }}
+                style={{ background: c.hex }}
                 onClick={() => setModalColor(c.name)}
                 title={c.name}
               />
@@ -361,86 +332,7 @@ const getSimilarProductsForNewArrivals = (currentProd, allProds) => {
     .map(s => s.product);
 };
 
-const fallbackNewArrivals = [
-  {
-    id: 'n1',
-    title: "Floral Frock Dress",
-    category: "CLOTHING",
-    price: 1499,
-    originalPrice: 2249,
-    rating: 5,
-    reviews: 42,
-    image: clothingUser1,
-    badge: "NEW",
-    isNewArrival: true,
-    description: "Vibrant traditional children's frock crafted in premium south cotton, featuring bright ethnic accents and details."
-  },
-  {
-    id: 'n2',
-    title: "Blue School Kit",
-    category: "STATIONERY",
-    price: 899,
-    originalPrice: 1349,
-    rating: 4.5,
-    reviews: 18,
-    image: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?auto=format&fit=crop&w=1000&q=80",
-    badge: "NEW",
-    isNewArrival: true,
-    description: "An all-in-one premium study organizer set featuring pastel blue binders, designer pencils, and note kits."
-  },
-  {
-    id: 'n3',
-    title: "Birthday Gift Box",
-    category: "GIFTS",
-    price: 1099,
-    originalPrice: 1649,
-    rating: 4.8,
-    reviews: 35,
-    image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
-    badge: "NEW",
-    isNewArrival: true,
-    description: "Thoughtfully curated celebration bundle containing custom premium boxes, ribbons, and hampers."
-  },
-  {
-    id: 'n4',
-    title: "Traditional Jhumka",
-    category: "ACCESSORIES",
-    price: 1799,
-    originalPrice: 2699,
-    rating: 5,
-    reviews: 58,
-    image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=1000&q=80",
-    badge: "NEW",
-    isNewArrival: true,
-    description: "Exquisite gold-plated jhumka earrings featuring premium micro-filigree beads and traditional temple design."
-  },
-  {
-    id: 'n5',
-    title: "Premium Notebook",
-    category: "STATIONERY",
-    price: 399,
-    originalPrice: 599,
-    rating: 4.2,
-    reviews: 14,
-    image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=1000&q=80",
-    badge: "NEW",
-    isNewArrival: true,
-    description: "Soft-bound luxury journal containing acid-free pages, ideal for sketching, calligraphy, and planning."
-  },
-  {
-    id: 'n6',
-    title: "Cotton Kurta Set",
-    category: "CLOTHING",
-    price: 1299,
-    originalPrice: 1949,
-    rating: 4.9,
-    reviews: 64,
-    image: clothingUser2,
-    badge: "NEW",
-    isNewArrival: true,
-    description: "Premium organic cotton kurta paired with a matching dupatta, reflecting heritage ethnic motifs."
-  }
-];
+const fallbackNewArrivals = [];
 
 export default function NewArrivalsView() {
   const [allProducts, setAllProducts] = useState([]);
@@ -475,6 +367,7 @@ export default function NewArrivalsView() {
   const [selectedColors, setSelectedColors] = useState([]);
   const [selectedDiscounts, setSelectedDiscounts] = useState([]);
   const [filterBestSellers, setFilterBestSellers] = useState(false);
+  const [filterNewArrivals, setFilterNewArrivals] = useState(false);
   const [filterOffers, setFilterOffers] = useState(false);
 
   // Accordion Expand/Collapse States
@@ -585,63 +478,124 @@ export default function NewArrivalsView() {
         setSearchQuery('');
       }
 
-      // Parse dynamic filters
-      const dynamicFilters = {};
-      const ignoredParams = ['category', 'subcategory', 'search', 'catalogue', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories'];
-      params.forEach((value, key) => {
-        if (!ignoredParams.includes(key.toLowerCase())) {
-          dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+      // Check if URL contains any filter parameters
+      const hasUrlFilters = Array.from(params.keys()).some(k => 
+        ['search', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories', 'offers', 'newarrivals', 'bestsellers'].includes(k.toLowerCase()) ||
+        !['category', 'subcategory'].includes(k.toLowerCase())
+      );
+
+      let loaded = null;
+      if (!hasUrlFilters) {
+        loaded = loadPersistentFilters();
+      }
+
+      if (loaded) {
+        if (loaded.priceRange !== undefined) setPriceRange(loaded.priceRange);
+        if (loaded.showInStock !== undefined) setShowInStock(loaded.showInStock);
+        if (loaded.showOutOfStock !== undefined) setShowOutOfStock(loaded.showOutOfStock);
+        if (loaded.selectedRatings !== undefined) setSelectedRatings(loaded.selectedRatings);
+        if (loaded.selectedDiscounts !== undefined) setSelectedDiscounts(loaded.selectedDiscounts);
+        if (loaded.catalogue !== undefined) setCatalogue(loaded.catalogue);
+        if (loaded.selectedSubcategories !== undefined) setSelectedSubcategories(loaded.selectedSubcategories);
+        if (loaded.filterNewArrivals !== undefined) setFilterNewArrivals(loaded.filterNewArrivals);
+        if (loaded.filterBestSellers !== undefined) setFilterBestSellers(loaded.filterBestSellers);
+        if (loaded.filterOffers !== undefined) setFilterOffers(loaded.filterOffers);
+        if (loaded.activeFilters !== undefined) setActiveFilters(loaded.activeFilters);
+      } else if (hasUrlFilters) {
+        // Parse dynamic filters
+        const dynamicFilters = {};
+        const ignoredParams = ['category', 'subcategory', 'search', 'catalogue', 'price', 'instock', 'outofstock', 'rating', 'discount', 'subcategories', 'offers', 'newarrivals', 'bestsellers'];
+        params.forEach((value, key) => {
+          if (!ignoredParams.includes(key.toLowerCase())) {
+            dynamicFilters[key] = value.split(',').map(v => decodeURIComponent(v));
+          }
+        });
+        setActiveFilters(dynamicFilters);
+
+        const priceVal = params.get('price');
+        if (priceVal) {
+          setPriceRange(Number(priceVal));
+        } else {
+          setPriceRange(15000);
         }
-      });
-      setActiveFilters(dynamicFilters);
 
-      const priceVal = params.get('price');
-      if (priceVal) {
-        setPriceRange(Number(priceVal));
+        const instockVal = params.get('instock');
+        if (instockVal === 'false') {
+          setShowInStock(false);
+        } else {
+          setShowInStock(true);
+        }
+
+        const outofstockVal = params.get('outofstock');
+        if (outofstockVal === 'false') {
+          setShowOutOfStock(false);
+        } else {
+          setShowOutOfStock(true);
+        }
+
+        const ratingVal = params.get('rating');
+        if (ratingVal) {
+          setSelectedRatings(ratingVal.split(',').map(Number));
+        } else {
+          setSelectedRatings([]);
+        }
+
+        const discountVal = params.get('discount');
+        if (discountVal) {
+          setSelectedDiscounts(discountVal.split(',').map(Number));
+        } else {
+          setSelectedDiscounts([]);
+        }
+
+        const catalogueVal = params.get('catalogue');
+        if (catalogueVal) {
+          setCatalogue(catalogueVal);
+        } else {
+          setCatalogue('A');
+        }
+
+        const subcategoriesVal = params.get('subcategories');
+        if (subcategoriesVal) {
+          setSelectedSubcategories(subcategoriesVal.split(',').map(v => decodeURIComponent(v)));
+        } else {
+          setSelectedSubcategories([]);
+        }
+
+        const offersVal = params.get('offers');
+        if (offersVal === 'true') {
+          setFilterOffers(true);
+        } else {
+          setFilterOffers(false);
+        }
+
+        const newArrivalsVal = params.get('newarrivals');
+        if (newArrivalsVal === 'true') {
+          setFilterNewArrivals(true);
+        } else {
+          setFilterNewArrivals(false);
+        }
+
+        const bestSellersVal = params.get('bestsellers');
+        if (bestSellersVal === 'true') {
+          setFilterBestSellers(true);
+        } else {
+          setFilterBestSellers(false);
+    setFilterNewArrivals(false);
+    setFilterOffers(false);
+        }
       } else {
+        setSearchQuery('');
         setPriceRange(15000);
-      }
-
-      const instockVal = params.get('instock');
-      if (instockVal === 'false') {
-        setShowInStock(false);
-      } else {
         setShowInStock(true);
-      }
-
-      const outofstockVal = params.get('outofstock');
-      if (outofstockVal === 'false') {
-        setShowOutOfStock(false);
-      } else {
         setShowOutOfStock(true);
-      }
-
-      const ratingVal = params.get('rating');
-      if (ratingVal) {
-        setSelectedRatings(ratingVal.split(',').map(Number));
-      } else {
         setSelectedRatings([]);
-      }
-
-      const discountVal = params.get('discount');
-      if (discountVal) {
-        setSelectedDiscounts(discountVal.split(',').map(Number));
-      } else {
         setSelectedDiscounts([]);
-      }
-
-      const catalogueVal = params.get('catalogue');
-      if (catalogueVal) {
-        setCatalogue(catalogueVal);
-      } else {
         setCatalogue('A');
-      }
-
-      const subcategoriesVal = params.get('subcategories');
-      if (subcategoriesVal) {
-        setSelectedSubcategories(subcategoriesVal.split(',').map(v => decodeURIComponent(v)));
-      } else {
         setSelectedSubcategories([]);
+        setFilterNewArrivals(false);
+        setFilterBestSellers(false);
+        setFilterOffers(false);
+        setActiveFilters({});
       }
       setIsUrlParsed(true);
     };
@@ -663,6 +617,9 @@ export default function NewArrivalsView() {
     if (selectedDiscounts.length > 0) params.set('discount', selectedDiscounts.join(','));
     if (catalogue !== 'A') params.set('catalogue', catalogue);
     if (selectedSubcategories.length > 0) params.set('subcategories', selectedSubcategories.map(v => encodeURIComponent(v)).join(','));
+    if (filterOffers) params.set('offers', 'true');
+    if (filterNewArrivals) params.set('newarrivals', 'true');
+    if (filterBestSellers) params.set('bestsellers', 'true');
     
     Object.entries(activeFilters).forEach(([key, values]) => {
       if (values && values.length > 0) {
@@ -670,19 +627,35 @@ export default function NewArrivalsView() {
       }
     });
 
+    // Save to persistent filters storage
+    savePersistentFilters({
+      searchQuery: '',
+      priceRange,
+      showInStock,
+      showOutOfStock,
+      selectedRatings,
+      selectedDiscounts,
+      catalogue,
+      selectedSubcategories,
+      filterNewArrivals,
+      filterBestSellers,
+      filterOffers,
+      activeFilters
+    });
+
     const path = activeTab !== 'ALL'
-      ? `/new-arrivals/${activeTab.toLowerCase()}${activeSubTab !== 'ALL' ? '/' + activeSubTab.toLowerCase().replace(/\s+/g, '-') : ''}`
+      ? '/new-arrivals/' + activeTab.toLowerCase() + (activeSubTab !== 'ALL' ? '/' + activeSubTab.toLowerCase().replace(/\s+/g, '-') : '')
       : '/new-arrivals';
     
     const queryString = params.toString();
-    const newUrl = `${path}${queryString ? '?' + queryString : ''}`;
+    const newUrl = path + (queryString ? '?' + queryString : '');
     
     if (window.location.pathname + window.location.search !== newUrl) {
       window.history.pushState(null, '', newUrl);
     }
-  }, [isUrlParsed, activeTab, activeSubTab, searchQuery, priceRange, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, catalogue, activeFilters, selectedSubcategories]);
+  }, [isUrlParsed, activeTab, activeSubTab, searchQuery, priceRange, showInStock, showOutOfStock, selectedRatings, selectedDiscounts, catalogue, activeFilters, selectedSubcategories, filterOffers, filterNewArrivals, filterBestSellers]);
 
-  // Reset page when filters change
+    // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, activeSubTab, searchQuery, catalogue, priceRange, showInStock, showOutOfStock, selectedRatings, selectedSubcategories, selectedShopFor, selectedSizes, selectedColors, selectedDiscounts, filterBestSellers, filterOffers]);
@@ -896,6 +869,7 @@ export default function NewArrivalsView() {
 
   // Reset all sidebar filters
   const handleClearAllFilters = () => {
+    clearPersistentFilters();
     setActiveFilters({});
     setOpenSections({});
     setCatalogue('A');
@@ -981,7 +955,7 @@ export default function NewArrivalsView() {
 
   // PRE-FILTER: STRICTLY show products where isNewArrival === true, with fallback to mock products if database has none
   const newArrivalsDbOnly = allProducts.filter(p => p.isNewArrival === true);
-  const finalNewArrivals = newArrivalsDbOnly.length > 0 ? newArrivalsDbOnly : fallbackNewArrivals;
+  const finalNewArrivals = newArrivalsDbOnly;
 
   const categoryProducts = finalNewArrivals.filter(p => {
     // 1. Root Category filter
@@ -1096,7 +1070,7 @@ export default function NewArrivalsView() {
   if (filterBestSellers || filterOffers) {
     filteredProducts = filteredProducts.filter(p => {
       const isBest = p.badge === 'BEST SELLER' || p.sales > 20 || String(p.id).startsWith('t');
-      const isOffer = p.isOffer || p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL') || p.discount > 0;
+      const isOffer = p.isOffer || p.badge?.toUpperCase().includes('OFFER') || p.badge?.toUpperCase().includes('DEAL') || getProductDiscount(p) > 0;
       
       if (filterBestSellers && filterOffers) return isBest || isOffer;
       if (filterBestSellers) return isBest;
@@ -1193,7 +1167,7 @@ export default function NewArrivalsView() {
               <span>Back to New Arrivals</span>
             </button>
             <span className="breadcrumb-divider">/</span>
-            <span className="breadcrumb-category" style={{ cursor: 'pointer' }} onClick={() => { setActiveTab(fullDetailProduct.category.toUpperCase()); setFullDetailProduct(null); }}>
+            <span className="breadcrumb-category" style={{ cursor: 'pointer' }} onClick={() => { setActiveTab(fullDetailProduct.category.toUpperCase()); setSearchQuery(''); setFullDetailProduct(null); }}>
               {fullDetailProduct.category}
             </span>
             <span className="breadcrumb-divider">/</span>
@@ -1352,7 +1326,7 @@ export default function NewArrivalsView() {
               </span>
             </div>
             <div className="similar-products-grid">
-              {getSimilarProductsForNewArrivals(fullDetailProduct, allProducts.length > 0 ? allProducts : fallbackNewArrivals)
+              {getSimilarProductsForNewArrivals(fullDetailProduct, allProducts)
                 .slice(0, 6)
                 .map((simProd) => {
                   const isSimWishlisted = wishlist.includes(simProd.id);
@@ -1745,37 +1719,6 @@ export default function NewArrivalsView() {
                   )}
                 </div>
 
-                {/* Discount & Offers Accordion */}
-                <div className="filter-card-section offers-accordion">
-                  <div className="section-title-row" onClick={() => setIsOffersOpenAccordion(!isOffersOpenAccordion)}>
-                    <h3 className="section-title-text">Discount & Offers</h3>
-                    <ChevronDown size={14} className={`section-chevron ${isOffersOpenAccordion ? 'rotated' : ''}`} />
-                  </div>
-                  {isOffersOpenAccordion && (
-                    <div className="section-content" style={{ marginTop: '10px' }}>
-                      {[10, 20, 30, 40].map(pct => {
-                        const isChecked = selectedDiscounts.includes(pct);
-                        return (
-                          <label key={pct} className="checkbox-filter-row">
-                            <input 
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                if (isChecked) {
-                                  setSelectedDiscounts(selectedDiscounts.filter(d => d !== pct));
-                                } else {
-                                  setSelectedDiscounts([...selectedDiscounts, pct]);
-                                }
-                              }}
-                            />
-                            <span>{pct}% and above</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
                 {/* Collections Accordion */}
                 <div className="filter-card-section collections-accordion">
                   <div className="section-title-row" onClick={() => setIsBestSellersOpen(!isBestSellersOpen)}>
@@ -1784,6 +1727,14 @@ export default function NewArrivalsView() {
                   </div>
                   {isBestSellersOpen && (
                     <div className="section-content" style={{ marginTop: '10px' }}>
+                      <label className="checkbox-filter-row">
+                        <input 
+                          type="checkbox"
+                          checked={filterNewArrivals}
+                          onChange={(e) => setFilterNewArrivals(e.target.checked)}
+                        />
+                        <span>New Arrivals</span>
+                      </label>
                       <label className="checkbox-filter-row">
                         <input 
                           type="checkbox"
