@@ -143,39 +143,258 @@ const getProductCatalogue = (p) => {
   return 'A';
 };
 
-// Render Variant Selectors inside Detail/QuickView
-const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty) => {
+// Handle color change and select the variant image in gallery
+const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize, currentSize) => {
+  setModalColor(colorName);
+  if (prod && prod.variants) {
+    const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
+    if (hasVariantImages) {
+      const colors = getProductThemedColors(prod);
+      const colorIdx = colors.findIndex(c => c.name.toLowerCase() === colorName.toLowerCase());
+      if (colorIdx !== -1) {
+        setActiveImageIndex(colorIdx);
+      }
+    }
+
+    // Selection Retention
+    const isSizeAvailable = prod.variants.some(v => 
+      v.color?.toLowerCase() === colorName.toLowerCase() && 
+      v.size?.toLowerCase() === currentSize?.toLowerCase() && 
+      v.stock > 0
+    );
+
+    if (isSizeAvailable) {
+      setModalSize(currentSize);
+    } else {
+      const fallbackVar = prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase() && 
+        v.stock > 0
+      ) || prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase()
+      );
+      if (fallbackVar && fallbackVar.size) {
+        setModalSize(fallbackVar.size);
+      }
+    }
+  }
+};
+
+const renderCategorySelectors = (
+  prod,
+  modalSize,
+  setModalSize,
+  modalColor,
+  setModalColor,
+  activeImageIndex,
+  setActiveImageIndex,
+  images,
+  colors,
+  modalQty,
+  setModalQty,
+  personalizationText = '',
+  setPersonalizationText = () => {},
+  personalizationError = false,
+  setPersonalizationError = () => {}
+) => {
   if (!prod) return null;
-  
+
+  const category = String(prod.category).toUpperCase();
+
+  // If the product has custom variants defined by a vendor:
   if (prod.variants && prod.variants.length > 0) {
     const varColors = getProductThemedColors(prod);
     const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
-    const availableSizes = prod.variants
-      .filter(v => !activeColor || v.color?.toLowerCase() === activeColor.toLowerCase())
-      .map(v => v.size)
-      .filter(Boolean);
-    const uniqueSizes = [...new Set(availableSizes)];
     
+    // Available options in list
+    const sizes = [...new Set(prod.variants.map(v => v.size).filter(Boolean))];
+    const fabrics = [...new Set(prod.variants.map(v => v.fabric || v.material).filter(Boolean))];
+    const fits = [...new Set(prod.variants.map(v => v.fit || v.style).filter(Boolean))];
+
+    // Helper to check if a combination is available (in-stock)
+    const isCombAvailable = (col, sz, fab, ft) => {
+      return prod.variants.some(v => 
+        (!col || v.color?.toLowerCase() === col.toLowerCase()) &&
+        (!sz || v.size?.toLowerCase() === sz.toLowerCase()) &&
+        (!fab || (v.fabric || v.material)?.toLowerCase() === fab.toLowerCase()) &&
+        (!ft || (v.fit || v.style)?.toLowerCase() === ft.toLowerCase()) &&
+        v.stock > 0
+      );
+    };
+
     return (
-      <>
+      <div className="variant-selectors-group" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Colors (Swatches) */}
         {varColors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Color: <span className="color-name">{modalColor || varColors[0]?.name || ""}</span></span>
-            <div className="modal-color-dots">
-              {varColors.map((c, idx) => (
-                <button
-                  key={c.name}
-                  className={`color-dot ${activeColor.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-                  style={{ background: c.hex }}
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{modalColor || varColors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+              {varColors.map((c, idx) => {
+                const isColAvail = prod.variants.some(v => v.color?.toLowerCase() === c.name.toLowerCase() && v.stock > 0);
+                return (
+                  <button 
+                    key={idx}
+                    type="button"
+                    className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                    style={{ 
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                      outline: modalColor === c.name ? '2px solid var(--primary-rose, #1d4ed8)' : 'none',
+                      cursor: 'pointer',
+                      opacity: isColAvail ? 1 : 0.45,
+                      background: isColAvail ? c.hex : `linear-gradient(45deg, ${c.hex} 48%, #94a3b8 49%, #94a3b8 51%, ${c.hex} 52%)`,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => {
+                      handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize, modalSize);
+                    }}
+                    title={`${c.name} ${isColAvail ? '' : '(Out of stock)'}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sizes (Grid) */}
+        {sizes.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {sizes.map((sz) => {
+                const isSzAvail = isCombAvailable(activeColor, sz);
+                return (
+                  <button 
+                    key={sz}
+                    type="button"
+                    className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                      color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                      background: modalSize === sz ? 'var(--bg-cream, #fffef9)' : (isSzAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)'),
+                      opacity: isSzAvail ? 1 : 0.4,
+                      cursor: isSzAvail ? 'pointer' : 'not-allowed',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => isSzAvail && setModalSize(sz)}
+                    disabled={!isSzAvail}
+                  >
+                    {sz}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fabrics/Materials */}
+        {fabrics.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Material / Fabric</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fabrics.map((fab) => {
+                const isFabAvail = isCombAvailable(activeColor, modalSize, fab);
+                return (
+                  <button 
+                    key={fab}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFabAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFabAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {fab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fits/Styles */}
+        {fits.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Style / Fit</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fits.map((ft) => {
+                const isFtAvail = isCombAvailable(activeColor, modalSize, null, ft);
+                return (
+                  <button 
+                    key={ft}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFtAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFtAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {ft}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback category-based static selectors (when no Mongoose variants exist)
+  if (category.includes('CLOTHING') || category.includes('DRESS')) {
+    const sizeOptions = prod.attributes?.size 
+      ? prod.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
+      : (prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {colors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+              {colors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  type="button"
+                  className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => {
-                    setModalColor(c.name);
-                    const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
-                    if (hasVariantImages) {
-                      const cIdx = varColors.findIndex(color => color.name.toLowerCase() === c.name.toLowerCase());
-                      if (cIdx !== -1) setActiveImageIndex(cIdx);
+                    if (idx < images.length) {
+                      setActiveImageIndex(idx);
                     }
-                    const matchVar = prod.variants.find(v => v.color?.toLowerCase() === c.name.toLowerCase());
-                    if (matchVar && matchVar.size) setModalSize(matchVar.size);
+                    setModalColor(c.name);
                   }}
                   title={c.name}
                 />
@@ -184,67 +403,235 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         )}
 
-        {uniqueSizes.length > 0 && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Size:</span>
-            <div className="modal-size-options">
-              {uniqueSizes.map(size => (
-                <button
-                  key={size}
-                  className={`size-option-btn ${modalSize === size ? 'active' : ''}`}
-                  onClick={() => setModalSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
+        <div className="modal-section-block">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {sizeOptions.map((sz) => (
+              <button 
+                key={sz}
+                type="button"
+                className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+                onClick={() => setModalSize(sz)}
+              >
+                {sz}
+              </button>
+            ))}
           </div>
-        )}
-      </>
+        </div>
+      </div>
     );
   }
 
-  // Fallback for flat products
-  const flatSizes = getProductSizes(prod);
-  const flatColors = getProductThemedColors(prod);
-
-  return (
-    <>
-      {flatColors.length > 0 && (
+  if (category.includes('STATIONERY')) {
+    const packs = ['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'];
+    const packSize = modalSize.includes('Pack') ? modalSize : 'Pack of 3';
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="modal-section-block">
-          <span className="modal-section-title">Color: <span className="color-name">{modalColor || (flatColors[0] && flatColors[0].name) || ''}</span></span>
-          <div className="modal-color-dots">
-            {flatColors.map(c => (
-              <button
-                key={c.name}
-                className={`color-dot ${ (modalColor || (flatColors[0] && flatColors[0].name) || '').toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
-                style={{ background: c.hex }}
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Ink Color: {modalColor || "Blue"}</span>
+          <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+            {[
+              { name: 'Blue', hex: '#0d47a1' },
+              { name: 'Black', hex: '#212121' },
+              { name: 'Red', hex: '#b71c1c' }
+            ].map((c, idx) => (
+              <button 
+                key={idx}
+                type="button"
+                className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                style={{ 
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: c.hex,
+                  border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                  outline: modalColor === c.name ? '2px solid var(--primary-rose)' : 'none',
+                  cursor: 'pointer'
+                }}
                 onClick={() => setModalColor(c.name)}
                 title={c.name}
               />
             ))}
           </div>
         </div>
-      )}
 
-      {flatSizes.length > 0 && (
         <div className="modal-section-block">
-          <span className="modal-section-title">Size:</span>
-          <div className="modal-size-options">
-            {flatSizes.map(size => (
-              <button
-                key={size}
-                className={`size-option-btn ${modalSize === size ? 'active' : ''}`}
-                onClick={() => setModalSize(size)}
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Pack Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {packs.map((sz) => (
+              <button 
+                key={sz}
+                type="button"
+                className={`modal-size-btn ${packSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: packSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: packSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: packSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+                onClick={() => setModalSize(sz)}
               >
-                {size}
+                {sz}
               </button>
             ))}
           </div>
         </div>
-      )}
-    </>
-  );
+      </div>
+    );
+  }
+
+  if (category.includes('GIFT')) {
+    const wrapThemes = ['Classic Red', 'Mystic Violet', 'Minimalist White', 'Premium Gold'];
+    const selectedTheme = modalColor.includes('Classic') || modalColor.includes('Mystic') || modalColor.includes('Minimal') || modalColor.includes('Premium') ? modalColor : 'Classic Red';
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="modal-section-block">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Occasion Theme: {modalSize || "Birthday"}</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {['Birthday', 'Anniversary', 'Wedding', 'Corporate'].map((sz) => (
+              <button 
+                key={sz}
+                type="button"
+                className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+                onClick={() => setModalSize(sz)}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Gift Wrapping Toggle */}
+        <div className="modal-section-block">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Gift Wrapping Theme</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {wrapThemes.map((sz) => (
+              <button 
+                key={sz}
+                type="button"
+                className={`modal-size-btn ${selectedTheme === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: selectedTheme === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: selectedTheme === sz ? 'var(--primary-rose)' : '#475569',
+                  background: selectedTheme === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.82rem'
+                }}
+                onClick={() => setModalColor(sz)}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Personalization textarea */}
+        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
+          <div className="modal-section-block" id="personalization-input-container" style={{ scrollMarginTop: '100px' }}>
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '4px' }}>Personalization Message *</span>
+            <textarea 
+              className="modal-input" 
+              value={personalizationText}
+              onChange={(e) => {
+                setPersonalizationText(e.target.value);
+                setPersonalizationError(false);
+              }}
+              placeholder="Enter name or message to print on gift..." 
+              style={{ 
+                width: '100%', 
+                padding: '10px', 
+                borderRadius: '8px', 
+                border: personalizationError ? '2px solid #ef4444' : '1px solid #eae6df', 
+                marginTop: '6px', 
+                outline: 'none',
+                height: '80px',
+                resize: 'none',
+                boxShadow: personalizationError ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : 'none'
+              }}
+            />
+            {personalizationError && (
+              <span style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '4px', display: 'block', fontWeight: 600 }}>
+                Please provide custom message / name for personalization!
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (category.includes('ACCESSORIES') || category.includes('FANCY')) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {colors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+              {colors.map((c, idx) => (
+                <button 
+                  key={idx}
+                  type="button"
+                  className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (idx < images.length) {
+                      setActiveImageIndex(idx);
+                    }
+                    setModalColor(c.name);
+                  }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="modal-section-block">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Size:</span>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', width: 'fit-content', background: '#f8fafc' }}>
+            One Size (Adjustable)
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 // Dynamic Category Class Resolver
@@ -390,6 +777,8 @@ export default function NewArrivalsView() {
   const [modalSize, setModalSize] = useState('M');
   const [modalColor, setModalColor] = useState('');
   const [modalQty, setModalQty] = useState(1);
+  const [personalizationText, setPersonalizationText] = useState('');
+  const [personalizationError, setPersonalizationError] = useState(false);
 
   const [categoryConfigs, setCategoryConfigs] = useState({});
   const [activeFilters, setActiveFilters] = useState({});
@@ -415,6 +804,64 @@ export default function NewArrivalsView() {
   );
 
   const dynamicFilterNames = categoryFilters.filter(f => f && typeof f === 'string' && f.toLowerCase() !== 'price');
+
+  const mapProductsData = (data) => {
+    if (!data) return [];
+    return data.map((p, idx) => {
+      let catUpper = (p.category || 'CLOTHING').toUpperCase();
+      let cleanCategory = 'CLOTHING';
+      let extractedSub = p.subCategory || '';
+
+      if (p.category && p.category.includes('>')) {
+        const parts = p.category.split('>').map(x => x.trim());
+        const rootCat = parts[0].toUpperCase();
+        if (rootCat.includes('CLOTHING') || rootCat.includes('DRESS')) cleanCategory = 'CLOTHING';
+        else if (rootCat.includes('STATIONERY') || rootCat.includes('PEN') || rootCat.includes('PENCIL') || rootCat.includes('NOTEBOOK') || rootCat.includes('WRITING') || rootCat.includes('PAPER')) cleanCategory = 'STATIONERY';
+        else if (rootCat.includes('GIFT') || rootCat.includes('VALENTINE')) cleanCategory = 'GIFTS';
+        else if (rootCat.includes('ACCESSORIES') || rootCat.includes('FANCY') || rootCat.includes('JEWEL') || rootCat.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+        else cleanCategory = rootCat;
+
+        extractedSub = parts[parts.length - 1];
+      } else {
+        if (catUpper.includes('CLOTHING') || catUpper.includes('DRESS')) cleanCategory = 'CLOTHING';
+        else if (catUpper.includes('STATIONERY') || catUpper.includes('PEN') || catUpper.includes('PENCIL') || catUpper.includes('NOTEBOOK') || catUpper.includes('WRITING') || catUpper.includes('PAPER')) cleanCategory = 'STATIONERY';
+        else if (catUpper.includes('GIFT') || catUpper.includes('VALENTINE')) cleanCategory = 'GIFTS';
+        else if (catUpper.includes('ACCESSORIES') || catUpper.includes('FANCY') || catUpper.includes('JEWEL') || catUpper.includes('WATCH')) cleanCategory = 'ACCESSORIES';
+        else cleanCategory = catUpper;
+      }
+
+      const title = p.name || p.title || 'Product';
+      
+      const isRealImg = (img) => img && (img.startsWith('http') || img.startsWith('/') || img.includes('.') || img.startsWith('data:'));
+
+      let productImages = [];
+      const rawImagesArray = Array.isArray(p.images) ? p.images : (typeof p.images === 'string' ? p.images.split(',').map(s => s.trim()) : []);
+      if (rawImagesArray.length > 0) {
+        const realOnes = rawImagesArray.filter(isRealImg);
+        if (realOnes.length > 0) productImages = realOnes;
+      }
+
+      let finalImage;
+      if (productImages.length > 0) {
+        finalImage = productImages[0];
+      } else if (isRealImg(p.image)) {
+        finalImage = p.image;
+        productImages = [finalImage];
+      } else {
+        finalImage = p.image || '';
+        productImages = [finalImage];
+      }
+
+      return {
+        ...p,
+        title,
+        category: cleanCategory,
+        subCategory: extractedSub,
+        image: finalImage,
+        images: productImages
+      };
+    });
+  };
 
   // Load wishlist, cart, products, and categories dynamically
   useEffect(() => {
@@ -442,7 +889,7 @@ export default function NewArrivalsView() {
     setLoading(true);
     apiService.getProducts()
       .then(data => {
-        setAllProducts(data);
+        setAllProducts(mapProductsData(data));
       })
       .catch(err => console.error('Error fetching products:', err))
       .finally(() => setLoading(false));
@@ -1253,7 +1700,7 @@ export default function NewArrivalsView() {
                 </span>
               </div>
 
-              {renderCategorySelectors(fullDetailProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+              {renderCategorySelectors(fullDetailProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty, personalizationText, setPersonalizationText, personalizationError, setPersonalizationError)}
 
               <div className="product-detail-section-block qty-block">
                 <span className="product-detail-section-title">Quantity</span>
@@ -1264,22 +1711,50 @@ export default function NewArrivalsView() {
                 </div>
               </div>
 
-              <div className="product-detail-actions-buttons" style={{ display: 'flex', gap: '15px', marginTop: '25px' }}>
+              {/* Actions */}
+              <div className="product-detail-actions">
                 <button 
-                  className={`product-detail-primary-btn ${cart.includes(fullDetailProduct.id) ? 'in-cart' : ''}`}
-                  onClick={() => toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor)}
+                  className={`product-detail-cart-btn ${cart.includes(fullDetailProduct.id) ? 'active' : ''}`}
                   disabled={isOutOfStock}
-                  style={{ flex: 2 }}
+                  style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
+                    const isGift = String(fullDetailProduct.category).toUpperCase().includes('GIFT');
+                    const needsPersonalization = fullDetailProduct.attributes?.personalization && fullDetailProduct.attributes.personalization !== 'No';
+                    if (isGift && needsPersonalization && !personalizationText.trim()) {
+                      setPersonalizationError(true);
+                      const container = document.getElementById('personalization-input-container');
+                      if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
+                    toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
+                  }}
                 >
-                  <ShoppingCart size={18} style={{ marginRight: '8px' }} />
-                  <span>{cart.includes(fullDetailProduct.id) ? "REMOVE FROM CART" : "ADD TO CART"}</span>
+                  {isOutOfStock ? "OUT OF STOCK" : (cart.includes(fullDetailProduct.id) ? "Remove from Cart" : "ADD TO CART")}
                 </button>
                 <button 
-                  className={`product-detail-secondary-btn ${wishlist.includes(fullDetailProduct.id) ? 'active' : ''}`}
-                  onClick={() => toggleWishlist(fullDetailProduct.id)}
-                  style={{ flex: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  className="product-detail-buy-btn"
+                  disabled={isOutOfStock}
+                  style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
+                    const isGift = String(fullDetailProduct.category).toUpperCase().includes('GIFT');
+                    const needsPersonalization = fullDetailProduct.attributes?.personalization && fullDetailProduct.attributes.personalization !== 'No';
+                    if (isGift && needsPersonalization && !personalizationText.trim()) {
+                      setPersonalizationError(true);
+                      const container = document.getElementById('personalization-input-container');
+                      if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                      return;
+                    }
+                    if (!cart.includes(fullDetailProduct.id)) {
+                      toggleCart(fullDetailProduct.id, fullDetailProduct.title, modalSize, modalColor);
+                    }
+                    alert("Proceeding to secure checkout!");
+                  }}
                 >
-                  <Heart size={20} fill={wishlist.includes(fullDetailProduct.id) ? "currentColor" : "none"} />
+                  BUY NOW
                 </button>
               </div>
 
@@ -1339,15 +1814,18 @@ export default function NewArrivalsView() {
                       key={simProd.id} 
                       className="clothing-product-card theme-clothing animate-fade-in-up"
                       onClick={() => {
-                        setFullDetailProduct(simProd);
-                        setModalQty(1);
-                        setModalColor('');
-                        setActiveImageIndex(0);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        sessionStorage.setItem('auto_open_product_id', String(simProd.id));
+                        window.history.pushState({}, '', '/Shop');
+                        window.dispatchEvent(new Event('popstate'));
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(simProd); setModalQty(1); setModalColor(''); setActiveImageIndex(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                      <div className="clothing-img-wrapper" onClick={(e) => { 
+                        e.stopPropagation(); 
+                        sessionStorage.setItem('auto_open_product_id', String(simProd.id));
+                        window.history.pushState({}, '', '/Shop');
+                        window.dispatchEvent(new Event('popstate'));
+                      }}>
                         {(() => {
                           const badgeInfo = getProductBadge(simProd, simDiscountPercentage);
                           if (!badgeInfo) return null;
@@ -1779,15 +2257,18 @@ export default function NewArrivalsView() {
                           key={prod.id} 
                           className="clothing-product-card theme-clothing animate-fade-in-up"
                           onClick={() => {
-                            setFullDetailProduct(prod);
-                            setModalQty(1);
-                            setModalColor('');
-                            setActiveImageIndex(0);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            sessionStorage.setItem('auto_open_product_id', String(prod.id));
+                            window.history.pushState({}, '', '/Shop');
+                            window.dispatchEvent(new Event('popstate'));
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          <div className="clothing-img-wrapper" onClick={(e) => { e.stopPropagation(); setFullDetailProduct(prod); setModalQty(1); setModalColor(''); setActiveImageIndex(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                          <div className="clothing-img-wrapper" onClick={(e) => { 
+                            e.stopPropagation(); 
+                            sessionStorage.setItem('auto_open_product_id', String(prod.id));
+                            window.history.pushState({}, '', '/Shop');
+                            window.dispatchEvent(new Event('popstate'));
+                          }}>
                             {/* Badge Logic */}
                             {(() => {
                               const badgeInfo = getProductBadge(prod, discountPercentage);
@@ -1934,8 +2415,8 @@ export default function NewArrivalsView() {
         };
 
         return (
-          <div className="modal-overlay quickview-modal-overlay animate-fade-in" onClick={() => setQuickViewProduct(null)}>
-            <div className="quickview-modal-card split-layout-card animate-scale-in" onClick={(e) => e.stopPropagation()}>
+          <div className={`modal-overlay quickview-split-overlay animate-fade-in ${getCategoryThemeClass(quickViewProduct.category)}`} onClick={() => setQuickViewProduct(null)}>
+            <div className="quickview-split-card animate-scale-in" onClick={(e) => e.stopPropagation()}>
               
               <div className="quickview-modal-header">
                 <span className="quickview-modal-title-top">Quick View</span>
@@ -2013,7 +2494,7 @@ export default function NewArrivalsView() {
                     {quickViewProduct.description || "Elegant and premium collection item designed to complement your cultural roots. Crafted with pure fabric and detailed quality finishes."}
                   </p>
 
-                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty, personalizationText, setPersonalizationText, personalizationError, setPersonalizationError)}
 
                   <div className="modal-section-block quantity-section">
                     <span className="modal-section-title">Quantity:</span>
@@ -2038,8 +2519,10 @@ export default function NewArrivalsView() {
                     <button 
                       className="modal-secondary-action-btn"
                       onClick={() => {
-                        setFullDetailProduct(quickViewProduct);
+                        sessionStorage.setItem('auto_open_product_id', String(quickViewProduct.id));
                         setQuickViewProduct(null);
+                        window.history.pushState({}, '', '/Shop');
+                        window.dispatchEvent(new Event('popstate'));
                       }}
                     >
                       Go to Product

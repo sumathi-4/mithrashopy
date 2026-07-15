@@ -23,13 +23,9 @@ checkBackendStatus();
 // Re-check periodically
 setInterval(checkBackendStatus, 15000);
 
-// Base fetch wrapper
-async function apiRequest(endpoint, method = 'GET', body = null) {
-  if (!isBackendReachable) {
-    throw new Error('Backend server is offline.');
-  }
-
-  const token = getStoredToken();
+  // Base fetch wrapper
+  async function apiRequest(endpoint, method = 'GET', body = null) {
+    const token = getStoredToken();
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})

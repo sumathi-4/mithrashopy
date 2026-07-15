@@ -1,4 +1,22 @@
 require('dotenv').config();
+
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL UNCAUGHT EXCEPTION:', err && err.stack ? err.stack : err);
+  process.stderr.write('', () => {
+    process.stdout.write('', () => {
+      process.exit(1);
+    });
+  });
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('CRITICAL UNHANDLED REJECTION:', reason && reason.stack ? reason.stack : reason);
+  process.stderr.write('', () => {
+    process.stdout.write('', () => {
+      process.exit(1);
+    });
+  });
+});
+
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');

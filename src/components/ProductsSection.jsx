@@ -48,6 +48,8 @@ export default function ProductsSection({ authUser, setAuthUser }) {
   const [modalColor, setModalColor] = useState('');
   const [modalSize, setModalSize] = useState('M');
   const [modalQty, setModalQty] = useState(1);
+  const [personalizationText, setPersonalizationText] = useState('');
+  const [personalizationError, setPersonalizationError] = useState(false);
 
   // Accordion Open/Closed States (Category and Shop For are default true, others false)
   const [isCategoryAccordionOpen, setIsCategoryAccordionOpen] = useState(true);
@@ -1572,8 +1574,7 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                     {quickViewProduct.description || "Elegant and premium collection item designed to complement your cultural roots. Crafted with pure fabric and detailed quality finishes."}
                   </p>
 
-                  {/* Category-specific Selectors */}
-                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty)}
+                  {renderCategorySelectors(quickViewProduct, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty, personalizationText, setPersonalizationText, personalizationError, setPersonalizationError)}
 
                   {/* Quantity Block */}
                   <div className="modal-section-block quantity-section">
@@ -1589,11 +1590,23 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                   <div className="modal-actions-buttons-row">
                     <button 
                       className="modal-primary-action-btn"
+                      disabled={isOutOfStock}
+                      style={{ opacity: isOutOfStock ? 0.5 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
                       onClick={() => {
+                        const isGift = String(quickViewProduct.category).toUpperCase().includes('GIFT');
+                        const needsPersonalization = quickViewProduct.attributes?.personalization && quickViewProduct.attributes.personalization !== 'No';
+                        if (isGift && needsPersonalization && !personalizationText.trim()) {
+                          setPersonalizationError(true);
+                          const container = document.getElementById('personalization-input-container');
+                          if (container) {
+                            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                          return;
+                        }
                         toggleCart(quickViewProduct.id, quickViewProduct.title, modalSize, modalColor);
                       }}
                     >
-                      {cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart"}
+                      {isOutOfStock ? "OUT OF STOCK" : (cart.includes(quickViewProduct.id) ? "Remove from Cart" : "Add to Cart")}
                     </button>
                     <button 
                       className="modal-secondary-action-btn"
@@ -1608,13 +1621,13 @@ export default function ProductsSection({ authUser, setAuthUser }) {
                   </div>
 
                   {/* Wishlist Link */}
-                  <div className="modal-wishlist-row">
+                  <div className="modal-extra-links-row">
                     <button 
-                      className={`modal-wishlist-btn-bottom ${wishlist.includes(quickViewProduct.id) ? 'active' : ''}`}
+                      className={`modal-extra-link-btn ${wishlist.includes(quickViewProduct.id) ? 'active' : ''}`}
                       onClick={() => toggleWishlist(quickViewProduct.id)}
                     >
-                      <Heart size={15} fill={wishlist.includes(quickViewProduct.id) ? "currentColor" : "none"} style={{ display: 'inline-block', marginRight: '5px', verticalAlign: 'middle' }} />
-                      {wishlist.includes(quickViewProduct.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                      <Heart size={16} fill={wishlist.includes(quickViewProduct.id) ? "currentColor" : "none"} style={{ marginRight: '6px' }} />
+                      <span>{wishlist.includes(quickViewProduct.id) ? "Added to Wishlist" : "Add to Wishlist"}</span>
                     </button>
                   </div>
 
@@ -1683,7 +1696,8 @@ const getCategoryThemeClass = (category) => {
   return 'theme-clothing';
 };
 
-const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize) => {
+// Handle color change and select the variant image in gallery
+const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, setModalSize, currentSize) => {
   setModalColor(colorName);
   if (prod && prod.variants) {
     const hasVariantImages = prod.variants.some(v => v.image && isRealImg(v.image));
@@ -1693,92 +1707,242 @@ const handleColorChange = (colorName, prod, setModalColor, setActiveImageIndex, 
       if (colorIdx !== -1) {
         setActiveImageIndex(colorIdx);
       }
-    } else {
-      const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-      if (matchVar) {
-        const isImgValid = matchVar.image && isRealImg(matchVar.image);
-        if (isImgValid) {
-          setActiveImageIndex(0);
-        }
-      }
     }
-    const matchVar = prod.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-    if (matchVar && matchVar.size) {
-      setModalSize(matchVar.size);
+
+    // Selection Retention
+    const isSizeAvailable = prod.variants.some(v => 
+      v.color?.toLowerCase() === colorName.toLowerCase() && 
+      v.size?.toLowerCase() === currentSize?.toLowerCase() && 
+      v.stock > 0
+    );
+
+    if (isSizeAvailable) {
+      setModalSize(currentSize);
+    } else {
+      const fallbackVar = prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase() && 
+        v.stock > 0
+      ) || prod.variants.find(v => 
+        v.color?.toLowerCase() === colorName.toLowerCase()
+      );
+      if (fallbackVar && fallbackVar.size) {
+        setModalSize(fallbackVar.size);
+      }
     }
   }
 };
 
-const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setModalColor, activeImageIndex, setActiveImageIndex, images, colors, modalQty, setModalQty) => {
+const renderCategorySelectors = (
+  prod,
+  modalSize,
+  setModalSize,
+  modalColor,
+  setModalColor,
+  activeImageIndex,
+  setActiveImageIndex,
+  images,
+  colors,
+  modalQty,
+  setModalQty,
+  personalizationText = '',
+  setPersonalizationText = () => {},
+  personalizationError = false,
+  setPersonalizationError = () => {}
+) => {
   if (!prod) return null;
-  
-  if (prod.variants && prod.variants.length > 0) {
-    const varColors = getProductThemedColors(prod);
-    const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
-    const availableSizes = prod.variants
-      .filter(v => !activeColor || v.color?.toLowerCase() === activeColor.toLowerCase())
-      .map(v => v.size)
-      .filter(Boolean);
-    const uniqueSizes = [...new Set(availableSizes)];
-    
-    return (
-      <>
-        {varColors.length > 0 && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Color: <span className="color-name">{modalColor || varColors[0]?.name || ""}</span></span>
-            <div className="modal-color-dots">
-              {varColors.map((c, idx) => (
-                <button 
-                  key={idx}
-                  className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                  style={{ background: c.hex }}
-                  onClick={() => {
-                    handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize);
-                  }}
-                  title={c.name}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {uniqueSizes.length > 0 && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Select Size</span>
-            <div className="modal-size-pills">
-              {uniqueSizes.map((sz) => (
-                <button 
-                  key={sz}
-                  className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
-                  onClick={() => setModalSize(sz)}
-                >
-                  {sz}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
 
   const category = String(prod.category).toUpperCase();
 
+  // If the product has custom variants defined by a vendor:
+  if (prod.variants && prod.variants.length > 0) {
+    const varColors = getProductThemedColors(prod);
+    const activeColor = modalColor || (varColors[0] ? varColors[0].name : '');
+    
+    // Available options in list
+    const sizes = [...new Set(prod.variants.map(v => v.size).filter(Boolean))];
+    const fabrics = [...new Set(prod.variants.map(v => v.fabric || v.material).filter(Boolean))];
+    const fits = [...new Set(prod.variants.map(v => v.fit || v.style).filter(Boolean))];
+
+    // Helper to check if a combination is available (in-stock)
+    const isCombAvailable = (col, sz, fab, ft) => {
+      return prod.variants.some(v => 
+        (!col || v.color?.toLowerCase() === col.toLowerCase()) &&
+        (!sz || v.size?.toLowerCase() === sz.toLowerCase()) &&
+        (!fab || (v.fabric || v.material)?.toLowerCase() === fab.toLowerCase()) &&
+        (!ft || (v.fit || v.style)?.toLowerCase() === ft.toLowerCase()) &&
+        v.stock > 0
+      );
+    };
+
+    return (
+      <div className="variant-selectors-group" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Colors (Swatches) */}
+        {varColors.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{modalColor || varColors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
+              {varColors.map((c, idx) => {
+                const isColAvail = prod.variants.some(v => v.color?.toLowerCase() === c.name.toLowerCase() && v.stock > 0);
+                return (
+                  <button 
+                    key={idx}
+                    type="button"
+                    className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
+                    style={{ 
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                      outline: modalColor === c.name ? '2px solid var(--primary-rose, #1d4ed8)' : 'none',
+                      cursor: 'pointer',
+                      opacity: isColAvail ? 1 : 0.45,
+                      background: isColAvail ? c.hex : `linear-gradient(45deg, ${c.hex} 48%, #94a3b8 49%, #94a3b8 51%, ${c.hex} 52%)`,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => {
+                      handleColorChange(c.name, prod, setModalColor, setActiveImageIndex, setModalSize, modalSize);
+                    }}
+                    title={`${c.name} ${isColAvail ? '' : '(Out of stock)'}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sizes (Grid) */}
+        {sizes.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {sizes.map((sz) => {
+                const isSzAvail = isCombAvailable(activeColor, sz);
+                return (
+                  <button 
+                    key={sz}
+                    type="button"
+                    className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                      color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                      background: modalSize === sz ? 'var(--bg-cream, #fffef9)' : (isSzAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)'),
+                      opacity: isSzAvail ? 1 : 0.4,
+                      cursor: isSzAvail ? 'pointer' : 'not-allowed',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => isSzAvail && setModalSize(sz)}
+                    disabled={!isSzAvail}
+                  >
+                    {sz}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fabrics/Materials */}
+        {fabrics.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Material / Fabric</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fabrics.map((fab) => {
+                const isFabAvail = isCombAvailable(activeColor, modalSize, fab);
+                return (
+                  <button 
+                    key={fab}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFabAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFabAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {fab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fits/Styles */}
+        {fits.length > 0 && (
+          <div className="modal-section-block">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Style / Fit</span>
+            <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {fits.map((ft) => {
+                const isFtAvail = isCombAvailable(activeColor, modalSize, null, ft);
+                return (
+                  <button 
+                    key={ft}
+                    type="button"
+                    className="modal-size-btn"
+                    style={{ 
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      background: isFtAvail ? '#ffffff' : 'linear-gradient(45deg, #ffffff 48%, #ef4444 49%, #ef4444 51%, #ffffff 52%)',
+                      opacity: isFtAvail ? 1 : 0.4,
+                      cursor: 'default',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {ft}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback category-based static selectors (when no Mongoose variants exist)
   if (category.includes('CLOTHING') || category.includes('DRESS')) {
     const sizeOptions = prod.attributes?.size 
       ? prod.attributes.size.split(',').map(s => s.trim()).filter(Boolean) 
       : (prod.subCategory === 'KIDS' ? ['2y', '4y', '6y', '8y'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']);
     return (
-      <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {colors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Color: <span className="color-name">{colors[activeImageIndex]?.name || colors[0]?.name || ""}</span></span>
-            <div className="modal-color-dots">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Color: <span className="color-name" style={{ color: 'var(--primary-rose)', fontWeight: 700 }}>{colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            </span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
               {colors.map((c, idx) => (
                 <button 
                   key={idx}
+                  type="button"
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ background: c.hex }}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);
@@ -1793,12 +1957,23 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
         )}
 
         <div className="modal-section-block">
-          <span className="modal-section-title">Select Size</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {sizeOptions.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
               >
                 {sz}
@@ -1806,7 +1981,7 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
             ))}
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -1814,19 +1989,28 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
     const packs = ['Pack of 1', 'Pack of 3', 'Pack of 5', 'Pack of 10'];
     const packSize = modalSize.includes('Pack') ? modalSize : 'Pack of 3';
     return (
-      <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="modal-section-block">
-          <span className="modal-section-title">Ink Color: {modalColor || "Blue"}</span>
-          <div className="modal-color-dots">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Ink Color: {modalColor || "Blue"}</span>
+          <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
             {[
-              { name: 'Blue', hex: '#051838' },
+              { name: 'Blue', hex: '#0d47a1' },
               { name: 'Black', hex: '#212121' },
               { name: 'Red', hex: '#b71c1c' }
             ].map((c, idx) => (
               <button 
                 key={idx}
+                type="button"
                 className={`modal-color-dot ${modalColor === c.name ? 'active' : ''}`}
-                style={{ background: c.hex }}
+                style={{ 
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: c.hex,
+                  border: modalColor === c.name ? '2px solid #fff' : '1px solid #cbd5e1',
+                  outline: modalColor === c.name ? '2px solid var(--primary-rose)' : 'none',
+                  cursor: 'pointer'
+                }}
                 onClick={() => setModalColor(c.name)}
                 title={c.name}
               />
@@ -1835,21 +2019,31 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
         </div>
 
         <div className="modal-section-block">
-          <span className="modal-section-title">Pack Size</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Pack Size</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {packs.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${packSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: packSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: packSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: packSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
-                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
               >
                 {sz}
               </button>
             ))}
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -1857,14 +2051,25 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
     const wrapThemes = ['Classic Red', 'Mystic Violet', 'Minimalist White', 'Premium Gold'];
     const selectedTheme = modalColor.includes('Classic') || modalColor.includes('Mystic') || modalColor.includes('Minimal') || modalColor.includes('Premium') ? modalColor : 'Classic Red';
     return (
-      <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="modal-section-block">
-          <span className="modal-section-title">Occasion Theme: {modalSize || "Birthday"}</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Occasion Theme: {modalSize || "Birthday"}</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {['Birthday', 'Anniversary', 'Wedding', 'Corporate'].map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${modalSize === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: modalSize === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: modalSize === sz ? 'var(--primary-rose)' : '#475569',
+                  background: modalSize === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
                 onClick={() => setModalSize(sz)}
               >
                 {sz}
@@ -1873,49 +2078,89 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
           </div>
         </div>
 
-        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
-          <div className="modal-section-block">
-            <span className="modal-section-title">Personalization Details:</span>
-            <input 
-              type="text" 
-              className="modal-input" 
-              placeholder="Enter name or message to print..." 
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #eae6df', marginTop: '6px', outline: 'none' }}
-            />
-          </div>
-        )}
-
+        {/* Gift Wrapping Toggle */}
         <div className="modal-section-block">
-          <span className="modal-section-title">Gift Wrapping Theme</span>
-          <div className="modal-size-pills">
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Gift Wrapping Theme</span>
+          <div className="modal-size-pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {wrapThemes.map((sz) => (
               <button 
                 key={sz}
+                type="button"
                 className={`modal-size-btn ${selectedTheme === sz ? 'active' : ''}`}
+                style={{ 
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: selectedTheme === sz ? '1.5px solid var(--primary-rose)' : '1px solid #e2e8f0',
+                  color: selectedTheme === sz ? 'var(--primary-rose)' : '#475569',
+                  background: selectedTheme === sz ? 'var(--bg-cream)' : '#ffffff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.82rem'
+                }}
                 onClick={() => setModalColor(sz)}
-                style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem' }}
               >
                 {sz}
               </button>
             ))}
           </div>
         </div>
-      </>
+
+        {/* Personalization textarea */}
+        {prod.attributes?.personalization && prod.attributes.personalization !== 'No' && (
+          <div className="modal-section-block" id="personalization-input-container" style={{ scrollMarginTop: '100px' }}>
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '4px' }}>Personalization Message *</span>
+            <textarea 
+              className="modal-input" 
+              value={personalizationText}
+              onChange={(e) => {
+                setPersonalizationText(e.target.value);
+                setPersonalizationError(false);
+              }}
+              placeholder="Enter name or message to print on gift..." 
+              style={{ 
+                width: '100%', 
+                padding: '10px', 
+                borderRadius: '8px', 
+                border: personalizationError ? '2px solid #ef4444' : '1px solid #eae6df', 
+                marginTop: '6px', 
+                outline: 'none',
+                height: '80px',
+                resize: 'none',
+                boxShadow: personalizationError ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : 'none'
+              }}
+            />
+            {personalizationError && (
+              <span style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '4px', display: 'block', fontWeight: 600 }}>
+                Please provide custom message / name for personalization!
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     );
   }
 
   if (category.includes('ACCESSORIES') || category.includes('FANCY')) {
     return (
-      <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {colors.length > 0 && (
           <div className="modal-section-block">
-            <span className="modal-section-title">Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name || "Default"}</span>
-            <div className="modal-color-dots">
+            <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Metal Plating: {colors[activeImageIndex]?.name || colors[0]?.name}</span>
+            <div className="modal-color-dots" style={{ display: 'flex', gap: '10px' }}>
               {colors.map((c, idx) => (
                 <button 
                   key={idx}
+                  type="button"
                   className={`modal-color-dot ${activeImageIndex === idx ? 'active' : ''}`}
-                  style={{ background: c.hex }}
+                  style={{ 
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: c.hex,
+                    border: activeImageIndex === idx ? '2px solid #fff' : '1px solid #cbd5e1',
+                    outline: activeImageIndex === idx ? '2px solid var(--primary-rose)' : 'none',
+                    cursor: 'pointer'
+                  }}
                   onClick={() => {
                     if (idx < images.length) {
                       setActiveImageIndex(idx);
@@ -1930,12 +2175,12 @@ const renderCategorySelectors = (prod, modalSize, setModalSize, modalColor, setM
         )}
 
         <div className="modal-section-block">
-          <span className="modal-section-title">Size:</span>
-          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'inherit', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', width: 'fit-content' }}>
+          <span className="modal-section-title" style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>Size:</span>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', width: 'fit-content', background: '#f8fafc' }}>
             One Size (Adjustable)
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
