@@ -1,1 +1,0 @@
-async function run() { console.time('fetch'); const res = await fetch('http://127.0.0.1:5000/api/products'); const data = await res.json(); console.timeEnd('fetch'); console.log('Status:', res.ok, 'Count:', data.products?.length); } run();
