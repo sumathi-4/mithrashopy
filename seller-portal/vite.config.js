@@ -8,6 +8,36 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-router-dom') || id.includes('react-router') || id.includes('@remix-run')) {
+              return 'vendor-router';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-redux') || id.includes('@reduxjs')) {
+              return 'vendor-react-core';
+            }
+            if (id.includes('lucide-react') || id.includes('react-icons')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
+            }
+            return 'vendor-lib';
+          }
+        }
+      }
+    }
+  },
   server: {
     port: 5176,
     proxy: {

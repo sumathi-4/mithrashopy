@@ -50,19 +50,19 @@ import {
   ToggleRight,
   Sliders
 } from 'lucide-react';
-import logoImg from '../../../src/assets/logo.png';
+import logoImg from '../../../user/src/assets/logo.png';
 import { resolveProductImage, isRealImg } from '../utils/imageHelper';
-import kidsDressImg from '../../../src/assets/kids_tq_110.jpg';
-import handbagImg from '../../../src/assets/hero_accessories.jpg';
-import heroKidsImg from '../../../src/assets/hero_kids.jpg';
-import heroGiftsImg from '../../../src/assets/hero_gifts.jpg';
-import heroClothingImg from '../../../src/assets/hero_clothing.jpg';
-import heroAccessoriesImg from '../../../src/assets/hero_accessories.jpg';
-import heroStationeryImg from '../../../src/assets/hero_stationery.jpg';
-import celebKidImg from '../../../src/assets/celeb_kid.jpg';
-import celebKeerthyImg from '../../../src/assets/celeb_keerthy.jpg';
-import celebDulquerImg from '../../../src/assets/celeb_dulquer.jpg';
-import celebCoupleImg from '../../../src/assets/celeb_couple.jpg';
+import kidsDressImg from '../../../user/src/assets/kids_tq_110.jpg';
+import handbagImg from '../../../user/src/assets/hero_accessories.jpg';
+import heroKidsImg from '../../../user/src/assets/hero_kids.jpg';
+import heroGiftsImg from '../../../user/src/assets/hero_gifts.jpg';
+import heroClothingImg from '../../../user/src/assets/hero_clothing.jpg';
+import heroAccessoriesImg from '../../../user/src/assets/hero_accessories.jpg';
+import heroStationeryImg from '../../../user/src/assets/hero_stationery.jpg';
+import celebKidImg from '../../../user/src/assets/celeb_kid.jpg';
+import celebKeerthyImg from '../../../user/src/assets/celeb_keerthy.jpg';
+import celebDulquerImg from '../../../user/src/assets/celeb_dulquer.jpg';
+import celebCoupleImg from '../../../user/src/assets/celeb_couple.jpg';
 
 const generateSKUForCategory = (categoryName) => {
   if (!categoryName) return '';

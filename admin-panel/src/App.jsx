@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminDashboard from './components/AdminDashboard';
 import { loginAdmin, verifySession, logout } from './services/authService';
-import logoImg from '../../src/assets/logo.png';
+import logoImg from '../../user/src/assets/logo.png';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 
 export default function App() {

@@ -21,9 +21,11 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const { seedAdmin, seedStoreData } = require('./db/database');
 
 const app = express();
+app.use(compression());
 const PORT = process.env.PORT || 5000;
 
 // ─── Security Middleware ───────────────────────────────────────────────────────
