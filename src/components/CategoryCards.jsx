@@ -25,6 +25,22 @@ const FALLBACK_CATEGORIES = [
   { name: 'Accessories & Fancy', image: imgAccessories },
 ];
 
+const resolveCategoryImage = (imageVal, key) => {
+  if (!imageVal) return DEFAULT_IMAGES[key] || imgClothing;
+  const str = String(imageVal).toLowerCase();
+  const isReal = str.startsWith('http') || str.startsWith('/') || str.startsWith('data:') || /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?|$)/.test(str);
+  
+  if (isReal) {
+    if (str.startsWith('/uploads/') || str.startsWith('uploads/')) {
+      const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const cleanPath = imageVal.startsWith('/') ? imageVal : `/${imageVal}`;
+      return `${BASE_URL}${cleanPath}`;
+    }
+    return imageVal;
+  }
+  return DEFAULT_IMAGES[key] || imgClothing;
+};
+
 export default function CategoryCards() {
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [loading, setLoading]       = useState(true);
@@ -47,7 +63,7 @@ export default function CategoryCards() {
                 const key = c.name.toLowerCase();
                 return {
                   name:  c.name,
-                  image: c.image || DEFAULT_IMAGES[key] || imgClothing,
+                  image: resolveCategoryImage(c.image, key),
                 };
               })
             );

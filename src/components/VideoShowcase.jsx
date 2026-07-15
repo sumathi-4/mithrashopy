@@ -1,5 +1,4 @@
 import React from 'react';
-import bannerVideo from '../assets/banner_video.mp4';
 
 export default function VideoShowcase() {
   const handleViewTrendsClick = () => {
@@ -16,7 +15,7 @@ export default function VideoShowcase() {
           loop
           muted
           playsInline
-          src={bannerVideo}
+          src="/banner_video.mp4"
         >
           Your browser does not support the video tag.
         </video>
